@@ -1,114 +1,224 @@
 <template>
-  <div class="h-screen w-screen bg-[#F0F2F5] flex flex-col overflow-hidden font-sans border-t-[8px] border-[#004A8D] relative">
-    
-    <header class="bg-white px-8 py-2 flex justify-between items-center h-[75px] border-b border-gray-100">
-      <img src="../assets/logo-prefeitura.png" alt="Prefeitura" class="h-10 object-contain">
+  <div class="h-screen w-screen bg-[#F0F2F5] flex flex-col overflow-hidden font-sans relative">
+    <header class="bg-white px-10 py-3 flex justify-between items-center border-b border-gray-100">
+      <div class="flex items-center">
+        <img src="../assets/logo-prefeitura.png" alt="Prefeitura" class="h-12 object-contain" />
+      </div>
       <div class="text-right leading-none">
-        <div class="text-2xl font-bold text-gray-700 tracking-tighter">{{ relogio }}</div>
-        <div class="text-[10px] text-gray-400 uppercase font-bold tracking-widest mt-1">Atendimento ao Cidadão</div>
+        <div class="text-2xl font-bold text-gray-700">{{ relogio }}</div>
+        <div class="text-[10px] text-gray-400 uppercase font-black tracking-widest mt-1">
+          Atendimento ao Cidadão
+        </div>
       </div>
     </header>
 
-    <main class="flex-1 flex p-4 gap-4 overflow-hidden">
-      
-      <div class="flex-[4] bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden">
-        <div class="flex-1 flex items-center justify-around px-12 relative bg-white">
-          
+    <main class="flex-1 flex p-4 gap-4 overflow-hidden relative pb-0">
+      <div
+        class="absolute top-0 left-0 w-full h-[4px] bg-gradient-to-r from-[#FFC107] via-[#f0d924] to-[#3da1d5] z-50"
+      ></div>
+      <div
+        class="flex-[4] bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden relative"
+      >
+        <div class="flex-1 flex items-center justify-around px-12 bg-white">
           <div class="flex flex-col items-center justify-center">
-            <span class="text-[#8e8e8e] text-5xl font-bold uppercase tracking-widest mb-2">SENHA</span>
-            <h1 class="text-[18vw] leading-[0.8] font-black text-[#004A8D] tracking-tighter">
+            <span class="text-[#8e8e8e] text-6xl font-bold uppercase tracking-widest mb-2"
+              >SENHA</span
+            >
+            <h1 class="text-[20vw] leading-[0.8] font-black text-[#0056B3] tracking-tighter">
               {{ senhaAtual.numero || '---' }}
             </h1>
           </div>
 
-          <div class="h-[60%] w-[1.5px] bg-gray-100"></div>
+          <div class="h-[60%] w-[2px] bg-gray-100"></div>
 
           <div class="flex flex-col items-center justify-center">
-            <span class="text-[#8e8e8e] text-5xl font-bold uppercase tracking-widest mb-2">GUICHÊ</span>
-            <h1 class="text-[18vw] leading-[0.8] font-black text-[#004A8D]">
-              {{ senhaAtual.guiche || '--' }}
+            <span class="text-[#8e8e8e] text-6xl font-bold uppercase tracking-widest mb-2"
+              >GUICHÊ</span
+            >
+            <h1 class="text-[14vw] leading-[0.8] font-black text-[#1A237E]">
+              {{ String(senhaAtual.guiche).padStart(2, '0') || '--' }}
             </h1>
           </div>
         </div>
-
-        <div class="bg-[#003B73] py-8 shadow-inner mt-auto">
-          <h2 class="text-7xl font-bold text-white text-center uppercase tracking-tight truncate px-10">
-            {{ senhaAtual.cidadao || 'Aguardando...' }}
-          </h2>
-        </div>
       </div>
 
-      <aside class="w-[360px] flex flex-col gap-3">
-        <div class="text-center font-bold text-gray-500 text-xs uppercase tracking-[0.3em] pb-2 border-b-2 border-gray-200 mx-4">
+      <aside class="w-[420px] flex flex-col h-full overflow-hidden">
+        <div
+          class="text-center font-bold text-gray-500 text-[20px] uppercase pt-1 pb-2 border-b-2 border-[#0056B3] mx-4 mb-4"
+        >
           HISTÓRICO
         </div>
-        
-        <div class="flex flex-col gap-3 overflow-hidden">
-          <div v-for="(item, index) in historico" :key="index" 
-               class="bg-white p-4 rounded-xl border-l-[12px] border-[#0056B3] flex justify-between items-center shadow-md">
+
+        <div class="flex-1 flex flex-col gap-4 px-2 pb-2 overflow-hidden">
+          <div
+            v-for="(item, index) in historico.slice(0, 4)"
+            :key="index"
+            class="flex-1 bg-white p-5 rounded-[25px] border-l-[8px] border-[#0056B3] flex justify-between items-center shadow-xl transition-all"
+          >
             <div class="flex flex-col leading-none">
-              <span class="text-[10px] text-gray-400 font-bold uppercase mb-1">Senha</span>
-              <span class="text-5xl font-black text-gray-700 tracking-tighter">{{ item.numero }}</span>
+              <span class="text-[13px] text-gray-400 font-bold uppercase mb-2 tracking-wider"
+                >Senha</span
+              >
+              <span class="text-6xl font-black text-gray-700 tracking-tighter">
+                {{ item.numero }}
+              </span>
             </div>
+
             <div class="flex flex-col text-right leading-none">
-              <span class="text-[10px] text-gray-400 font-bold uppercase mb-1">Guichê</span>
-              <span class="text-5xl font-black text-[#2B78E4] tracking-tighter">{{ item.guiche }}</span>
+              <span class="text-[13px] text-gray-400 font-bold uppercase mb-2 tracking-wider"
+                >Guichê</span
+              >
+              <span class="text-6xl font-black text-[#0056B3] tracking-tighter">
+               {{ String(item.guiche).padStart(2, '0') }}
+              </span>
             </div>
           </div>
         </div>
       </aside>
     </main>
 
-    <div class="absolute bottom-4 left-6 z-40 flex flex-col items-center">
-      <div class="bg-white p-1 rounded shadow-2xl border border-gray-100">
-         <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=GAVIC" alt="QR" class="w-20 h-20" />
+    <footer class="relative w-full py-12">
+      <div
+        class="bg-[#003B73] py-4 rounded-2xl shadow-inner w-full flex justify-center items-center"
+      >
+        <h2 class="text-6xl font-bold text-white text-center px-20">
+          {{ senhaAtual.cidadao || 'Aguardando...' }}
+        </h2>
       </div>
-      <span class="text-[10px] font-black text-gray-400 mt-1 tracking-widest">GAVIC</span>
-    </div>
 
-    <button v-if="!somAtivado" @click="ativarAudio" 
-            class="fixed bottom-6 right-6 bg-[#FFC107] hover:bg-yellow-500 text-black text-[10px] font-bold py-3 px-6 rounded-full shadow-2xl z-50">
-      🔔 Clique para ativar áudio
-    </button>
+      <div class="absolute inset-0 flex items-center justify-between px-8 pointer-events-none">
+        <div class="pointer-events-auto transform -translate-y-4">
+          <div
+            class="bg-white p-2 rounded-2xl shadow-2xl border border-gray-100 flex flex-col items-center"
+          >
+            <img
+              src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=GAVIC"
+              alt="QR"
+              class="w-20 h-20"
+            />
+            <span class="text-[10px] font-black text-gray-800 mt-1 tracking-widest uppercase"
+              >{{ SIGLA_SECRETARIA }}</span
+            >
+          </div>
+        </div>
+
+        <button
+          v-if="!somAtivado"
+          @click="ativarAudio"
+          class="bg-[#FFC107] hover:bg-yellow-500 text-black text-[11px] font-black py-3 px-8 rounded-2xl shadow-2xl pointer-events-auto transform translate-y-8"
+        >
+          🔔 Clique para ativar áudio
+        </button>
+      </div>
+    </footer>
 
     <audio ref="audioPlayer" src="/audio/ding.mp3"></audio>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import api from '@/services/api';
+import { ref, onMounted, onUnmounted } from 'vue'
+import api from '@/services/api'
 
-const relogio = ref('');
-const audioPlayer = ref(null);
-const somAtivado = ref(false);
+const relogio = ref('')
+const audioPlayer = ref(null)
+const somAtivado = ref(false)
 
-// Dados Mockados para teste igual à sua foto
-const senhaAtual = ref({ 
-  numero: 'N015', 
-  guiche: '04', 
-  cidadao: 'Hellywdes Silva Pereira' 
-});
+const senhaAtual = ref({ numero: '---', guiche: '--', cidadao: 'Aguardando...' })
+const historico = ref([])
 
-const historico = ref([
-  { numero: 'N014', guiche: '04' },
-  { numero: 'N013', guiche: '04' },
-  { numero: 'N012', guiche: '04' },
-  { numero: 'N011', guiche: '04' }
-]);
-
-const ativarAudio = () => {
-  somAtivado.value = true;
-  audioPlayer.value?.play().catch(() => {});
-};
+const SIGLA_SECRETARIA = 'GAVIC'
 
 const atualizarRelogio = () => {
-  const agora = new Date();
-  relogio.value = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-};
+  const agora = new Date()
+  relogio.value = agora.toLocaleTimeString('pt-BR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  })
+}
+
+const buscarChamadas = async () => {
+  try {
+    const res = await api.get(`/agendamentos/ultimas-chamadas/${SIGLA_SECRETARIA}`)
+
+    if (res.status === 200 && res.data.length > 0) {
+      const novasChamadas = res.data
+      const ultima = novasChamadas[0]
+
+      if (ultima.senha !== senhaAtual.value.numero) {
+        // 1. Atualiza os dados na tela
+        senhaAtual.value = {
+          numero: ultima.senha,
+          guiche: ultima.guiche,
+          cidadao: ultima.nomeCidadao,
+        }
+
+        falarChamada(ultima.nomeCidadao, ultima.senha, ultima.guiche)
+
+        historico.value = novasChamadas.slice(1, 5).map((item) => ({
+          numero: item.senha,
+          guiche: item.guiche,
+        }))
+      }
+    }
+  } catch (error) {
+    console.error('Erro ao buscar chamadas:', error)
+  }
+}
+
+const falarChamada = (nome, senha, guiche) => {
+  if (!somAtivado.value) return
+
+  const mensagem = new SpeechSynthesisUtterance()
+  mensagem.text = `Senha ${senha}, ${nome}, comparecer ao guichê ${guiche}`
+  mensagem.lang = 'pt-BR'
+  mensagem.rate = 0.9
+  mensagem.pitch = 1
+
+  let repeticoes = 0
+  const totalRepeticoes = 2
+
+  // Função que gerencia a repetição
+  mensagem.onend = () => {
+    repeticoes++
+    if (repeticoes < totalRepeticoes) {
+      setTimeout(() => {
+        window.speechSynthesis.speak(mensagem)
+      }, 500)
+    }
+  }
+
+  // Toca o sino uma única vez antes de começar a falar
+  if (audioPlayer.value) {
+    audioPlayer.value.currentTime = 0
+    audioPlayer.value.play()
+
+    setTimeout(() => {
+      window.speechSynthesis.speak(mensagem)
+    }, 1200)
+  } else {
+    window.speechSynthesis.speak(mensagem)
+  }
+}
+
+const ativarAudio = () => {
+  somAtivado.value = true
+  audioPlayer.value?.play().catch(() => {})
+}
+
+let intervalChamada = null
 
 onMounted(() => {
-  atualizarRelogio();
-  setInterval(atualizarRelogio, 1000);
-});
+  atualizarRelogio()
+  setInterval(atualizarRelogio, 1000)
+
+  buscarChamadas()
+
+  intervalChamada = setInterval(buscarChamadas, 3000)
+})
+
+onUnmounted(() => {
+  clearInterval(intervalChamada)
+})
 </script>

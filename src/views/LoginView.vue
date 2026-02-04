@@ -1,5 +1,7 @@
 <template>
+  <div class="border border-black">testeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee</div>
   <div class="flex min-h-screen items-center justify-center bg-[#f1f5f9] font-sans relative overflow-hidden">
+    
     <div class="absolute -top-24 -left-24 w-96 h-96 bg-blue-50 rounded-full opacity-50"></div>
     <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-blue-50 rounded-full opacity-50"></div>
 
@@ -11,7 +13,7 @@
         <h2 class="text-xl font-black text-[#1e3a8a] uppercase tracking-tighter flex items-center gap-2">
           Acesso ao <span class="text-blue-600">Sistema</span>
         </h2>
-        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mt-1">(adicionar descrição topper)</p>
+        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mt-1">Agendamento de Serviços</p>
       </div>
 
      <form @submit.prevent="handleLogin" class="space-y-5">

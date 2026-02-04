@@ -3,13 +3,13 @@
     <aside class="w-64 bg-white border-r border-gray-100 flex flex-col items-center py-6">
       <div class="flex items-center gap-2 mb-10 self-start px-6">
         <div
-          class="w-10 h-10 bg-[#2563eb] rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-200"
+          class="w-10 h-10 bg-[#2563eb] rounded-[13px] flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-200"
         >
           SA
         </div>
         <div class="leading-3">
-          <p class="text-[11px] font-black text-[#1e3a8a] uppercase">Sistema de</p>
-          <p class="text-[11px] font-black text-[#1e3a8a] tracking-tighter uppercase">
+          <p class="text-[12px] font-medium text-[#1e3a8a] uppercase">Sistema de</p>
+          <p class="text-[12px] font-black text-[#1e3a8a] tracking-tighter uppercase">
             Agendamento
           </p>
         </div>
@@ -18,15 +18,9 @@
       <nav class="w-full px-4 space-y-2">
         <a
           href="#"
-          class="flex items-center gap-3 px-4 py-3 bg-[#2563eb] text-white rounded-2xl shadow-xl shadow-blue-100"
+          class="flex items-center gap-3 px-4 py-3 bg-[#2563eb] text-white rounded-[13px] shadow-xl shadow-blue-100"
         >
           <i class="pi pi-grid-view"></i> <span class="text-sm font-bold">Painel</span>
-        </a>
-        <a
-          href="#"
-          class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-50 rounded-2xl transition"
-        >
-          <i class="pi pi-history"></i> <span class="text-sm font-semibold">Fila de Espera</span>
         </a>
       </nav>
 
@@ -59,7 +53,7 @@
       <header
         class="flex justify-between bg-white border-b border-black items-center px-8 mb-5 py-4"
       >
-        <div class="text-[11px] font-bold text-gray-400">
+        <div class="text-[13px] font-bold text-gray-400">
           Gestão / <span class="text-gray-900">Monitor Operacional</span>
         </div>
 
@@ -91,7 +85,7 @@
           class="bg-white p-6 rounded-[15px] shadow-sm flex justify-between items-start border-b-4 border-transparent hover:border-[#9E9E9E] transition-all"
         >
           <div>
-            <p class="text-[10px] font-bold text-gray-400 uppercase mb-1">Atendimentos Hoje</p>
+            <p class="text-[12px] font-bold text-gray-400 uppercase mb-1">Atendimentos Hoje</p>
             <h3 class="text-3xl font-black text-gray-800">{{ agendamentosPorSec.length }}</h3>
             <span class="inline-block w-8 h-1 bg-blue-grey-darken-4 rounded-full"></span>
           </div>
@@ -106,7 +100,7 @@
           class="bg-white p-6 rounded-[15px] shadow-sm flex justify-between items-start border-b-4 border-transparent hover:border-[#FFD54F] transition-all"
         >
           <div>
-            <p class="text-[10px] font-bold text-gray-400 uppercase mb-1">Pessoas na Fila</p>
+            <p class="text-[12px] font-bold text-gray-400 uppercase mb-1">Pessoas na Fila</p>
             <h3 class="text-3xl font-black text-gray-800">
               {{ agendamentosPorSec.length }}
             </h3>
@@ -133,7 +127,7 @@
           class="bg-white p-6 rounded-[15px] shadow-sm flex justify-between items-start border-b-4 border-transparent hover:border-[#4CAF50] transition-all"
         >
           <div>
-            <p class="text-[10px] font-bold text-gray-400 uppercase mb-1">Finalizados</p>
+            <p class="text-[12px] font-bold text-gray-400 uppercase mb-1">Finalizados</p>
             <h3 class="text-3xl font-black text-gray-800">{{ agendamentosFinalizados }}</h3>
             <span class="inline-block w-8 h-1 bg-green-600 rounded-full"></span>
           </div>
@@ -155,7 +149,7 @@
             <div
               class="cursor-pointer bg-[#2563eb] hover:bg-[#1d4ed8] p-6 rounded-[15px] shadow-md flex justify-between items-center transition-all active:scale-95"
             >
-              <div>
+              <div @click="handleChamarNormal(usuario?.secretaria?.id || 1)" >
                 <p class="text-[10px] font-bold text-white/70 uppercase mb-1 tracking-wider">Ação</p>
                 <h3 class="text-2xl font-black text-white tracking-tighter">Chamar Normal</h3>
               </div>
@@ -169,9 +163,9 @@
             <div
               class="cursor-pointer bg-[#FFA000] hover:bg-[#FF8F00] p-6 rounded-[15px] shadow-md flex justify-between items-center transition-all active:scale-95"
             >
-              <div>
+              <div @click="handleChamarPrioridade(usuario?.secretaria?.id || 1)" >
                 <p class="text-[10px] font-bold text-white/70 uppercase mb-1 tracking-wider">Ação</p>
-                <h3 class="text-2xl font-black text-white tracking-tighter">{{ @click  }}</h3>
+                <h3 class="text-2xl font-black text-white tracking-tighter">Chamar Prioridade</h3>
               </div>
               <div
                 class="w-12 h-12 bg-white/20 rounded-[12px] flex items-center justify-center text-white backdrop-blur-sm"
@@ -186,33 +180,30 @@
         <div class="bg-white rounded-[15px] shadow-sm border-b-4 border-transparent p-4">
           <div class="flex gap-6 mb-6 px-4">
             <button
-              @click="abaAtiva = 'AGUARDANDO'"
-              :class="
-                abaAtiva === 'AGUARDANDO'
-                  ? 'text-[#2563eb] border-[#2563eb]'
-                  : 'text-gray-300 border-transparent'
-              "
+              @click="mudarAba('AGUARDANDO')"
+              :class="abaAtiva === 'AGUARDANDO' ? 'text-[#2563eb] border-[#2563eb]' : 'text-gray-300 border-transparent'"
               class="text-xs font-black border-b-2 pb-1 transition-all uppercase tracking-widest"
             >
               Aguardando
             </button>
             <button
-              @click="abaAtiva = 'ATENDIMENTO'"
-              :class="
-                abaAtiva === 'ATENDIMENTO'
-                  ? 'text-[#2563eb] border-[#2563eb]'
-                  : 'text-gray-300 border-transparent'
-              "
+              @click="mudarAba('ATENDIMENTO')"
+              :class="abaAtiva === 'ATENDIMENTO' ? 'text-[#2563eb] border-[#2563eb]' : 'text-gray-300 border-transparent'"
               class="text-xs font-black border-b-2 pb-1 transition-all uppercase tracking-widest"
             >
               Em Atendimento
             </button>
+            <button
+              @click="mudarAba('ESPONTANEO')"
+              :class="abaAtiva === 'ESPONTANEO' ? 'text-[#2563eb] border-[#2563eb]' : 'text-gray-300 border-transparent'"
+              class="text-xs font-black border-b-2 pb-1 transition-all uppercase tracking-widest"
+            >
+              Fila de espera
+            </button>
           </div>
 
           <table class="w-full">
-            <thead
-              class="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50"
-            >
+            <thead class="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50">
               <tr>
                 <th class="px-6 py-4 text-left">Senha</th>
                 <th class="px-6 py-4 text-left">Usuário</th>
@@ -223,18 +214,14 @@
                 <th class="px-6 py-4 text-right pr-10">Ações</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-50 mb-4">
-              <tr v-for="(item, index) in agendamentosFiltrados" :key="index" class="group">
+            <tbody class="divide-y divide-gray-50">
+              <tr v-for="(item, index) in agendamentosPaginados" :key="index" class="group">
                 <td class="px-6 py-6">
                   <div class="flex items-center gap-3">
-                    <div
-                      class="w-10 h-10 bg-[#2563eb] rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-100"
-                    >
+                    <div class="w-10 h-10 bg-[#2563eb] rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-100">
                       <i class="pi pi-bolt"></i>
                     </div>
-                    <span class="font-black text-[#1e3a8a] text-base leading-none">{{
-                      item.senha
-                    }}</span>
+                    <span class="font-black text-[#1e3a8a] text-base leading-none">{{ item.senha }}</span>
                   </div>
                 </td>
                 <td class="px-6 text-sm font-bold text-gray-500">{{ item.usuarioNome }}</td>
@@ -242,56 +229,47 @@
                   {{ item.servicoNome }} - {{ usuario?.secretaria?.sigla }}
                 </td>
                 <td class="px-6">
-                  <span
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-[#2563eb] text-[10px] font-black rounded-lg uppercase tracking-tight"
-                  >
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-[#2563eb] text-[10px] font-black rounded-lg uppercase tracking-tight">
                     <i class="pi pi-calendar text-[10px]"></i> {{ item.situacao }}
                   </span>
                 </td>
-                <td class="px-6 text-[11px] font-black text-gray-400 uppercase">
-                  {{ item.tipoAtendimento }}
-                </td>
+                <td class="px-6 text-[11px] font-black text-gray-400 uppercase">{{ item.tipoAtendimento }}</td>
                 <td class="px-6 text-xs font-bold text-gray-400">{{ item.horaAgendamento }}</td>
-
                 <td class="px-6 text-right pr-6 mt-6 flex gap-2 justify-end">
-                  <v-btn
-                    v-if="item.situacao === 'AGENDADO'"
-                    color="#2563eb"
-                    class="text-white text-[11px] font-black uppercase px-6 py-2.5 rounded-x2 transition"
-                    @click="handleChamar(item.senha)"
-                  >
-                    Chamar
-                  </v-btn>
-
-                  <v-btn
-                    v-if="item.situacao === 'CHAMADO' || item.situacao === 'EM_ATENDIMENTO'"
-                    color="green-darken-3"
-                    class="text-white text-[11px] font-black uppercase px-6 py-2.5 rounded-x2 transition"
-                    @click="handleFinalizar(item.agendamentoId)"
-                  >
-                    Finalizar
-                  </v-btn>
-
-                  <v-btn
-                    color="#e61919"
-                    class="text-white text-[11px] font-black uppercase px-6 py-2.5 rounded-x2 transition"
-                    @click="handleCancelar(item.agendamentoId)"
-                  >
-                    Cancelar
-                  </v-btn>
+                  <v-btn v-if="item.situacao === 'AGENDADO'" color="#2563eb" size="small" class="text-white text-[10px] font-black" @click="handleChamar(item.senha)">Chamar</v-btn>
+                  <v-btn color="#F57F17" size="small" class="text-white text-[10px] font-black" @click="handleCancelar(item.agendamentoId)">Fila</v-btn>
+                  <v-btn v-if="['CHAMADO', 'EM_ATENDIMENTO'].includes(item.situacao)" color="green-darken-3" size="small" class="text-white text-[10px] font-black" @click="handleFinalizar(item.agendamentoId)">Finalizar</v-btn>
+                  <v-btn color="#e61919" size="small" class="text-white text-[10px] font-black" @click="handleCancelar(item.agendamentoId)">Cancelar</v-btn>
+                  
                 </td>
               </tr>
-
-              <tr v-if="agendamentosFiltrados.length === 0">
-                <td
-                  colspan="7"
-                  class="px-6 py-10 text-center text-gray-300 font-bold uppercase text-xs tracking-widest"
-                >
-                  Nenhum agendamento nesta lista
-                </td>
+              <tr v-if="agendamentosPaginados.length === 0">
+                <td colspan="7" class="px-6 py-10 text-center text-gray-300 font-bold uppercase text-xs">Nenhum agendamento encontrado</td>
               </tr>
             </tbody>
           </table>
+
+          <div class="flex justify-between items-center px-6 py-4 border-t border-gray-50 mt-4">
+            <span class="text-[10px] font-bold text-gray-400 uppercase">
+              Página {{ paginaAtual }} de {{ totalPaginas }}
+            </span>
+            <div class="flex gap-2">
+              <button 
+                @click="paginaAtual--" 
+                :disabled="paginaAtual === 1"
+                class="px-4 py-2 bg-gray-100 rounded-lg text-[10px] font-black uppercase disabled:opacity-30"
+              >
+                Anterior
+              </button>
+              <button 
+                @click="paginaAtual++" 
+                :disabled="paginaAtual >= totalPaginas"
+                class="px-4 py-2 bg-[#2563eb] text-white rounded-lg text-[10px] font-black uppercase disabled:opacity-30"
+              >
+                Próximo
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </main>
@@ -316,18 +294,22 @@ export default {
     abaAtiva: 'AGUARDANDO',
     relogio: '--:--:--',
     filtroTexto: '',
+    paginaAtual: 1, 
+    itensPorPagina: 3,
   }),
   methods: {
+    // Método para mudar a aba e resetar a página
+    mudarAba(novaAba) {
+      this.abaAtiva = novaAba;
+      this.paginaAtual = 1;
+    },
+
     async buscarAgendamentos() {
       try {
         const resposta = await api.get('/agendamentos/secretaria/1')
-
         if (Array.isArray(resposta.data)) {
           this.agendamentosPorSec = resposta.data
         }
-
-        console.log(this.agendamentosPorSec)
-        console.log(this.usuario)
       } catch (e) {
         console.error(e)
       }
@@ -335,13 +317,7 @@ export default {
 
     async handleChamar(senha) {
       try {
-        const resposta = await api.post(
-          `/agendamentos/chamar/por-senha/${senha}/${this.usuario.id}`,
-        )
-
-        if (resposta.status != 200) {
-          console.error(resposta)
-        }
+        await api.post(`/agendamentos/chamar/por-senha/${senha}/${this.usuario.id}`)
       } catch (e) {
         console.error(e)
       } finally {
@@ -349,36 +325,28 @@ export default {
       }
     },
 
-    async handleChamarNormal(secretariaId) {
+    async handleChamarNormal() {
+      const secretariaId = this.usuario?.secretaria?.id;
+      const gerenciadorId = this.usuario?.id;
+
+      if (!secretariaId || !gerenciadorId) {
+        alert("Dados do usuário ou secretaria incompletos.");
+        return;
+      }
+
       try {
-        if (secretariaId === null) {
-          alert('Algum problema com gerenciador ou secretaria')
-        }
-
-        const resposta = await api.post(
-          `/agendamentos/chamar/normal/${secretariaId}/${this.usuario.id}`,
-        )
-
-        if (resposta.status != 200) console.error(resposta)
+        await api.post(`/agendamentos/chamar/normal/${secretariaId}/${gerenciadorId}`);
       } catch (e) {
-        console.error(e)
+        console.error(e);
       } finally {
-        this.buscarAgendamentos()
+        this.buscarAgendamentos();
       }
     },
 
     async handleChamarPrioridade(secretariaId) {
-      console.log('Chamou')
       try {
-        if (secretariaId === null) {
-          alert('Algum problema com gerenciador ou secretaria')
-        }
-
-        const resposta = await api.post(
-          `/agendamentos/chamar/prioridade/${secretariaId}/${this.usuario.id}`,
-        )
-
-        if (resposta.status != 200) console.error(resposta)
+        if (!secretariaId) alert('Algum problema com gerenciador ou secretaria')
+        await api.post(`/agendamentos/chamar/prioridade/${secretariaId}/${this.usuario.id}`)
       } catch (e) {
         console.error(e)
       } finally {
@@ -390,51 +358,27 @@ export default {
       try {
         const usuario_logado = JSON.parse(localStorage.getItem('usuario'))
         const resposta = await api.get('/gerenciador/usuario-logado', {
-          headers: {
-            Authorization: `Bearer ${usuario_logado.token}`,
-          },
+          headers: { Authorization: `Bearer ${usuario_logado.token}` },
         })
-
         this.usuario = resposta.data
-        console.log(this.usuario)
       } catch (error) {
         console.error('Erro ao buscar usuário logado', error)
-
-        if (error.response?.status === 401) {
-          localStorage.removeItem('usuario')
-          // router.push("/login")
-        }
-
-        throw error
       }
     },
 
-    async handleLogout() {
-      localStorage.removeItem('token')
+    handleLogout() {
       localStorage.clear()
       this.$router.push({ name: 'login' })
-      console.log('Sessão encerrada com sucesso.')
     },
 
     async handleCancelar(id) {
       if (!confirm('Deseja realmente cancelar este atendimento?')) return
-      console.log(id)
       try {
         const usuario_logado = JSON.parse(localStorage.getItem('usuario'))
-
-        const resposta = await api.put(`/agendamentos/cancelar/${id}`, {
-          headers: {
-            Authorization: `Bearer ${usuario_logado.token}`,
-          },
+        await api.put(`/agendamentos/cancelar/${id}`, {}, {
+          headers: { Authorization: `Bearer ${usuario_logado.token}` },
         })
-
-        if (resposta.status === 200) {
-          console.log('Atendimento cancelado com sucesso.')
-        } else {
-          console.error('Erro ao cancelar:', resposta)
-        }
       } catch (e) {
-        console.error('Erro na requisição de cancelamento:', e)
         alert('Não foi possível cancelar o atendimento.')
       } finally {
         this.buscarAgendamentos()
@@ -444,41 +388,25 @@ export default {
     async handleFinalizar(id) {
       if (!confirm('Deseja finalizar este atendimento?')) return
       try {
-        const resposta = await api.put(`/agendamentos/finalizar/${id}`)
-        if (resposta.status === 200) {
-          console.log('Atendimento finalizado!')
-        }
+        await api.put(`/agendamentos/finalizar/${id}`)
       } catch (e) {
-        console.error('Erro ao finalizar:', e)
+        console.error(e)
       } finally {
         this.buscarAgendamentos()
       }
     },
 
-    async atualizarRelogioLocal() {
+    atualizarRelogioLocal() {
       const agora = new Date()
-
       this.relogio = agora.toLocaleTimeString('pt-BR', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
       })
-    },
-
-    async buscarHorarioServidor() {
-      try {
-        const res = await api.get('/utils/horario-atual')
-        this.relogio = res.data.horario
-      } catch (e) {
-        this.atualizarRelogioLocal()
-      }
-    },
+    }
   },
 
   computed: {
     agendamentosFinalizados() {
-      let finalizados = this.agendamentosPorSec.filter((a) => a.situacao === 'ATENDIDO')
-      return finalizados.length
+      return this.agendamentosPorSec.filter((a) => a.situacao === 'ATENDIDO').length
     },
 
     agendamentosFiltrados() {
@@ -505,6 +433,17 @@ export default {
       })
     },
 
+    agendamentosPaginados() {
+      const inicio = (this.paginaAtual - 1) * this.itensPorPagina;
+      const fim = inicio + this.itensPorPagina;
+      return this.agendamentosFiltrados.slice(inicio, fim);
+    },
+
+    totalPaginas() {
+      const total = Math.ceil(this.agendamentosFiltrados.length / this.itensPorPagina);
+      return total > 0 ? total : 1;
+    },
+
     totalNormal() {
       return this.agendamentosPorSec.filter((a) => a.tipoAtendimento === 'NORMAL').length
     },
@@ -517,10 +456,7 @@ export default {
     this.buscarAgendamentos()
     this.getUsuarioLogado()
     this.atualizarRelogioLocal()
-
-    setInterval(() => {
-      this.atualizarRelogioLocal()
-    }, 1000)
+    setInterval(() => this.atualizarRelogioLocal(), 1000)
   },
 }
 </script>
