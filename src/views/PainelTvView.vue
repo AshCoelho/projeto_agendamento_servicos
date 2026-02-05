@@ -13,7 +13,9 @@
     </header>
 
     <main class="flex-1 flex p-4 gap-4 overflow-hidden relative pb-0">
-      <div class="absolute top-0 left-0 w-full h-[4px] bg-gradient-to-r from-[#FFC107] via-[#f0d924] to-[#3da1d5] z-50"></div>
+      <div
+        class="absolute top-0 left-0 w-full h-[4px] bg-gradient-to-r from-[#FFC107] via-[#f0d924] to-[#3da1d5] z-50"
+      ></div>
       <div
         class="flex-[4] bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden relative"
       >
@@ -67,7 +69,7 @@
                 >Guichê</span
               >
               <span class="text-6xl font-black text-[#0056B3] tracking-tighter">
-               {{ String(item.guiche).padStart(2, '0') }}
+                {{ String(item.guiche).padStart(2, '0') }}
               </span>
             </div>
           </div>
@@ -94,9 +96,9 @@
               alt="QR"
               class="w-20 h-20"
             />
-            <span class="text-[10px] font-black text-gray-800 mt-1 tracking-widest uppercase"
-              >{{ SIGLA_SECRETARIA }}</span
-            >
+            <span class="text-[10px] font-black text-gray-800 mt-1 tracking-widest uppercase">{{
+              sigla
+            }}</span>
           </div>
         </div>
 
@@ -125,8 +127,6 @@ const somAtivado = ref(false)
 const senhaAtual = ref({ numero: '---', guiche: '--', cidadao: 'Aguardando...' })
 const historico = ref([])
 
-const SIGLA_SECRETARIA = 'GAVIC'
-
 const atualizarRelogio = () => {
   const agora = new Date()
   relogio.value = agora.toLocaleTimeString('pt-BR', {
@@ -136,9 +136,10 @@ const atualizarRelogio = () => {
   })
 }
 
+
 const buscarChamadas = async () => {
   try {
-    const res = await api.get(`/agendamentos/ultimas-chamadas/${SIGLA_SECRETARIA}`)
+    const res = await api.get(`/agendamentos/ultimas-chamadas/1`)
 
     if (res.status === 200 && res.data.length > 0) {
       const novasChamadas = res.data

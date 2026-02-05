@@ -352,6 +352,7 @@ export default {
     async buscarAgendamentos() {
       try {
         const resposta = await api.get('/agendamentos/secretaria/1')
+        console.log("Dados recebidos no painel:", resposta.data)
         if (Array.isArray(resposta.data)) {
           this.agendamentosPorSec = resposta.data
         }
