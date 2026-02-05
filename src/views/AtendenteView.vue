@@ -149,8 +149,10 @@
             <div
               class="cursor-pointer bg-[#2563eb] hover:bg-[#1d4ed8] p-6 rounded-[15px] shadow-md flex justify-between items-center transition-all active:scale-95"
             >
-              <div @click="handleChamarNormal(usuario?.secretaria?.id || 1)" >
-                <p class="text-[10px] font-bold text-white/70 uppercase mb-1 tracking-wider">Ação</p>
+              <div @click="handleChamarNormal(usuario?.secretaria?.id || 1)">
+                <p class="text-[10px] font-bold text-white/70 uppercase mb-1 tracking-wider">
+                  Ação
+                </p>
                 <h3 class="text-2xl font-black text-white tracking-tighter">Chamar Normal</h3>
               </div>
               <div
@@ -163,8 +165,10 @@
             <div
               class="cursor-pointer bg-[#FFA000] hover:bg-[#FF8F00] p-6 rounded-[15px] shadow-md flex justify-between items-center transition-all active:scale-95"
             >
-              <div @click="handleChamarPrioridade(usuario?.secretaria?.id || 1)" >
-                <p class="text-[10px] font-bold text-white/70 uppercase mb-1 tracking-wider">Ação</p>
+              <div @click="handleChamarPrioridade(usuario?.secretaria?.id || 1)">
+                <p class="text-[10px] font-bold text-white/70 uppercase mb-1 tracking-wider">
+                  Ação
+                </p>
                 <h3 class="text-2xl font-black text-white tracking-tighter">Chamar Prioridade</h3>
               </div>
               <div
@@ -181,29 +185,38 @@
           <div class="flex gap-6 mb-6 px-4">
             <button
               @click="mudarAba('AGUARDANDO')"
-              :class="abaAtiva === 'AGUARDANDO' ? 'text-[#2563eb] border-[#2563eb]' : 'text-gray-300 border-transparent'"
+              :class="
+                abaAtiva === 'AGUARDANDO'
+                  ? 'text-[#2563eb] border-[#2563eb]'
+                  : 'text-gray-300 border-transparent'
+              "
               class="text-xs font-black border-b-2 pb-1 transition-all uppercase tracking-widest"
             >
               Aguardando
             </button>
             <button
               @click="mudarAba('ATENDIMENTO')"
-              :class="abaAtiva === 'ATENDIMENTO' ? 'text-[#2563eb] border-[#2563eb]' : 'text-gray-300 border-transparent'"
+              :class="
+                abaAtiva === 'ATENDIMENTO'
+                  ? 'text-[#2563eb] border-[#2563eb]'
+                  : 'text-gray-300 border-transparent'
+              "
               class="text-xs font-black border-b-2 pb-1 transition-all uppercase tracking-widest"
             >
               Em Atendimento
             </button>
             <button
-              @click="mudarAba('ESPONTANEO')"
-              :class="abaAtiva === 'ESPONTANEO' ? 'text-[#2563eb] border-[#2563eb]' : 'text-gray-300 border-transparent'"
+              
               class="text-xs font-black border-b-2 pb-1 transition-all uppercase tracking-widest"
             >
-              Fila de espera
+              ESPONTANEO
             </button>
           </div>
 
           <table class="w-full">
-            <thead class="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50">
+            <thead
+              class="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50"
+            >
               <tr>
                 <th class="px-6 py-4 text-left">Senha</th>
                 <th class="px-6 py-4 text-left">Usuário</th>
@@ -218,10 +231,14 @@
               <tr v-for="(item, index) in agendamentosPaginados" :key="index" class="group">
                 <td class="px-6 py-6">
                   <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-[#2563eb] rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-100">
+                    <div
+                      class="w-10 h-10 bg-[#2563eb] rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-100"
+                    >
                       <i class="pi pi-bolt"></i>
                     </div>
-                    <span class="font-black text-[#1e3a8a] text-base leading-none">{{ item.senha }}</span>
+                    <span class="font-black text-[#1e3a8a] text-base leading-none">{{
+                      item.senha
+                    }}</span>
                   </div>
                 </td>
                 <td class="px-6 text-sm font-bold text-gray-500">{{ item.usuarioNome }}</td>
@@ -229,22 +246,50 @@
                   {{ item.servicoNome }} - {{ usuario?.secretaria?.sigla }}
                 </td>
                 <td class="px-6">
-                  <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-[#2563eb] text-[10px] font-black rounded-lg uppercase tracking-tight">
+                  <span
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-[#2563eb] text-[10px] font-black rounded-lg uppercase tracking-tight"
+                  >
                     <i class="pi pi-calendar text-[10px]"></i> {{ item.situacao }}
                   </span>
                 </td>
-                <td class="px-6 text-[11px] font-black text-gray-400 uppercase">{{ item.tipoAtendimento }}</td>
+                <td class="px-6 text-[11px] font-black text-gray-400 uppercase">
+                  {{ item.tipoAtendimento }}
+                </td>
                 <td class="px-6 text-xs font-bold text-gray-400">{{ item.horaAgendamento }}</td>
                 <td class="px-6 text-right pr-6 mt-6 flex gap-2 justify-end">
-                  <v-btn v-if="item.situacao === 'AGENDADO'" color="#2563eb" size="small" class="text-white text-[10px] font-black" @click="handleChamar(item.senha)">Chamar</v-btn>
-                  <v-btn color="#F57F17" size="small" class="text-white text-[10px] font-black" @click="handleCancelar(item.agendamentoId)">Fila</v-btn>
-                  <v-btn v-if="['CHAMADO', 'EM_ATENDIMENTO'].includes(item.situacao)" color="green-darken-3" size="small" class="text-white text-[10px] font-black" @click="handleFinalizar(item.agendamentoId)">Finalizar</v-btn>
-                  <v-btn color="#e61919" size="small" class="text-white text-[10px] font-black" @click="handleCancelar(item.agendamentoId)">Cancelar</v-btn>
+                  <v-btn
+                    v-if="item.situacao === 'AGENDADO'"
+                    color="#2563eb"
+                    size="small"
+                    class="text-white text-[10px] font-black"
+                    @click="handleChamar(item.senha)"
+                    >Chamar</v-btn
+                  >
                   
+                  <v-btn
+                    v-if="['CHAMADO', 'EM_ATENDIMENTO'].includes(item.situacao)"
+                    color="green-darken-3"
+                    size="small"
+                    class="text-white text-[10px] font-black"
+                    @click="handleFinalizar(item.agendamentoId)"
+                    >Finalizar</v-btn
+                  >
+                  <v-btn
+                    color="#e61919"
+                    size="small"
+                    class="text-white text-[10px] font-black"
+                    @click="handleCancelar(item.agendamentoId)"
+                    >Cancelar</v-btn
+                  >
                 </td>
               </tr>
               <tr v-if="agendamentosPaginados.length === 0">
-                <td colspan="7" class="px-6 py-10 text-center text-gray-300 font-bold uppercase text-xs">Nenhum agendamento encontrado</td>
+                <td
+                  colspan="7"
+                  class="px-6 py-10 text-center text-gray-300 font-bold uppercase text-xs"
+                >
+                  Nenhum agendamento encontrado
+                </td>
               </tr>
             </tbody>
           </table>
@@ -254,15 +299,15 @@
               Página {{ paginaAtual }} de {{ totalPaginas }}
             </span>
             <div class="flex gap-2">
-              <button 
-                @click="paginaAtual--" 
+              <button
+                @click="paginaAtual--"
                 :disabled="paginaAtual === 1"
                 class="px-4 py-2 bg-gray-100 rounded-lg text-[10px] font-black uppercase disabled:opacity-30"
               >
                 Anterior
               </button>
-              <button 
-                @click="paginaAtual++" 
+              <button
+                @click="paginaAtual++"
                 :disabled="paginaAtual >= totalPaginas"
                 class="px-4 py-2 bg-[#2563eb] text-white rounded-lg text-[10px] font-black uppercase disabled:opacity-30"
               >
@@ -294,14 +339,14 @@ export default {
     abaAtiva: 'AGUARDANDO',
     relogio: '--:--:--',
     filtroTexto: '',
-    paginaAtual: 1, 
+    paginaAtual: 1,
     itensPorPagina: 3,
   }),
   methods: {
     // Método para mudar a aba e resetar a página
     mudarAba(novaAba) {
-      this.abaAtiva = novaAba;
-      this.paginaAtual = 1;
+      this.abaAtiva = novaAba
+      this.paginaAtual = 1
     },
 
     async buscarAgendamentos() {
@@ -326,20 +371,20 @@ export default {
     },
 
     async handleChamarNormal() {
-      const secretariaId = this.usuario?.secretaria?.id;
-      const gerenciadorId = this.usuario?.id;
+      const secretariaId = this.usuario?.secretaria?.id
+      const gerenciadorId = this.usuario?.id
 
       if (!secretariaId || !gerenciadorId) {
-        alert("Dados do usuário ou secretaria incompletos.");
-        return;
+        alert('Dados do usuário ou secretaria incompletos.')
+        return
       }
 
       try {
-        await api.post(`/agendamentos/chamar/normal/${secretariaId}/${gerenciadorId}`);
+        await api.post(`/agendamentos/chamar/normal/${secretariaId}/${gerenciadorId}`)
       } catch (e) {
-        console.error(e);
+        console.error(e)
       } finally {
-        this.buscarAgendamentos();
+        this.buscarAgendamentos()
       }
     },
 
@@ -375,9 +420,13 @@ export default {
       if (!confirm('Deseja realmente cancelar este atendimento?')) return
       try {
         const usuario_logado = JSON.parse(localStorage.getItem('usuario'))
-        await api.put(`/agendamentos/cancelar/${id}`, {}, {
-          headers: { Authorization: `Bearer ${usuario_logado.token}` },
-        })
+        await api.put(
+          `/agendamentos/cancelar/${id}`,
+          {},
+          {
+            headers: { Authorization: `Bearer ${usuario_logado.token}` },
+          },
+        )
       } catch (e) {
         alert('Não foi possível cancelar o atendimento.')
       } finally {
@@ -399,9 +448,11 @@ export default {
     atualizarRelogioLocal() {
       const agora = new Date()
       this.relogio = agora.toLocaleTimeString('pt-BR', {
-        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
       })
-    }
+    },
   },
 
   computed: {
@@ -434,14 +485,14 @@ export default {
     },
 
     agendamentosPaginados() {
-      const inicio = (this.paginaAtual - 1) * this.itensPorPagina;
-      const fim = inicio + this.itensPorPagina;
-      return this.agendamentosFiltrados.slice(inicio, fim);
+      const inicio = (this.paginaAtual - 1) * this.itensPorPagina
+      const fim = inicio + this.itensPorPagina
+      return this.agendamentosFiltrados.slice(inicio, fim)
     },
 
     totalPaginas() {
-      const total = Math.ceil(this.agendamentosFiltrados.length / this.itensPorPagina);
-      return total > 0 ? total : 1;
+      const total = Math.ceil(this.agendamentosFiltrados.length / this.itensPorPagina)
+      return total > 0 ? total : 1
     },
 
     totalNormal() {

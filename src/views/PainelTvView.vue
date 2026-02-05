@@ -13,9 +13,7 @@
     </header>
 
     <main class="flex-1 flex p-4 gap-4 overflow-hidden relative pb-0">
-      <div
-        class="absolute top-0 left-0 w-full h-[4px] bg-gradient-to-r from-[#FFC107] via-[#f0d924] to-[#3da1d5] z-50"
-      ></div>
+      <div class="absolute top-0 left-0 w-full h-[4px] bg-gradient-to-r from-[#FFC107] via-[#f0d924] to-[#3da1d5] z-50"></div>
       <div
         class="flex-[4] bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden relative"
       >
