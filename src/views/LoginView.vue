@@ -85,8 +85,8 @@
 
             <select
               v-model="roleSelecionado"
+              @change="roleSelecionado === 'ATENDENTE' ? carregarGuichesDinamicos() : null"
               class="w-full bg-[#f8fafc] border border-gray-100 rounded-2xl py-3.5 pl-12 pr-4 text-xs font-semibold focus:ring-4 focus:ring-blue-50 focus:border-blue-300 transition-all outline-none appearance-none cursor-pointer"
-              required
             >
               <option value="" disabled selected>Selecione seu perfil</option>
               <option v-for="role in roles" :key="role.value" :value="role.value">
@@ -110,14 +110,10 @@
             <i
               class="pi pi-desktop absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 text-sm"
             ></i>
-            <select
-              v-model="guicheSelecionado"
-              class="w-full bg-[#f8fafc] border border-gray-100 rounded-2xl py-3.5 pl-12 pr-4 text-xs font-semibold focus:ring-4 focus:ring-blue-50 focus:border-blue-300 transition-all outline-none appearance-none cursor-pointer"
-              required
-            >
+            <select v-model="guicheSelecionado" class="..." required>
               <option value="" disabled selected>Selecione o guichê</option>
-              <option v-for="g in guiches" :key="g.id" :value="g.numero">
-                Guichê {{ g.numero }}
+              <option v-for="g in guichesDoBanco" :key="g.value" :value="g.value">
+                {{ g.title }}
               </option>
             </select>
             <i
@@ -182,7 +178,7 @@ export default {
         },
       ],
       roleSelecionado: '',
-      guiche: [],
+      guicheDoBanco: [],
       guicheSelecionado: '',
     }
   },
@@ -190,7 +186,8 @@ export default {
   watch: {
     async roleSelecionado(novoPerfil) {
       if (novoPerfil === 'ATENDENTE') {
-        await this.carregarGuiches()
+        // Nome da função deve ser igual ao definido nos methods
+        await this.carregarGuichesDinamicos()
       }
     },
   },
@@ -205,7 +202,6 @@ export default {
           const usuario = resposta.data
           localStorage.setItem('usuario', JSON.stringify(usuario))
 
-          
           const perfilFormatado = usuario.perfil ? usuario.perfil.toUpperCase() : ''
 
           switch (perfilFormatado) {
@@ -219,7 +215,7 @@ export default {
               this.$router.push('/agendamento')
               break
             default:
-              console.log('Perfil recebido do banco:', usuario.perfil) 
+              console.log('Perfil recebido do banco:', usuario.perfil)
               alert('Perfil de acesso não reconhecido: ' + usuario.perfil)
               this.$router.push('/')
           }
@@ -232,14 +228,29 @@ export default {
       }
     },
 
-    async carregarGuiches() {
+    async carregarGuichesDinamicos() {
       try {
-        const resposta = await api.get('/gerenciador/guiches-disponiveis')
+        // Chama a rota de listagem que já existe no seu Backend
+        const resposta = await api.get('/gerenciador')
+
         if (resposta.status === 200) {
-          this.guiches = resposta.data 
+          const todosUsuarios = resposta.data
+
+          // Filtra os guichês: remove nulos e números repetidos
+          const numerosUnicos = [
+            ...new Set(
+              todosUsuarios.map((u) => u.guiche).filter((g) => g !== null && g !== undefined),
+            ),
+          ].sort((a, b) => a - b)
+
+          // Formata para o seu <select>
+          this.guichesDoBanco = numerosUnicos.map((num) => ({
+            title: `Guichê ${String(num).padStart(2, '0')}`,
+            value: num,
+          }))
         }
       } catch (error) {
-        console.error('Erro ao carregar guichês:', error)
+        console.error('Erro ao buscar usuários para filtrar guichês:', error)
       }
     },
   },

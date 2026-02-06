@@ -1,55 +1,52 @@
 <template>
   <div class="flex min-h-screen bg-[#f8f9fd] font-sans text-[#2d3748]">
-    <aside class="w-64 bg-white border-r border-gray-100 flex flex-col items-center py-6">
-      <div class="flex items-center gap-2 mb-10 self-start px-6">
-        <div
-          class="w-10 h-10 bg-[#2563eb] rounded-[13px] flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-200"
-        >
+
+    <aside 
+      :class="[sidebarAberta ? 'w-64' : 'w-20']" 
+      class="bg-white border-r border-gray-100 flex flex-col items-center py-6 transition-all duration-300 relative"
+    >
+      <button 
+        @click="sidebarAberta = !sidebarAberta"
+        class="absolute -right-3 top-10 bg-white border border-gray-100 rounded-full w-6 h-6 flex items-center justify-center shadow-sm hover:bg-gray-50 z-50"
+      >
+        <i :class="['pi', sidebarAberta ? 'pi-chevron-left' : 'pi-chevron-right']" style="font-size: 0.7rem"></i>
+      </button>
+
+      <div class="flex items-center gap-2 mb-10 self-start px-6 overflow-hidden">
+        <div class="min-w-[40px] w-10 h-10 bg-[#2563eb] rounded-[13px] flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-200">
           SA
         </div>
-        <div class="leading-3">
+        <div v-if="sidebarAberta" class="leading-3 whitespace-nowrap">
           <p class="text-[12px] font-medium text-[#1e3a8a] uppercase">Sistema de</p>
-          <p class="text-[12px] font-black text-[#1e3a8a] tracking-tighter uppercase">
-            Agendamento
-          </p>
+          <p class="text-[12px] font-black text-[#1e3a8a] tracking-tighter uppercase">Agendamento</p>
         </div>
       </div>
 
       <nav class="w-full px-4 space-y-2">
-        <a
-          href="#"
-          class="flex items-center gap-3 px-4 py-3 bg-[#2563eb] text-white rounded-[13px] shadow-xl shadow-blue-100"
-        >
-          <i class="pi pi-grid-view"></i> <span class="text-sm font-bold">Painel</span>
+        <a href="#" class="flex items-center gap-3 px-4 py-3 bg-[#2563eb] text-white rounded-[13px] shadow-xl shadow-blue-100">
+          <i class="pi pi-grid-view"></i> 
+          <span v-if="sidebarAberta" class="text-sm font-bold whitespace-nowrap">Painel</span>
         </a>
       </nav>
 
-      <div class="mt-auto w-full px-6 pb-4">
+      <div class="mt-auto w-full px-4 pb-4 overflow-hidden">
         <div class="flex items-center gap-3 bg-gray-50 p-3 rounded-2xl mb-4 border border-gray-100">
-          <div
-            class="w-10 h-10 bg-[#2563eb] rounded-full flex items-center justify-center text-white font-bold shadow-sm"
-          >
+          <div class="min-w-[40px] w-10 h-10 bg-[#2563eb] rounded-full flex items-center justify-center text-white font-bold shadow-sm">
             {{ usuario?.nome?.charAt(0).toUpperCase() || 'U' }}
           </div>
-          <div class="leading-tight">
-            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
-              {{ usuario?.perfil || 'Atendente' }}
-            </p>
-            <p class="text-sm font-black text-[#1e3a8a] truncate w-32">
-              {{ usuario?.nome || 'Usuário' }}
-            </p>
+          <div v-if="sidebarAberta" class="leading-tight whitespace-nowrap">
+            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{{ usuario?.perfil || 'Atendente' }}</p>
+            <p class="text-sm font-black text-[#1e3a8a] truncate w-24">{{ usuario?.nome || 'Usuário' }}</p>
           </div>
         </div>
-        <button
-          @click="handleLogout"
-          class="flex items-center gap-2 text-red-500 font-bold text-xs uppercase tracking-tight"
-        >
-          <i class="pi pi-sign-out"></i> Sair do Sistema
+        <button @click="handleLogout" class="flex items-center gap-2 text-red-500 font-bold text-xs uppercase tracking-tight px-2">
+          <i class="pi pi-sign-out"></i> 
+          <span v-if="sidebarAberta">Sair</span>
         </button>
       </div>
     </aside>
 
-    <main class="flex-1">
+    <main class="flex-1 overflow-x-hidden">
       <header
         class="flex justify-between bg-white border-b border-black items-center px-8 mb-5 py-4"
       >
@@ -182,36 +179,92 @@
       </div>
       <div class="px-8">
         <div class="bg-white rounded-[15px] shadow-sm border-b-4 border-transparent p-4">
-          <div class="flex gap-6 mb-6 px-4">
+          <div class="flex justify-between">
+            <div class="flex justify-start gap-6 mb-6 px-4">
             <button
               @click="mudarAba('AGUARDANDO')"
               :class="
                 abaAtiva === 'AGUARDANDO'
-                  ? 'text-[#2563eb] border-[#2563eb]'
-                  : 'text-gray-300 border-transparent'
+                  ? 'bg-[#2563eb] text-white rounded-[10px] p-2 shadow-xl shadow-blue-100'
+                  : 'bg-transparent text-gray-400 hover:bg-gray-20 hover:text-gray-100'
               "
               class="text-xs font-black border-b-2 pb-1 transition-all uppercase tracking-widest"
             >
               Aguardando
             </button>
+
+            <button
+              @click="mudarAba('ESPONTANEO')"
+              :class="
+                abaAtiva === 'ESPONTANEO'
+                  ? 'bg-[#2563eb] text-white rounded-[10px] p-2 shadow-xl shadow-blue-100'
+                  : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
+              "
+              class="text-xs font-black border-b-2 pb-1 transition-all uppercase tracking-widest"
+            >
+              Espontâneo
+            </button>
+
+            <div
+              v-if="mostrarModalEspontaneo"
+              class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+            >
+              <div class="bg-white w-full max-w-md rounded-[32px] p-8 shadow-2xl">
+                <h2 class="text-[#1e3a8a] text-xl font-black uppercase mb-6">
+                  Cadastro de Senha Espontânea
+                </h2>
+
+                <form @submit.prevent="salvarEspontaneo" class="space-y-4">
+                  <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1"
+                      >Nome do Cidadão</label
+                    >
+                    <input
+                      v-model="novoAgendamento.nomeCidadao"
+                      type="text"
+                      class="w-full bg-gray-50 border-none rounded-2xl py-3 px-4 text-xs font-bold outline-none ring-1 ring-gray-100 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1"
+                      >Serviço</label
+                    >
+                    <select
+                      v-model="novoAgendamento.servicoId"
+                      class="w-full bg-gray-50 border-none rounded-2xl py-3 px-4 text-xs font-bold outline-none ring-1 ring-gray-100 focus:ring-blue-500"
+                      required
+                    >
+                      <option :value="null" disabled>Selecione o serviço</option>
+                      <option v-for="s in servicos" :key="s.id" :value="s.id">{{ s.nome }}</option>
+                    </select>
+                  </div>
+                </form>
+              </div>
+            </div>
             <button
               @click="mudarAba('ATENDIMENTO')"
               :class="
                 abaAtiva === 'ATENDIMENTO'
-                  ? 'text-[#2563eb] border-[#2563eb]'
-                  : 'text-gray-300 border-transparent'
+                  ? 'bg-[#2563eb] text-white rounded-[10px] p-2 shadow-xl shadow-blue-100'
+                  : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
               "
               class="text-xs font-black border-b-2 pb-1 transition-all uppercase tracking-widest"
             >
               Em Atendimento
             </button>
+          </div>
+          <div v-if="abaAtiva === 'ESPONTANEO'" class="flex justify-end mr-6">
             <button
-              
-              class="text-xs font-black border-b-2 pb-1 transition-all uppercase tracking-widest"
+              @click="mostrarModalEspontaneo = true"
+              class="bg-green-600 text-white px-2 my-1.5 rounded-[6px] text-[10px] font-medium uppercase shadow-lg hover:bg-green-700 transition-all"
             >
-              ESPONTANEO
+              + Novo Registro
             </button>
           </div>
+          </div>
+          
 
           <table class="w-full">
             <thead
@@ -265,7 +318,7 @@
                     @click="handleChamar(item.senha)"
                     >Chamar</v-btn
                   >
-                  
+
                   <v-btn
                     v-if="['CHAMADO', 'EM_ATENDIMENTO'].includes(item.situacao)"
                     color="green-darken-3"
@@ -334,6 +387,7 @@ export default {
   },
   data: () => ({
     usuario: null,
+    sidebarAberta: true,
     fila: [],
     agendamentosPorSec: [],
     abaAtiva: 'AGUARDANDO',
@@ -341,6 +395,14 @@ export default {
     filtroTexto: '',
     paginaAtual: 1,
     itensPorPagina: 3,
+    idsChamadosManualmente: [],
+    mostrarModalEspontaneo: false,
+    novoAgendamento: {
+      nomeCidadao: '',
+      servicoId: null,
+      tipoAtendimento: 'ESPONTANEO',
+    },
+    servicos: [],
   }),
   methods: {
     // Método para mudar a aba e resetar a página
@@ -352,7 +414,7 @@ export default {
     async buscarAgendamentos() {
       try {
         const resposta = await api.get('/agendamentos/secretaria/1')
-        console.log("Dados recebidos no painel:", resposta.data)
+        console.log('Dados recebidos no painel:', resposta.data)
         if (Array.isArray(resposta.data)) {
           this.agendamentosPorSec = resposta.data
         }
@@ -363,11 +425,27 @@ export default {
 
     async handleChamar(senha) {
       try {
-        await api.post(`/agendamentos/chamar/por-senha/${senha}/${this.usuario.id}`)
+        const res = await api.post(`/agendamentos/chamar/por-senha/${senha}/${this.usuario.id}`)
+
+        if (res.status === 200) {
+          // 1. Localiza o item atual na memória do Vue
+          const item = this.agendamentosPorSec.find((a) => a.senha === senha)
+          if (item) {
+            // 2. Registra o ID para o Filtro Computado não escondê-lo
+            this.idsChamadosManualmente.push(item.agendamentoId)
+            // 3. Muda o status local imediatamente para o Vue reagir
+            item.situacao = 'EM_ATENDIMENTO'
+          }
+
+          // 4. Muda a aba para o usuário ver o resultado
+          this.abaAtiva = 'ATENDIMENTO'
+
+          // 5. Busca do banco, mas a lógica computada manterá o item como EM_ATENDIMENTO
+          await this.buscarAgendamentos()
+        }
       } catch (e) {
-        console.error(e)
-      } finally {
-        this.buscarAgendamentos()
+        console.error('Erro ao chamar:', e)
+        alert('Falha na chamada. Verifique se o servidor está ativo.')
       }
     },
 
@@ -454,6 +532,41 @@ export default {
         second: '2-digit',
       })
     },
+
+    async salvarEspontaneo() {
+      try {
+        const secretariaId = this.usuario?.secretaria?.id || 1
+
+        // Payload baseado nos campos da sua tabela
+        const payload = {
+          nomeCidadao: this.novoAgendamento.nomeCidadao, // Preenche a.nome_cidadao
+          servico: { id: this.novoAgendamento.servicoId },
+          tipoAtendimento: this.novoAgendamento.tipoAtendimento, // 'NORMAL' ou 'PRIORIDADE'
+          tipoAgendamento: 'ESPONTANEO', // Crucial para o filtro acima
+          situacao: 'AGENDADO',
+          horaAgendamento: new Date().toISOString(), // Data/Hora atual
+        }
+
+        const res = await api.post(`/agendamentos/espontaneo/${secretariaId}`, payload)
+
+        if (res.status === 201 || res.status === 200) {
+          this.mostrarModalEspontaneo = false
+          this.novoAgendamento = { nomeCidadao: '', servicoId: null, tipoAtendimento: 'NORMAL' }
+          await this.buscarAgendamentos()
+        }
+      } catch (e) {
+        console.error('Erro ao salvar espontâneo:', e)
+      }
+    },
+
+    async carregarServicos() {
+      try {
+        const res = await api.get('/servicos')
+        this.servicos = res.data
+      } catch (e) {
+        console.error(e)
+      }
+    },
   },
 
   computed: {
@@ -462,27 +575,35 @@ export default {
     },
 
     agendamentosFiltrados() {
-      let listaBase = []
+      let listaNormalizada = this.agendamentosPorSec.map((item) => {
+        const status = item.situacao ? item.situacao.toUpperCase() : ''
+        const tipoAg = item.tipoAgendamento ? item.tipoAgendamento.toUpperCase() : ''
+
+        if (this.idsChamadosManualmente.includes(item.agendamentoId)) {
+          return { ...item, situacao: 'EM_ATENDIMENTO', tipoAgendamento: tipoAg }
+        }
+        return { ...item, situacao: status, tipoAgendamento: tipoAg }
+      })
+
       if (this.abaAtiva === 'AGUARDANDO') {
-        listaBase = this.agendamentosPorSec.filter((a) => a.situacao === 'AGENDADO')
-      } else if (this.abaAtiva === 'ATENDIMENTO') {
-        listaBase = this.agendamentosPorSec.filter((a) =>
-          ['CHAMADO', 'EM_ATENDIMENTO', 'FALTOU'].includes(a.situacao),
+        return listaNormalizada.filter(
+          (a) => a.situacao === 'AGENDADO' && a.tipoAgendamento !== 'ESPONTANEO',
         )
-      } else {
-        listaBase = this.agendamentosPorSec.filter((a) => a.situacao === 'ATENDIDO')
       }
 
-      if (!this.filtroTexto) return listaBase
+      if (this.abaAtiva === 'ESPONTANEO') {
+        return listaNormalizada.filter((a) => a.tipoAgendamento === 'ESPONTANEO')
+      }
 
-      const termo = this.filtroTexto.toLowerCase()
-      return listaBase.filter((item) => {
-        return (
-          item.senha.toLowerCase().includes(termo) ||
-          item.usuarioNome.toLowerCase().includes(termo) ||
-          (item.servicoNome && item.servicoNome.toLowerCase().includes(termo))
+      if (this.abaAtiva === 'ATENDIMENTO') {
+        return listaNormalizada.filter(
+          (a) =>
+            ['CHAMADO', 'EM_ATENDIMENTO', 'ATENDIMENTO'].includes(a.situacao) ||
+            this.idsChamadosManualmente.includes(a.agendamentoId),
         )
-      })
+      }
+
+      return listaNormalizada
     },
 
     agendamentosPaginados() {

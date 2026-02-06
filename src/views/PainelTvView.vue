@@ -147,24 +147,26 @@ const buscarChamadas = async () => {
       const novasChamadas = res.data
       const ultima = novasChamadas[0]
 
+      // Verifique se a senha realmente mudou para disparar a atualização
       if (ultima.senha !== senhaAtual.value.numero) {
-        // 1. Atualiza os dados na tela
         senhaAtual.value = {
           numero: ultima.senha,
-          guiche: ultima.guiche,
-          cidadao: ultima.nomeCidadao,
+          guiche: ultima.guiche || '01',
+          // Tente nomeCidadao ou usuarioNome dependendo do seu DTO
+          cidadao: ultima.nomeCidadao || ultima.usuarioNome || 'Cidadão', 
         }
 
-        falarChamada(ultima.nomeCidadao, ultima.senha, ultima.guiche)
+        falarChamada(senhaAtual.value.cidadao, ultima.senha, senhaAtual.value.guiche)
 
         historico.value = novasChamadas.slice(1, 5).map((item) => ({
           numero: item.senha,
-          guiche: item.guiche,
+          guiche: item.guiche || '01',
         }))
       }
     }
   } catch (error) {
-    console.error('Erro ao buscar chamadas:', error)
+    // Esse erro aparece no seu console
+    console.error('Servidor offline ou porta incorreta:', error)
   }
 }
 
