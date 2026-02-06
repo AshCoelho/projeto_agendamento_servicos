@@ -24,7 +24,10 @@
             <span class="text-[#8e8e8e] text-6xl font-bold uppercase tracking-widest mb-2"
               >SENHA</span
             >
-            <h1 class="text-[20vw] leading-[0.8] font-black text-[#0056B3] tracking-tighter">
+            <h1
+              class="text-[20vw] leading-[0.8] font-black tracking-tighter"
+              :class="senhaAtual.numero.includes('P') ? 'text-red-600' : 'text-[#0056B3]'"
+            >
               {{ senhaAtual.numero || '---' }}
             </h1>
           </div>
@@ -135,7 +138,6 @@ const atualizarRelogio = () => {
     second: '2-digit',
   })
 }
-
 
 const buscarChamadas = async () => {
   try {

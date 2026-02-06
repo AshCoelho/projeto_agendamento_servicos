@@ -75,26 +75,55 @@
         <div>
           <label
             class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1 tracking-widest"
-            >Perfil</label
           >
-          <v-select
-            :items="roles"
-            item-title="title"
-            item-value="value"
-            v-model="roleSelecionado"
-            density="compact"
-            variant="outlined"
-          ></v-select>
+            Perfil
+          </label>
+          <div class="relative">
+            <i
+              class="pi pi-users absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 text-sm"
+            ></i>
 
-          <v-select
-            v-if="roleSelecionado === 'ATENDENTE'"
-            :items="guiche"
-            item-title="title"
-            item-value="value"
-            density="compact"
-            variant="outlined"
+            <select
+              v-model="roleSelecionado"
+              class="w-full bg-[#f8fafc] border border-gray-100 rounded-2xl py-3.5 pl-12 pr-4 text-xs font-semibold focus:ring-4 focus:ring-blue-50 focus:border-blue-300 transition-all outline-none appearance-none cursor-pointer"
+              required
+            >
+              <option value="" disabled selected>Selecione seu perfil</option>
+              <option v-for="role in roles" :key="role.value" :value="role.value">
+                {{ role.title }}
+              </option>
+            </select>
+
+            <i
+              class="pi pi-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 text-[10px] pointer-events-none"
+            ></i>
+          </div>
+        </div>
+
+        <div v-if="roleSelecionado === 'ATENDENTE'" class="mt-4">
+          <label
+            class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1 tracking-widest"
           >
-          </v-select>
+            Selecione seu Guichê
+          </label>
+          <div class="relative">
+            <i
+              class="pi pi-desktop absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 text-sm"
+            ></i>
+            <select
+              v-model="guicheSelecionado"
+              class="w-full bg-[#f8fafc] border border-gray-100 rounded-2xl py-3.5 pl-12 pr-4 text-xs font-semibold focus:ring-4 focus:ring-blue-50 focus:border-blue-300 transition-all outline-none appearance-none cursor-pointer"
+              required
+            >
+              <option value="" disabled selected>Selecione o guichê</option>
+              <option v-for="g in guiches" :key="g.id" :value="g.numero">
+                Guichê {{ g.numero }}
+              </option>
+            </select>
+            <i
+              class="pi pi-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 text-[10px] pointer-events-none"
+            ></i>
+          </div>
         </div>
 
         <div class="flex items-center justify-between px-1">
@@ -153,30 +182,64 @@ export default {
         },
       ],
       roleSelecionado: '',
-      guiche: [
-        {
-          title: 'Guichê',
-          value: 'Guichê',
-        },
-      ],
+      guiche: [],
       guicheSelecionado: '',
     }
   },
+
+  watch: {
+    async roleSelecionado(novoPerfil) {
+      if (novoPerfil === 'ATENDENTE') {
+        await this.carregarGuiches()
+      }
+    },
+  },
+
   methods: {
     async handleLogin() {
       this.carregando = true
       try {
         const resposta = await api.post('/gerenciador/login', this.login)
+
         if (resposta.status === 200) {
-          console.log(resposta)
-          localStorage.setItem('usuario', JSON.stringify(resposta.data))
-          this.$router.push('/atendente')
+          const usuario = resposta.data
+          localStorage.setItem('usuario', JSON.stringify(usuario))
+
+          
+          const perfilFormatado = usuario.perfil ? usuario.perfil.toUpperCase() : ''
+
+          switch (perfilFormatado) {
+            case 'ADMINISTRADOR':
+              this.$router.push('/administrador')
+              break
+            case 'ATENDENTE':
+              this.$router.push('/atendente')
+              break
+            case 'USUARIO':
+              this.$router.push('/agendamento')
+              break
+            default:
+              console.log('Perfil recebido do banco:', usuario.perfil) 
+              alert('Perfil de acesso não reconhecido: ' + usuario.perfil)
+              this.$router.push('/')
+          }
         }
       } catch (error) {
         console.error('Erro ao autenticar:', error)
         alert('Credenciais inválidas ou erro no servidor.')
       } finally {
         this.carregando = false
+      }
+    },
+
+    async carregarGuiches() {
+      try {
+        const resposta = await api.get('/gerenciador/guiches-disponiveis')
+        if (resposta.status === 200) {
+          this.guiches = resposta.data 
+        }
+      } catch (error) {
+        console.error('Erro ao carregar guichês:', error)
       }
     },
   },
