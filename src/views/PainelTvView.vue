@@ -95,7 +95,7 @@
             class="bg-white p-2 rounded-2xl shadow-2xl border border-gray-100 flex flex-col items-center"
           >
             <img
-              src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=GAVIC"
+              src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=SEMIT"
               alt="QR"
               class="w-20 h-20"
             />
@@ -141,7 +141,7 @@ const atualizarRelogio = () => {
 
 const buscarChamadas = async () => {
   try {
-    const res = await api.get(`/agendamentos/ultimas-chamadas/GAVIC`)
+    const res = await api.get(`/agendamentos/ultimas-chamadas/SEMIT`)
 
     if (res.status === 200 && res.data.length > 0) {
       const novasChamadas = res.data

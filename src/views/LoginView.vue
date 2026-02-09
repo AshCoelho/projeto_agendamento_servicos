@@ -100,7 +100,7 @@
           </div>
         </div>
 
-        <div v-if="roleSelecionado === 'ATENDENTE'" class="mt-4">
+        <!-- <div v-if="roleSelecionado === 'ATENDENTE'" class="mt-4">
           <label
             class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1 tracking-widest"
           >
@@ -120,7 +120,7 @@
               class="pi pi-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 text-[10px] pointer-events-none"
             ></i>
           </div>
-        </div>
+        </div> -->
 
         <div class="flex items-center justify-between px-1">
           <a href="#" class="text-[10px] font-bold text-blue-600 uppercase hover:underline"

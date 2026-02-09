@@ -1,46 +1,64 @@
 <template>
   <div class="flex min-h-screen bg-[#f8f9fd] font-sans text-[#2d3748]">
-
-    <aside 
-      :class="[sidebarAberta ? 'w-64' : 'w-20']" 
+    <aside
+      :class="[sidebarAberta ? 'w-64' : 'w-20']"
       class="bg-white border-r border-gray-100 flex flex-col items-center py-6 transition-all duration-300 relative"
     >
-      <button 
+      <button
         @click="sidebarAberta = !sidebarAberta"
         class="absolute -right-3 top-10 bg-white border border-gray-100 rounded-full w-6 h-6 flex items-center justify-center shadow-sm hover:bg-gray-50 z-50"
       >
-        <i :class="['pi', sidebarAberta ? 'pi-chevron-left' : 'pi-chevron-right']" style="font-size: 0.7rem"></i>
+        <i
+          :class="['pi', sidebarAberta ? 'pi-chevron-left' : 'pi-chevron-right']"
+          style="font-size: 0.7rem"
+        ></i>
       </button>
 
       <div class="flex items-center gap-2 mb-10 self-start px-6 overflow-hidden">
-        <div class="min-w-[40px] w-10 h-10 bg-[#2563eb] rounded-[13px] flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-200">
+        <div
+          class="min-w-[40px] w-10 h-10 bg-[#2563eb] rounded-[13px] flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-200"
+        >
           SA
         </div>
         <div v-if="sidebarAberta" class="leading-3 whitespace-nowrap">
           <p class="text-[12px] font-medium text-[#1e3a8a] uppercase">Sistema de</p>
-          <p class="text-[12px] font-black text-[#1e3a8a] tracking-tighter uppercase">Agendamento</p>
+          <p class="text-[12px] font-black text-[#1e3a8a] tracking-tighter uppercase">
+            Agendamento
+          </p>
         </div>
       </div>
 
       <nav class="w-full px-4 space-y-2">
-        <a href="#" class="flex items-center gap-3 px-4 py-3 bg-[#2563eb] text-white rounded-[13px] shadow-xl shadow-blue-100">
-          <i class="pi pi-grid-view"></i> 
+        <a
+          href="#"
+          class="flex items-center gap-3 px-4 py-3 bg-[#2563eb] text-white rounded-[13px] shadow-xl shadow-blue-100"
+        >
+          <i class="pi pi-grid-view"></i>
           <span v-if="sidebarAberta" class="text-sm font-bold whitespace-nowrap">Painel</span>
         </a>
       </nav>
 
       <div class="mt-auto w-full px-4 pb-4 overflow-hidden">
         <div class="flex items-center gap-3 bg-gray-50 p-3 rounded-2xl mb-4 border border-gray-100">
-          <div class="min-w-[40px] w-10 h-10 bg-[#2563eb] rounded-full flex items-center justify-center text-white font-bold shadow-sm">
+          <div
+            class="min-w-[40px] w-10 h-10 bg-[#2563eb] rounded-full flex items-center justify-center text-white font-bold shadow-sm"
+          >
             {{ usuario?.nome?.charAt(0).toUpperCase() || 'U' }}
           </div>
           <div v-if="sidebarAberta" class="leading-tight whitespace-nowrap">
-            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{{ usuario?.perfil || 'Atendente' }}</p>
-            <p class="text-sm font-black text-[#1e3a8a] truncate w-24">{{ usuario?.nome || 'Usuário' }}</p>
+            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
+              {{ usuario?.perfil || 'Atendente' }}
+            </p>
+            <p class="text-sm font-black text-[#1e3a8a] truncate w-24">
+              {{ usuario?.nome || 'Usuário' }}
+            </p>
           </div>
         </div>
-        <button @click="handleLogout" class="flex items-center gap-2 text-red-500 font-bold text-xs uppercase tracking-tight px-2">
-          <i class="pi pi-sign-out"></i> 
+        <button
+          @click="handleLogout"
+          class="flex items-center gap-2 text-red-500 font-bold text-xs uppercase tracking-tight px-2"
+        >
+          <i class="pi pi-sign-out"></i>
           <span v-if="sidebarAberta">Sair</span>
         </button>
       </div>
@@ -181,95 +199,138 @@
         <div class="bg-white rounded-[15px] shadow-sm border-b-4 border-transparent p-4">
           <div class="flex justify-between">
             <div class="flex justify-start gap-6 mb-6 px-4">
-            <button
-              @click="mudarAba('AGUARDANDO')"
-              :class="
-                abaAtiva === 'AGUARDANDO'
-                  ? 'bg-[#2563eb] text-white rounded-[10px] p-2 shadow-xl shadow-blue-100'
-                  : 'bg-transparent text-gray-400 hover:bg-gray-20 hover:text-gray-100'
-              "
-              class="text-xs font-black border-b-2 pb-1 transition-all uppercase tracking-widest"
-            >
-              Aguardando
-            </button>
+              <button
+                @click="mudarAba('AGUARDANDO')"
+                :class="
+                  abaAtiva === 'AGUARDANDO'
+                    ? 'bg-[#2563eb] text-white rounded-[10px] p-2 shadow-xl shadow-blue-100'
+                    : 'bg-transparent text-gray-400 hover:bg-gray-20 hover:text-gray-100'
+                "
+                class="text-xs font-black border-b-2 pb-1 transition-all uppercase tracking-widest"
+              >
+                Aguardando
+              </button>
 
-            <button
-              @click="mudarAba('ESPONTANEO')"
-              :class="
-                abaAtiva === 'ESPONTANEO'
-                  ? 'bg-[#2563eb] text-white rounded-[10px] p-2 shadow-xl shadow-blue-100'
-                  : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
-              "
-              class="text-xs font-black border-b-2 pb-1 transition-all uppercase tracking-widest"
-            >
-              Atendimento Avulso
-            </button>
+              <button
+                @click="mudarAba('ESPONTANEO')"
+                :class="
+                  abaAtiva === 'ESPONTANEO'
+                    ? 'bg-[#2563eb] text-white rounded-[10px] p-2 shadow-xl shadow-blue-100'
+                    : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
+                "
+                class="text-xs font-black border-b-2 pb-1 transition-all uppercase tracking-widest"
+              >
+                Atendimento Avulso
+              </button>
 
-            <div
-              v-if="mostrarModalEspontaneo"
-              class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm"
-            >
-              <div class="bg-white w-full max-w-md rounded-[32px] p-8 shadow-2xl">
-                <h2 class="text-[#1e3a8a] text-xl font-black uppercase mb-6">
-                  Cadastro de Senha Espontânea
-                </h2>
+              <div
+                v-if="mostrarModalEspontaneo"
+                class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+              >
+                <div class="bg-white w-full max-w-md rounded-[32px] p-8 shadow-2xl">
+                  <h2 class="text-[#1e3a8a] text-xl font-black uppercase mb-6">
+                    Cadastro de Senha Espontânea
+                  </h2>
 
-                <form @submit.prevent="salvarEspontaneo" class="space-y-4 ">
-                  <div>
-                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1"
-                      >Nome do Cidadão</label
-                    >
-                    <input
-                      v-model="novoAgendamento.nomeCidadao"
-                      type="text"
-                      class="w-full bg-gray-50 border-none rounded-2xl py-3 px-4 text-xs font-bold outline-none ring-1 ring-gray-100 focus:ring-blue-500"
-                      required
-                    />
-                  </div>
+                  <form @submit.prevent="salvarEspontaneo" class="space-y-4">
+                    <div>
+                      <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1"
+                        >Nome do Cidadão</label
+                      >
+                      <input
+                        v-model="novoAgendamento.nomeCidadao"
+                        type="text"
+                        class="w-full bg-gray-50 border-none rounded-2xl py-3 px-4 text-xs font-bold outline-none ring-1 ring-gray-100 focus:ring-blue-500"
+                        required
+                      />
+                    </div>
 
-                  <div>
-                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1"
-                      >Serviço</label
-                    >
-                    <v-select
-                      v-model="novoAgendamento.servico"
-                      :items="servicos" item-title="nome" item-value="id" return-object density="compact" rounded="xl" variant="solo" bg-color="blue"
-                      class=""
-                      required
-                    >
-                      
-                    </v-select>
-                  </div>
-                  <div>
-                    <v-btn @click="salvarEspontaneo">
-                      Criar
-                    </v-btn>
-                  </div>
-                </form>
+                    <div>
+                      <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1"
+                        >Secretaria</label
+                      >
+                      <v-select
+                        v-model="novoAgendamento.secretaria"
+                        :items="secretarias"
+                        item-title="nome"
+                        item-value="id"
+                        return-object
+                        density="compact"
+                        rounded="xl"
+                        variant="solo"
+                        bg-color="transparent"
+                        class=""
+                        required
+                      >
+                      </v-select>
+                    </div>
+
+                    <div>
+                      <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1"
+                        >Tipo de Atendimento</label
+                      >
+                      <v-select
+                        v-model="novoAgendamento.tipoAtendimento"
+                        :items="tiposAtendimento"
+                        item-title="nome"
+                        item-value="id"
+                        return-object
+                        density="compact"
+                        rounded="xl"
+                        variant="solo"
+                        bg-color="transparent"
+                        class=""
+                        required
+                      >
+                      </v-select>
+                    </div>
+
+                    <div>
+                      <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1"
+                        >Serviço</label
+                      >
+                      <v-select
+                        v-model="novoAgendamento.servico"
+                        :items="servicos"
+                        item-title="nome"
+                        item-value="id"
+                        return-object
+                        density="compact"
+                        rounded="xl"
+                        variant="solo"
+                        bg-color="transparent"
+                        class=""
+                        required
+                      >
+                      </v-select>
+                    </div>
+                    <div>
+                      <v-btn @click="salvarEspontaneo"> Criar </v-btn>
+                    </div>
+                  </form>
+                </div>
               </div>
+              <button
+                @click="mudarAba('ATENDIMENTO')"
+                :class="
+                  abaAtiva === 'ATENDIMENTO'
+                    ? 'bg-[#2563eb] text-white rounded-[10px] p-2 shadow-xl shadow-blue-100'
+                    : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
+                "
+                class="text-xs font-black border-b-2 pb-1 transition-all uppercase tracking-widest"
+              >
+                Em Atendimento
+              </button>
             </div>
-            <button
-              @click="mudarAba('ATENDIMENTO')"
-              :class="
-                abaAtiva === 'ATENDIMENTO'
-                  ? 'bg-[#2563eb] text-white rounded-[10px] p-2 shadow-xl shadow-blue-100'
-                  : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
-              "
-              class="text-xs font-black border-b-2 pb-1 transition-all uppercase tracking-widest"
-            >
-              Em Atendimento
-            </button>
+            <div v-if="abaAtiva === 'ESPONTANEO'" class="flex justify-end mr-6">
+              <button
+                @click="mostrarModalEspontaneo = true"
+                class="bg-green-600 text-white px-2 my-1.5 rounded-[6px] text-[10px] font-medium uppercase shadow-lg hover:bg-green-700 transition-all"
+              >
+                + Novo Registro
+              </button>
+            </div>
           </div>
-          <div v-if="abaAtiva === 'ESPONTANEO'" class="flex justify-end mr-6">
-            <button
-              @click="mostrarModalEspontaneo = true"
-              class="bg-green-600 text-white px-2 my-1.5 rounded-[6px] text-[10px] font-medium uppercase shadow-lg hover:bg-green-700 transition-all"
-            >
-              + Novo Registro
-            </button>
-          </div>
-          </div>
-          
 
           <table class="w-full">
             <thead
@@ -405,11 +466,17 @@ export default {
     novoAgendamento: {
       nomeCidadao: '',
       servico: null,
+      tipoAtendimento: null,
+      secretaria: null,
     },
     servicos: [],
+    secretarias: [],
+    tiposAtendimento: [
+      { id: 'NORMAL', nome: 'Normal' },
+      { id: 'PRIORIDADE', nome: 'Prioridade' },
+    ],
   }),
   methods: {
-    // Método para mudar a aba e resetar a página
     mudarAba(novaAba) {
       this.abaAtiva = novaAba
       this.paginaAtual = 1
@@ -429,22 +496,17 @@ export default {
 
     async handleChamar(senha) {
       try {
-        const res = await api.post(`/agendamentos/chamar/por-senha/${senha}/${5}`)
+        const res = await api.post(`/agendamentos/chamar/por-senha/${senha}/${2}`)
 
         if (res.status === 200) {
-          // 1. Localiza o item atual na memória do Vue
           const item = this.agendamentosPorSec.find((a) => a.senha === senha)
           if (item) {
-            // 2. Registra o ID para o Filtro Computado não escondê-lo
             this.idsChamadosManualmente.push(item.agendamentoId)
-            // 3. Muda o status local imediatamente para o Vue reagir
             item.situacao = 'EM_ATENDIMENTO'
           }
 
-          // 4. Muda a aba para o usuário ver o resultado
-          this.abaAtiva = 'ATENDIMENTO'
+          this.abaAtiva = 'ATENDIMENTO '
 
-          // 5. Busca do banco, mas a lógica computada manterá o item como EM_ATENDIMENTO
           await this.buscarAgendamentos()
         }
       } catch (e) {
@@ -569,6 +631,16 @@ export default {
     },
   },
 
+  async carregarSecretarias() {
+    try {
+      const res = await api.get('/secretarias')
+      this.secretariasId = res.data
+      console.log('Secretarias carregadas:', this.secretariaId)
+    } catch (e) {
+      console.error('Erro ao carregar secretarias:', e)
+    }
+  },
+
   computed: {
     agendamentosFinalizados() {
       return this.agendamentosPorSec.filter((a) => a.situacao === 'ATENDIDO').length
@@ -626,8 +698,8 @@ export default {
   },
 
   mounted() {
-    this.buscarAgendamentos()
     this.getUsuarioLogado()
+    this.buscarAgendamentos()
     this.atualizarRelogioLocal()
     this.carregarServicos()
     setInterval(() => this.atualizarRelogioLocal(), 1000)
@@ -635,7 +707,4 @@ export default {
 }
 </script>
 
-<style scoped>
-
-
-</style>
+<style scoped></style>
