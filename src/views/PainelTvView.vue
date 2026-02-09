@@ -141,10 +141,11 @@ const atualizarRelogio = () => {
 
 const buscarChamadas = async () => {
   try {
-    const res = await api.get(`/agendamentos/ultimas-chamadas/1`)
+    const res = await api.get(`/agendamentos/ultimas-chamadas/GAVIC`)
 
     if (res.status === 200 && res.data.length > 0) {
       const novasChamadas = res.data
+      console.log(novasChamadas)
       const ultima = novasChamadas[0]
 
       // Verifique se a senha realmente mudou para disparar a atualização

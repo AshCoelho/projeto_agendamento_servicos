@@ -202,7 +202,7 @@
               "
               class="text-xs font-black border-b-2 pb-1 transition-all uppercase tracking-widest"
             >
-              Espontâneo
+              Atendimento Avulso
             </button>
 
             <div
@@ -214,7 +214,7 @@
                   Cadastro de Senha Espontânea
                 </h2>
 
-                <form @submit.prevent="salvarEspontaneo" class="space-y-4">
+                <form @submit.prevent="salvarEspontaneo" class="space-y-4 ">
                   <div>
                     <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1"
                       >Nome do Cidadão</label
@@ -231,14 +231,19 @@
                     <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1"
                       >Serviço</label
                     >
-                    <select
-                      v-model="novoAgendamento.servicoId"
-                      class="w-full bg-gray-50 border-none rounded-2xl py-3 px-4 text-xs font-bold outline-none ring-1 ring-gray-100 focus:ring-blue-500"
+                    <v-select
+                      v-model="novoAgendamento.servico"
+                      :items="servicos" item-title="nome" item-value="id" return-object density="compact" rounded="xl" variant="solo" bg-color="blue"
+                      class=""
                       required
                     >
-                      <option :value="null" disabled>Selecione o serviço</option>
-                      <option v-for="s in servicos" :key="s.id" :value="s.id">{{ s.nome }}</option>
-                    </select>
+                      
+                    </v-select>
+                  </div>
+                  <div>
+                    <v-btn @click="salvarEspontaneo">
+                      Criar
+                    </v-btn>
                   </div>
                 </form>
               </div>
@@ -399,8 +404,7 @@ export default {
     mostrarModalEspontaneo: false,
     novoAgendamento: {
       nomeCidadao: '',
-      servicoId: null,
-      tipoAtendimento: 'ESPONTANEO',
+      servico: null,
     },
     servicos: [],
   }),
@@ -425,7 +429,7 @@ export default {
 
     async handleChamar(senha) {
       try {
-        const res = await api.post(`/agendamentos/chamar/por-senha/${senha}/${this.usuario.id}`)
+        const res = await api.post(`/agendamentos/chamar/por-senha/${senha}/${5}`)
 
         if (res.status === 200) {
           // 1. Localiza o item atual na memória do Vue
@@ -539,12 +543,7 @@ export default {
 
         // Payload baseado nos campos da sua tabela
         const payload = {
-          nomeCidadao: this.novoAgendamento.nomeCidadao, // Preenche a.nome_cidadao
-          servico: { id: this.novoAgendamento.servicoId },
-          tipoAtendimento: this.novoAgendamento.tipoAtendimento, // 'NORMAL' ou 'PRIORIDADE'
-          tipoAgendamento: 'ESPONTANEO', // Crucial para o filtro acima
-          situacao: 'AGENDADO',
-          horaAgendamento: new Date().toISOString(), // Data/Hora atual
+          ...this.novoAgendamento,
         }
 
         const res = await api.post(`/agendamentos/espontaneo/${secretariaId}`, payload)
@@ -561,8 +560,9 @@ export default {
 
     async carregarServicos() {
       try {
-        const res = await api.get('/servicos')
+        const res = await api.get('/agendamento/api/servico/listar-todos')
         this.servicos = res.data
+        console.log(this.servicos)
       } catch (e) {
         console.error(e)
       }
@@ -629,7 +629,13 @@ export default {
     this.buscarAgendamentos()
     this.getUsuarioLogado()
     this.atualizarRelogioLocal()
+    this.carregarServicos()
     setInterval(() => this.atualizarRelogioLocal(), 1000)
   },
 }
 </script>
+
+<style scoped>
+
+
+</style>
