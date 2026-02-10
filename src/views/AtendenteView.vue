@@ -484,7 +484,7 @@ export default {
 
     async buscarAgendamentos() {
       try {
-        const resposta = await api.get('/agendamentos/secretaria/1')
+        const resposta = await api.get('/agendamentos/secretaria/5')
         console.log('Dados recebidos no painel:', resposta.data)
         if (Array.isArray(resposta.data)) {
           this.agendamentosPorSec = resposta.data
@@ -496,7 +496,7 @@ export default {
 
     async handleChamar(senha) {
       try {
-        const res = await api.post(`/agendamentos/chamar/por-senha/${senha}/${2}`)
+        const res = await api.post(`/agendamentos/chamar/por-senha/${senha}/${5}`)
 
         if (res.status === 200) {
           const item = this.agendamentosPorSec.find((a) => a.senha === senha)
@@ -551,6 +551,7 @@ export default {
           headers: { Authorization: `Bearer ${usuario_logado.token}` },
         })
         this.usuario = resposta.data
+        console.log(resposta)
       } catch (error) {
         console.error('Erro ao buscar usuário logado', error)
       }
