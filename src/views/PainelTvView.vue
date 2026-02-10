@@ -95,7 +95,7 @@
             class="bg-white p-2 rounded-2xl shadow-2xl border border-gray-100 flex flex-col items-center"
           >
             <img
-              src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=SEMIT"
+              src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=HMDM"
               alt="QR"
               class="w-20 h-20"
             />
@@ -121,7 +121,12 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-import api from '@/services/api'
+import axios from 'axios'
+
+const apiPublico = axios.create({
+  baseURL: 'http://localhost:8080', // <-- ajuste aqui
+  timeout: 8000,
+})
 
 const relogio = ref('')
 const audioPlayer = ref(null)
@@ -129,6 +134,11 @@ const somAtivado = ref(false)
 
 const senhaAtual = ref({ numero: '---', guiche: '--', cidadao: 'Aguardando...' })
 const historico = ref([])
+
+const SIGLA = 'HMDM' // <-- deixe fixo ou transforme em prop/route param
+
+let intervalChamada = null
+let intervalRelogio = null
 
 const atualizarRelogio = () => {
   const agora = new Date()
@@ -139,70 +149,79 @@ const atualizarRelogio = () => {
   })
 }
 
+// tenta pegar lista independente do formato
+function extrairLista(payload) {
+  if (Array.isArray(payload)) return payload
+  if (Array.isArray(payload?.content)) return payload.content
+  if (Array.isArray(payload?.data)) return payload.data
+  if (Array.isArray(payload?.ultimasChamadas)) return payload.ultimasChamadas
+  return []
+}
+
+function pegarCampo(item, chaves) {
+  for (const k of chaves) {
+    if (item && item[k] != null && item[k] !== '') return item[k]
+  }
+  return null
+}
+
 const buscarChamadas = async () => {
   try {
-    const res = await api.get(`/agendamentos/ultimas-chamadas/SEMIT`)
+    const res = await apiPublico.get(`/agendamentos/ultimas-chamadas/${SIGLA}`)
+    const lista = extrairLista(res.data)
 
-    if (res.status === 200 && res.data.length > 0) {
-      const novasChamadas = res.data
-      console.log(novasChamadas)
-      const ultima = novasChamadas[0]
+    console.log('[ultimas-chamadas] raw:', res.data)
+    console.log('[ultimas-chamadas] lista:', lista)
 
-      // Verifique se a senha realmente mudou para disparar a atualização
-      if (ultima.senha !== senhaAtual.value.numero) {
-        senhaAtual.value = {
-          numero: ultima.senha,
-          guiche: ultima.guiche || '01',
-          // Tente nomeCidadao ou usuarioNome dependendo do seu DTO
-          cidadao: ultima.nomeCidadao || ultima.usuarioNome || 'Cidadão', 
-        }
+    if (!lista.length) return
 
-        falarChamada(senhaAtual.value.cidadao, ultima.senha, senhaAtual.value.guiche)
+    // se vier desordenado, tenta pegar a “mais recente” pelo primeiro mesmo (ou ajuste aqui se sua API vier invertida)
+    const ultima = lista[0]
 
-        historico.value = novasChamadas.slice(1, 5).map((item) => ({
-          numero: item.senha,
-          guiche: item.guiche || '01',
-        }))
+    const senha = pegarCampo(ultima, ['senha', 'numeroSenha', 'senhaAtual', 'nsenha', 'senha_agendamento']) || '---'
+    const guiche =
+      pegarCampo(ultima, ['guiche', 'numeroGuiche', 'guicheNumero']) ?? '01'
+
+    const cidadao =
+      pegarCampo(ultima, ['nomeCidadao', 'nome_cidadao', 'usuarioNome', 'nomeUsuario', 'cidadao']) ||
+      'Cidadão'
+
+    // só atualiza se mudou
+    if (String(senha) !== String(senhaAtual.value.numero)) {
+      senhaAtual.value = {
+        numero: String(senha),
+        guiche: String(guiche),
+        cidadao: String(cidadao),
       }
+
+      falarChamada(senhaAtual.value.cidadao, senhaAtual.value.numero, senhaAtual.value.guiche)
+
+      historico.value = lista.slice(1, 5).map((item) => ({
+        numero:
+          pegarCampo(item, ['senha', 'numeroSenha', 'senhaAtual', 'nsenha', 'senha_agendamento']) || '---',
+        guiche: String(pegarCampo(item, ['guiche', 'numeroGuiche', 'guicheNumero']) ?? '01'),
+      }))
     }
   } catch (error) {
-    // Esse erro aparece no seu console
-    console.error('Servidor offline ou porta incorreta:', error)
+    console.error('Erro ao buscar chamadas:', error?.message || error)
   }
 }
 
 const falarChamada = (nome, senha, guiche) => {
   if (!somAtivado.value) return
 
-  const mensagem = new SpeechSynthesisUtterance()
-  mensagem.text = `Senha ${senha}, ${nome}, comparecer ao guichê ${guiche}`
-  mensagem.lang = 'pt-BR'
-  mensagem.rate = 0.9
-  mensagem.pitch = 1
+  const msg = new SpeechSynthesisUtterance()
+  msg.text = `Senha ${senha}, ${nome}, comparecer ao guichê ${guiche}`
+  msg.lang = 'pt-BR'
+  msg.rate = 0.9
 
-  let repeticoes = 0
-  const totalRepeticoes = 2
-
-  // Função que gerencia a repetição
-  mensagem.onend = () => {
-    repeticoes++
-    if (repeticoes < totalRepeticoes) {
-      setTimeout(() => {
-        window.speechSynthesis.speak(mensagem)
-      }, 500)
-    }
-  }
-
-  // Toca o sino uma única vez antes de começar a falar
+  // toca o sino antes
   if (audioPlayer.value) {
     audioPlayer.value.currentTime = 0
-    audioPlayer.value.play()
-
-    setTimeout(() => {
-      window.speechSynthesis.speak(mensagem)
-    }, 1200)
+    audioPlayer.value.play().catch(() => {})
+    setTimeout(() => window.speechSynthesis.speak(msg), 900)
   } else {
-    window.speechSynthesis.speak(mensagem)
+    window.speechSynthesis.speak(msg)
   }
 }
 
@@ -211,18 +230,17 @@ const ativarAudio = () => {
   audioPlayer.value?.play().catch(() => {})
 }
 
-let intervalChamada = null
-
 onMounted(() => {
   atualizarRelogio()
-  setInterval(atualizarRelogio, 1000)
+  intervalRelogio = setInterval(atualizarRelogio, 1000)
 
   buscarChamadas()
-
   intervalChamada = setInterval(buscarChamadas, 3000)
 })
 
 onUnmounted(() => {
   clearInterval(intervalChamada)
+  clearInterval(intervalRelogio)
 })
 </script>
+

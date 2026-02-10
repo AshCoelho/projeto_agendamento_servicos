@@ -483,38 +483,60 @@ export default {
     },
 
     async buscarAgendamentos() {
-      try {
-        const resposta = await api.get('/agendamentos/secretaria/5')
-        console.log('Dados recebidos no painel:', resposta.data)
-        if (Array.isArray(resposta.data)) {
-          this.agendamentosPorSec = resposta.data
-        }
-      } catch (e) {
-        console.error(e)
-      }
-    },
+  try {
+    const secretariaId = this.usuario?.secretaria?.id
+    if (!secretariaId) {
+      console.warn('Secretaria ainda não carregou. Buscando usuário...')
+      await this.getUsuarioLogado()
+    }
 
+    const secId = this.usuario?.secretaria?.id
+    if (!secId) return
+
+    const resposta = await api.get(`/agendamentos/secretaria/${secId}`)
+    console.log('Dados recebidos no painel:', resposta.data)
+
+    if (Array.isArray(resposta.data)) {
+      this.agendamentosPorSec = resposta.data
+    }
+  } catch (e) {
+    console.error('Erro buscarAgendamentos:', e?.response?.data || e)
+  }
+},
     async handleChamar(senha) {
-      try {
-        const res = await api.post(`/agendamentos/chamar/por-senha/${senha}/${5}`)
+  try {
+    if (!this.usuario?.id) {
+      await this.getUsuarioLogado()
+    }
 
-        if (res.status === 200) {
-          const item = this.agendamentosPorSec.find((a) => a.senha === senha)
-          if (item) {
-            this.idsChamadosManualmente.push(item.agendamentoId)
-            item.situacao = 'EM_ATENDIMENTO'
-          }
+    const gerenciadorId = this.usuario?.id
+    if (!gerenciadorId) {
+      alert('Usuário não carregado. Faça login novamente.')
+      return
+    }
 
-          this.abaAtiva = 'ATENDIMENTO '
+    const url = `/agendamentos/chamar/por-senha/${encodeURIComponent(senha)}/${gerenciadorId}`
+    console.log('POST:', url)
 
-          await this.buscarAgendamentos()
-        }
-      } catch (e) {
-        console.error('Erro ao chamar:', e)
-        alert('Falha na chamada. Verifique se o servidor está ativo.')
+    const res = await api.post(url)
+
+    if (res.status === 200) {
+      const item = this.agendamentosPorSec.find((a) => a.senha === senha)
+      if (item) {
+        this.idsChamadosManualmente.push(item.agendamentoId)
+        item.situacao = 'EM_ATENDIMENTO'
       }
-    },
 
+      // ✅ SEM espaço
+      this.abaAtiva = 'ATENDIMENTO'
+
+      await this.buscarAgendamentos()
+    }
+  } catch (e) {
+    console.error('Erro ao chamar:', e?.response?.data || e)
+    alert(e?.response?.data?.mensagem || e?.response?.data || 'Falha na chamada.')
+  }
+},
     async handleChamarNormal() {
       const secretariaId = this.usuario?.secretaria?.id
       const gerenciadorId = this.usuario?.id
@@ -545,18 +567,25 @@ export default {
     },
 
     async getUsuarioLogado() {
-      try {
-        const usuario_logado = JSON.parse(localStorage.getItem('usuario'))
-        const resposta = await api.get('/gerenciador/usuario-logado', {
-          headers: { Authorization: `Bearer ${usuario_logado.token}` },
-        })
-        this.usuario = resposta.data
-        console.log(resposta)
-      } catch (error) {
-        console.error('Erro ao buscar usuário logado', error)
-      }
-    },
+  try {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      this.$router.push({ name: 'login' })
+      return
+    }
 
+    const { data } = await api.get('/gerenciador/usuario-logado', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+
+    this.usuario = data
+    console.log('usuario-logado:', data)
+  } catch (error) {
+    console.error('Erro ao buscar usuário logado', error)
+    localStorage.removeItem('token')
+    this.$router.push({ name: 'login' })
+  }
+},
     handleLogout() {
       localStorage.clear()
       this.$router.push({ name: 'login' })
