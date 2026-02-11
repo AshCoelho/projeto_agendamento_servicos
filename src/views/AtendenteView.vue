@@ -227,7 +227,7 @@
                 v-if="mostrarModalEspontaneo"
                 class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm"
               >
-                <div class="bg-white w-full max-w-md rounded-[32px] p-8 shadow-2xl">
+                <div class="bg-white w-full max-w-md rounded-[12px] p-8 shadow-2xl">
                   <h2 class="text-[#1e3a8a] text-xl font-black uppercase mb-6">
                     Cadastro de Senha Espontânea
                   </h2>
@@ -240,7 +240,7 @@
                       <input
                         v-model="novoAgendamento.nomeCidadao"
                         type="text"
-                        class="w-full bg-gray-50 border-none rounded-2xl py-3 px-4 text-xs font-bold outline-none ring-1 ring-gray-100 focus:ring-blue-500"
+                        class="w-full bg-gray-50 border-none rounded-[12px] py-3 px-4 text-xs font-bold outline-none ring-1 ring-gray-100 focus:ring-blue-500"
                         required
                       />
                     </div>
@@ -249,20 +249,33 @@
                       <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1"
                         >Secretaria</label
                       >
-                      <v-select
-                        v-model="novoAgendamento.secretaria"
-                        :items="secretarias"
-                        item-title="nome"
-                        item-value="id"
-                        return-object
+                      <v-text-field
+                        v-model="usuario.secretaria.nome"
                         density="compact"
-                        rounded="xl"
+                        rounded="12px"
+                        variant="solo"
+                        bg-color="transparent"
+                        class=""
+                        required
+                        readonly
+                      >
+                      </v-text-field>
+                    </div>
+
+                    <div>
+                      <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1"
+                        >Endereço</label
+                      >
+                      <v-text-field
+                        v-model="enderecoEstatico"
+                        density="compact"
+                        rounded="12px"
                         variant="solo"
                         bg-color="transparent"
                         class=""
                         required
                       >
-                      </v-select>
+                      </v-text-field>
                     </div>
 
                     <div>
@@ -272,9 +285,9 @@
                       <v-select
                         v-model="novoAgendamento.tipoAtendimento"
                         :items="tiposAtendimento"
-                        item-title="nome"
-                        item-value="id"
-                        return-object
+                        item-title="title"
+                        item-value="value"
+                        
                         density="compact"
                         rounded="xl"
                         variant="solo"
@@ -452,6 +465,7 @@ export default {
     PainelComandos,
   },
   data: () => ({
+    enderecoEstatico: null, 
     usuario: null,
     sidebarAberta: true,
     fila: [],
@@ -461,21 +475,20 @@ export default {
     filtroTexto: '',
     paginaAtual: 1,
     itensPorPagina: 3,
-    idsChamadosManualmente: [],
     mostrarModalEspontaneo: false,
     novoAgendamento: {
       nomeCidadao: '',
       servico: null,
-      tipoAtendimento: null,
-      secretaria: null,
+      tipoAtendimento: null
     },
     servicos: [],
     secretarias: [],
     tiposAtendimento: [
-      { id: 'NORMAL', nome: 'Normal' },
-      { id: 'PRIORIDADE', nome: 'Prioridade' },
+      { title: 'Normal', value: 'NORMAL' },
+      { title: 'Prioridade', value: 'PRIORIDADE' },
     ],
   }),
+
   methods: {
     mudarAba(novaAba) {
       this.abaAtiva = novaAba
@@ -483,60 +496,60 @@ export default {
     },
 
     async buscarAgendamentos() {
-  try {
-    const secretariaId = this.usuario?.secretaria?.id
-    if (!secretariaId) {
-      console.warn('Secretaria ainda não carregou. Buscando usuário...')
-      await this.getUsuarioLogado()
-    }
+      try {
+        const secretariaId = this.usuario?.secretaria?.id
+        if (!secretariaId) {
+          console.warn('Secretaria ainda não carregou. Buscando usuário...')
+          await this.getUsuarioLogado()
+        }
 
-    const secId = this.usuario?.secretaria?.id
-    if (!secId) return
+        const secId = this.usuario?.secretaria?.id
+        if (!secId) return
 
-    const resposta = await api.get(`/agendamentos/secretaria/${secId}`)
-    console.log('Dados recebidos no painel:', resposta.data)
+        const resposta = await api.get(`/agendamentos/secretaria/${secId}`)
+        console.log('Dados recebidos no painel:', resposta.data)
 
-    if (Array.isArray(resposta.data)) {
-      this.agendamentosPorSec = resposta.data
-    }
-  } catch (e) {
-    console.error('Erro buscarAgendamentos:', e?.response?.data || e)
-  }
-},
-    async handleChamar(senha) {
-  try {
-    if (!this.usuario?.id) {
-      await this.getUsuarioLogado()
-    }
-
-    const gerenciadorId = this.usuario?.id
-    if (!gerenciadorId) {
-      alert('Usuário não carregado. Faça login novamente.')
-      return
-    }
-
-    const url = `/agendamentos/chamar/por-senha/${encodeURIComponent(senha)}/${gerenciadorId}`
-    console.log('POST:', url)
-
-    const res = await api.post(url)
-
-    if (res.status === 200) {
-      const item = this.agendamentosPorSec.find((a) => a.senha === senha)
-      if (item) {
-        this.idsChamadosManualmente.push(item.agendamentoId)
-        item.situacao = 'EM_ATENDIMENTO'
+        if (Array.isArray(resposta.data)) {
+          this.agendamentosPorSec = resposta.data
+        }
+      } catch (e) {
+        console.error('Erro buscarAgendamentos:', e?.response?.data || e)
       }
+    },
+    async handleChamar(senha) {
+      try {
+        if (!this.usuario?.id) {
+          await this.getUsuarioLogado()
+        }
 
-      // ✅ SEM espaço
-      this.abaAtiva = 'ATENDIMENTO'
+        const gerenciadorId = this.usuario?.id
+        if (!gerenciadorId) {
+          alert('Usuário não carregado. Faça login novamente.')
+          return
+        }
 
-      await this.buscarAgendamentos()
-    }
-  } catch (e) {
-    console.error('Erro ao chamar:', e?.response?.data || e)
-    alert(e?.response?.data?.mensagem || e?.response?.data || 'Falha na chamada.')
-  }
-},
+        const url = `/agendamentos/chamar/por-senha/${encodeURIComponent(senha)}/${gerenciadorId}`
+        console.log('POST:', url)
+
+        const res = await api.post(url)
+
+        if (res.status === 200) {
+          const item = this.agendamentosPorSec.find((a) => a.senha === senha)
+          if (item) {
+            this.idsChamadosManualmente.push(item.agendamentoId)
+            item.situacao = 'EM_ATENDIMENTO'
+          }
+
+          // ✅ SEM espaço
+          this.abaAtiva = 'ATENDIMENTO'
+
+          await this.buscarAgendamentos()
+        }
+      } catch (e) {
+        console.error('Erro ao chamar:', e?.response?.data || e)
+        alert(e?.response?.data?.mensagem || e?.response?.data || 'Falha na chamada.')
+      }
+    },
     async handleChamarNormal() {
       const secretariaId = this.usuario?.secretaria?.id
       const gerenciadorId = this.usuario?.id
@@ -567,25 +580,25 @@ export default {
     },
 
     async getUsuarioLogado() {
-  try {
-    const token = localStorage.getItem('token')
-    if (!token) {
-      this.$router.push({ name: 'login' })
-      return
-    }
+      try {
+        const token = localStorage.getItem('token')
+        if (!token) {
+          this.$router.push({ name: 'login' })
+          return
+        }
 
-    const { data } = await api.get('/gerenciador/usuario-logado', {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+        const { data } = await api.get('/gerenciador/usuario-logado', {
+          headers: { Authorization: `Bearer ${token}` },
+        })
 
-    this.usuario = data
-    console.log('usuario-logado:', data)
-  } catch (error) {
-    console.error('Erro ao buscar usuário logado', error)
-    localStorage.removeItem('token')
-    this.$router.push({ name: 'login' })
-  }
-},
+        this.usuario = data
+        console.log('usuario-logado:', data)
+      } catch (error) {
+        console.error('Erro ao buscar usuário logado', error)
+        localStorage.removeItem('token')
+        this.$router.push({ name: 'login' })
+      }
+    },
     handleLogout() {
       localStorage.clear()
       this.$router.push({ name: 'login' })
@@ -631,11 +644,13 @@ export default {
 
     async salvarEspontaneo() {
       try {
-        const secretariaId = this.usuario?.secretaria?.id || 1
+        const secretariaId = this.usuario?.secretaria?.id
 
         // Payload baseado nos campos da sua tabela
         const payload = {
           ...this.novoAgendamento,
+          secretaria: this.usuario?.secretaria,
+          endereco: this.usuario?.endereco
         }
 
         const res = await api.post(`/agendamentos/espontaneo/${secretariaId}`, payload)
@@ -727,12 +742,18 @@ export default {
     },
   },
 
-  mounted() {
-    this.getUsuarioLogado()
+  async mounted() {
+    try {
+      await this.getUsuarioLogado()
+    } catch(e) {
+      console.error(e)
+    }
     this.buscarAgendamentos()
     this.atualizarRelogioLocal()
     this.carregarServicos()
     setInterval(() => this.atualizarRelogioLocal(), 1000)
+
+    this.enderecoEstatico = `${this.usuario?.endereco?.bairro}, ${this.usuario?.endereco?.logradouro}`
   },
 }
 </script>
