@@ -240,7 +240,7 @@
                       <input
                         v-model="novoAgendamento.nomeCidadao"
                         type="text"
-                        class="w-full bg-gray-50 border-none rounded-[12px] py-3 px-4 text-xs font-bold outline-none ring-1 ring-gray-100 focus:ring-blue-500"
+                        class="w-full bg-gray-50 border-none rounded-2xl py-3 px-4 text-xs font-bold outline-none ring-1 ring-gray-500 focus:ring-gray-500"
                         required
                       />
                     </div>
@@ -269,7 +269,7 @@
                       <v-text-field
                         v-model="enderecoEstatico"
                         density="compact"
-                        rounded="12px"
+                        rounded-2xl
                         variant="solo"
                         bg-color="transparent"
                         class=""
@@ -287,9 +287,8 @@
                         :items="tiposAtendimento"
                         item-title="title"
                         item-value="value"
-                        
                         density="compact"
-                        rounded="xl"
+                        rounded-2xl
                         variant="solo"
                         bg-color="transparent"
                         class=""
@@ -309,7 +308,7 @@
                         item-value="id"
                         return-object
                         density="compact"
-                        rounded="xl"
+                        rounded-2xl
                         variant="solo"
                         bg-color="transparent"
                         class=""
@@ -465,7 +464,7 @@ export default {
     PainelComandos,
   },
   data: () => ({
-    enderecoEstatico: null, 
+    enderecoEstatico: null,
     usuario: null,
     sidebarAberta: true,
     fila: [],
@@ -475,11 +474,12 @@ export default {
     filtroTexto: '',
     paginaAtual: 1,
     itensPorPagina: 3,
+    idsChamadosManualmente: [],
     mostrarModalEspontaneo: false,
     novoAgendamento: {
       nomeCidadao: '',
       servico: null,
-      tipoAtendimento: null
+      tipoAtendimento: null,
     },
     servicos: [],
     secretarias: [],
@@ -516,6 +516,7 @@ export default {
         console.error('Erro buscarAgendamentos:', e?.response?.data || e)
       }
     },
+
     async handleChamar(senha) {
       try {
         if (!this.usuario?.id) {
@@ -540,7 +541,6 @@ export default {
             item.situacao = 'EM_ATENDIMENTO'
           }
 
-          // ✅ SEM espaço
           this.abaAtiva = 'ATENDIMENTO'
 
           await this.buscarAgendamentos()
@@ -646,22 +646,42 @@ export default {
       try {
         const secretariaId = this.usuario?.secretaria?.id
 
-        // Payload baseado nos campos da sua tabela
-        const payload = {
-          ...this.novoAgendamento,
-          secretaria: this.usuario?.secretaria,
-          endereco: this.usuario?.endereco
+        if (!secretariaId) {
+          console.error('ID da secretaria não encontrado no usuário logado.')
+          return
         }
+
+        const payload = {
+          nomeCidadao: this.novoAgendamento.nomeCidadao,
+          servico: this.novoAgendamento.servico,
+          tipoAtendimento: this.novoAgendamento.tipoAtendimento,
+          secretaria: this.usuario?.secretaria,
+          endereco: this.usuario?.endereco,
+          status: 'AGUARDANDO',
+        }
+        console.log("O que estou enviando para o banco:", JSON.stringify(payload, null, 2));
+       
 
         const res = await api.post(`/agendamentos/espontaneo/${secretariaId}`, payload)
 
         if (res.status === 201 || res.status === 200) {
           this.mostrarModalEspontaneo = false
-          this.novoAgendamento = { nomeCidadao: '', servicoId: null, tipoAtendimento: 'NORMAL' }
+
+          this.novoAgendamento = {
+            nomeCidadao: '',
+            servico: null,
+            tipoAtendimento: 'NORMAL',
+          }
+
           await this.buscarAgendamentos()
+
+          console.log('Agendamento salvo com sucesso:', res.data)
         }
       } catch (e) {
-        console.error('Erro ao salvar espontâneo:', e)
+        if (e.response) {
+          console.error('Erro do Servidor:', e.response.data)
+        }
+        console.error('Erro na requisição:', e.message)
       }
     },
 
@@ -692,36 +712,36 @@ export default {
     },
 
     agendamentosFiltrados() {
-      let listaNormalizada = this.agendamentosPorSec.map((item) => {
-        const status = item.situacao ? item.situacao.toUpperCase() : ''
-        const tipoAg = item.tipoAgendamento ? item.tipoAgendamento.toUpperCase() : ''
+  // 1. Normaliza a lista para evitar erros de undefined/null
+  let listaNormalizada = this.agendamentosPorSec.map((item) => {
+    const status = item.situacao ? item.situacao.toUpperCase() : 'AGENDADO';
+    const tipoAg = item.tipoAgendamento ? item.tipoAgendamento.toUpperCase() : 'NORMAL';
+    const id = item.agendamentoId || item.id; // Tenta pegar o ID de duas formas
 
-        if (this.idsChamadosManualmente.includes(item.agendamentoId)) {
-          return { ...item, situacao: 'EM_ATENDIMENTO', tipoAgendamento: tipoAg }
-        }
-        return { ...item, situacao: status, tipoAgendamento: tipoAg }
-      })
+    // Se o ID foi chamado manualmente, força o status para visualização
+    if (this.idsChamadosManualmente && this.idsChamadosManualmente.includes(id)) {
+      return { ...item, situacao: 'EM_ATENDIMENTO', tipoAgendamento: tipoAg };
+    }
+    return { ...item, situacao: status, tipoAgendamento: tipoAg };
+  });
 
-      if (this.abaAtiva === 'AGUARDANDO') {
-        return listaNormalizada.filter(
-          (a) => a.situacao === 'AGENDADO' && a.tipoAgendamento !== 'ESPONTANEO',
-        )
-      }
+  // 2. Filtra de acordo com a aba ativa
+  if (this.abaAtiva === 'AGUARDANDO') {
+    return listaNormalizada.filter(a => a.situacao === 'AGENDADO');
+  }
 
-      if (this.abaAtiva === 'ESPONTANEO') {
-        return listaNormalizada.filter((a) => a.tipoAgendamento === 'ESPONTANEO')
-      }
+  if (this.abaAtiva === 'ESPONTANEO') {
+    return listaNormalizada.filter(a => a.tipoAgendamento === 'ESPONTANEO');
+  }
 
-      if (this.abaAtiva === 'ATENDIMENTO') {
-        return listaNormalizada.filter(
-          (a) =>
-            ['CHAMADO', 'EM_ATENDIMENTO', 'ATENDIMENTO'].includes(a.situacao) ||
-            this.idsChamadosManualmente.includes(a.agendamentoId),
-        )
-      }
+  if (this.abaAtiva === 'ATENDIMENTO') {
+    return listaNormalizada.filter(a => 
+      ['EM_ATENDIMENTO', 'CHAMADO'].includes(a.situacao)
+    );
+  }
 
-      return listaNormalizada
-    },
+  return listaNormalizada;
+},
 
     agendamentosPaginados() {
       const inicio = (this.paginaAtual - 1) * this.itensPorPagina
@@ -745,7 +765,7 @@ export default {
   async mounted() {
     try {
       await this.getUsuarioLogado()
-    } catch(e) {
+    } catch (e) {
       console.error(e)
     }
     this.buscarAgendamentos()

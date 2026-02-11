@@ -138,7 +138,7 @@ export default {
 
         const perfil = (data.perfil || '').toUpperCase()
 
-        // ✅ redirecionamento controlado pelo BACKEND
+        
         switch (perfil) {
           case 'ADMINISTRADOR':
             this.$router.push('/administrador')
