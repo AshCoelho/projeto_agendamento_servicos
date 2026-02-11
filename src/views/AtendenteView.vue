@@ -497,20 +497,29 @@ export default {
 
     async buscarAgendamentos() {
       try {
+        if (!this.usuario?.id) await this.getUsuarioLogado()
+
+        const enderecoId = this.usuario?.endereco?.id
         const secretariaId = this.usuario?.secretaria?.id
-        if (!secretariaId) {
-          console.warn('Secretaria ainda não carregou. Buscando usuário...')
-          await this.getUsuarioLogado()
+
+        if (!enderecoId) {
+          console.warn('Usuário logado não tem endereco.id')
+          return
         }
 
-        const secId = this.usuario?.secretaria?.id
-        if (!secId) return
+        // ✅ OPÇÃO A (se seu backend ficou assim):
+        // GET /agendamentos/enderecos/{enderecoId}
+        const res = await api.get(`/agendamentos/enderecos/${enderecoId}`)
 
-        const resposta = await api.get(`/agendamentos/secretaria/${secId}`)
-        console.log('Dados recebidos no painel:', resposta.data)
+        // ✅ OPÇÃO B (se você mudou pra secretaria + endereco):
+        // const res = await api.get(`/agendamentos/enderecos/${secretariaId}/${enderecoId}`)
 
-        if (Array.isArray(resposta.data)) {
-          this.agendamentosPorSec = resposta.data
+        console.log('Agendamentos recebidos:', res.data)
+
+        if (Array.isArray(res.data)) {
+          this.agendamentosPorSec = res.data
+        } else {
+          this.agendamentosPorSec = []
         }
       } catch (e) {
         console.error('Erro buscarAgendamentos:', e?.response?.data || e)
@@ -550,30 +559,44 @@ export default {
         alert(e?.response?.data?.mensagem || e?.response?.data || 'Falha na chamada.')
       }
     },
-    async handleChamarNormal() {
-      const secretariaId = this.usuario?.secretaria?.id
-      const gerenciadorId = this.usuario?.id
 
-      if (!secretariaId || !gerenciadorId) {
-        alert('Dados do usuário ou secretaria incompletos.')
-        return
-      }
-
+     async handleChamarNormal() {
       try {
-        await api.post(`/agendamentos/chamar/normal/${secretariaId}/${gerenciadorId}`)
+        if (!this.usuario?.id) await this.getUsuarioLogado()
+
+        const enderecoId = this.usuario?.endereco?.id
+        const gerenciadorId = this.usuario?.id
+
+        if (!enderecoId || !gerenciadorId) {
+          alert('Usuário incompleto: faltou enderecoId/gerenciadorId')
+          return
+        }
+
+        await api.post(`/agendamentos/chamar/normal/${enderecoId}/${gerenciadorId}`)
       } catch (e) {
-        console.error(e)
+        console.error('Erro chamar normal:', e?.response?.data || e)
+        alert(e?.response?.data?.mensagem || 'Falha ao chamar normal.')
       } finally {
         this.buscarAgendamentos()
       }
     },
 
-    async handleChamarPrioridade(secretariaId) {
+    async handleChamarPrioridade() {
       try {
-        if (!secretariaId) alert('Algum problema com gerenciador ou secretaria')
-        await api.post(`/agendamentos/chamar/prioridade/${secretariaId}/${this.usuario.id}`)
+        if (!this.usuario?.id) await this.getUsuarioLogado()
+
+        const enderecoId = this.usuario?.endereco?.id
+        const gerenciadorId = this.usuario?.id
+
+        if (!enderecoId || !gerenciadorId) {
+          alert('Usuário incompleto: faltou enderecoId/gerenciadorId')
+          return
+        }
+
+        await api.post(`/agendamentos/chamar/prioridade/${enderecoId}/${gerenciadorId}`)
       } catch (e) {
-        console.error(e)
+        console.error('Erro chamar prioridade:', e?.response?.data || e)
+        alert(e?.response?.data?.mensagem || 'Falha ao chamar prioridade.')
       } finally {
         this.buscarAgendamentos()
       }
