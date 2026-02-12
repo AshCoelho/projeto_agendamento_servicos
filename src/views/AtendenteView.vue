@@ -117,7 +117,7 @@
           <div>
             <p class="text-[12px] font-bold text-gray-400 uppercase mb-1">Pessoas na Fila</p>
             <h3 class="text-3xl font-black text-gray-800">
-              {{ agendamentosPorSec.length }}
+              {{ agendamentosAguardando }}
             </h3>
             <span class="inline-block w-8 h-1 bg-amber-lighten-2 rounded-full"></span>
 
@@ -223,24 +223,76 @@
                 Atendimento Avulso
               </button>
 
+              <button
+                @click="mudarAba('ATENDIMENTO')"
+                :class="
+                  abaAtiva === 'ATENDIMENTO'
+                    ? 'bg-[#2563eb] text-white rounded-[10px] p-2 shadow-xl shadow-blue-100'
+                    : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
+                "
+                class="text-xs font-black border-b-2 pb-1 transition-all uppercase tracking-widest"
+              >
+                Em Atendimento
+              </button>
+
+              <button
+              
+                @click="mudarAba('CANCELADOS')"
+                :class="
+                  abaAtiva === 'CANCELADOS'
+                    ? 'bg-[#2563eb] text-white rounded-[10px] p-2 shadow-xl shadow-blue-100'
+                    : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
+                "
+                class="text-xs font-black border-b-2 pb-1 transition-all uppercase tracking-widest"
+              >
+                CANCELADOS
+              </button>
+
+              <button
+                @click="mudarAba('FINALIZADOS')"
+                :class="
+                  abaAtiva === 'FINALIZADOS'
+                    ? 'bg-[#2563eb] text-white rounded-[10px] p-2 shadow-xl shadow-blue-100'
+                    : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
+                "
+                class="text-xs font-black border-b-2 pb-1 transition-all uppercase tracking-widest"
+              >
+                FINALIZADOS
+              </button>
+
               <div
                 v-if="mostrarModalEspontaneo"
                 class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm"
               >
                 <div class="bg-white w-full max-w-md rounded-[12px] p-8 shadow-2xl">
-                  <h2 class="text-[#1e3a8a] text-xl font-black uppercase mb-6">
-                    Cadastro de Senha Espontânea
-                  </h2>
-
+                  <div class="d-flex align-center justify-space-between mb-6">
+                    <h2
+                      class="text-[#1e3a8a] text-lg font-black uppercase"
+                      style="line-height: 1; justify-content: center"
+                    >
+                      Cadastro de Senha Espontânea
+                    </h2>
+                    <v-btn
+                      @click="mostrarModalEspontaneo = false"
+                      icon
+                      size="small"
+                      class="bg-transparent elevation-0"
+                    >
+                      <v-icon> mdi-close </v-icon>
+                    </v-btn>
+                  </div>
                   <form @submit.prevent="salvarEspontaneo" class="space-y-4">
                     <div>
                       <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1"
                         >Nome do Cidadão</label
                       >
-                      <input
+                      <v-text-field
                         v-model="novoAgendamento.nomeCidadao"
                         type="text"
-                        class="w-full bg-gray-50 border-none rounded-2xl py-3 px-4 text-xs font-bold outline-none ring-1 ring-gray-500 focus:ring-gray-500"
+                        rounded="12px"
+                        variant="solo"
+                        density="compact"
+                        class="w-full border-none text-xs font-bold ring-gray-500 focus:ring-gray-500"
                         required
                       />
                     </div>
@@ -317,12 +369,18 @@
                       </v-select>
                     </div>
                     <div>
-                      <v-btn @click="salvarEspontaneo"> Criar </v-btn>
+                      <v-btn
+                        color="primary"
+                        @click="salvarEspontaneo"
+                        class="text-capitalize w-100"
+                      >
+                        Cadastrar
+                      </v-btn>
                     </div>
                   </form>
                 </div>
               </div>
-              <button
+              <!-- <button
                 @click="mudarAba('ATENDIMENTO')"
                 :class="
                   abaAtiva === 'ATENDIMENTO'
@@ -332,7 +390,7 @@
                 class="text-xs font-black border-b-2 pb-1 transition-all uppercase tracking-widest"
               >
                 Em Atendimento
-              </button>
+              </button> -->
             </div>
             <div v-if="abaAtiva === 'ESPONTANEO'" class="flex justify-end mr-6">
               <button
@@ -349,6 +407,7 @@
               class="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50"
             >
               <tr>
+                <th class="px-6 py-4 text-left">Editar</th>
                 <th class="px-6 py-4 text-left">Senha</th>
                 <th class="px-6 py-4 text-left">Usuário</th>
                 <th class="px-6 py-4 text-left">Serviço</th>
@@ -360,6 +419,11 @@
             </thead>
             <tbody class="divide-y divide-gray-50">
               <tr v-for="(item, index) in agendamentosPaginados" :key="index" class="group">
+                <td class="px-6 text-sm font-bold text-gray-500">
+                  <v-btn icon class="bg-transparent elevation-0">
+                    <v-icon color="success"> mdi-pencil-outline </v-icon>
+                  </v-btn>
+                </td>
                 <td class="px-6 py-6">
                   <div class="flex items-center gap-3">
                     <div
@@ -406,6 +470,7 @@
                     >Finalizar</v-btn
                   >
                   <v-btn
+                  v-if="abaAtiva === 'ATENDIMENTO' "
                     color="#e61919"
                     size="small"
                     class="text-white text-[10px] font-black"
@@ -488,8 +553,23 @@ export default {
       { title: 'Prioridade', value: 'PRIORIDADE' },
     ],
   }),
+  watch: {
+    mostrarModalEspontaneo(novoValor) {
+      if (novoValor) {
+        window.addEventListener('keydown', this.handleEsc)
+      } else {
+        window.removeEventListener('keydown', this.handleEsc)
+      }
+    },
+  },
 
   methods: {
+    handleEsc(event) {
+      if (event.key === 'Escape') {
+        this.mostrarModalEspontaneo = false
+      }
+    },
+
     mudarAba(novaAba) {
       this.abaAtiva = novaAba
       this.paginaAtual = 1
@@ -560,7 +640,7 @@ export default {
       }
     },
 
-     async handleChamarNormal() {
+    async handleChamarNormal() {
       try {
         if (!this.usuario?.id) await this.getUsuarioLogado()
 
@@ -682,8 +762,7 @@ export default {
           endereco: this.usuario?.endereco,
           status: 'AGUARDANDO',
         }
-        console.log("O que estou enviando para o banco:", JSON.stringify(payload, null, 2));
-       
+        console.log('O que estou enviando para o banco:', JSON.stringify(payload, null, 2))
 
         const res = await api.post(`/agendamentos/espontaneo/${secretariaId}`, payload)
 
@@ -730,41 +809,52 @@ export default {
   },
 
   computed: {
+    agendamentosAguardando() {
+      console.log()
+      return this.agendamentosPorSec.filter((a) => a.situacao === 'AGENDADO').length
+    },
+
     agendamentosFinalizados() {
       return this.agendamentosPorSec.filter((a) => a.situacao === 'ATENDIDO').length
     },
 
     agendamentosFiltrados() {
-  // 1. Normaliza a lista para evitar erros de undefined/null
-  let listaNormalizada = this.agendamentosPorSec.map((item) => {
-    const status = item.situacao ? item.situacao.toUpperCase() : 'AGENDADO';
-    const tipoAg = item.tipoAgendamento ? item.tipoAgendamento.toUpperCase() : 'NORMAL';
-    const id = item.agendamentoId || item.id; // Tenta pegar o ID de duas formas
+      // 1. Normaliza a lista para evitar erros de undefined/null
+      let listaNormalizada = this.agendamentosPorSec.map((item) => {
+        const status = item.situacao ? item.situacao.toUpperCase() : 'AGENDADO'
+        const tipoAg = item.tipoAgendamento ? item.tipoAgendamento.toUpperCase() : 'NORMAL'
+        const id = item.agendamentoId || item.id // Tenta pegar o ID de duas formas
 
-    // Se o ID foi chamado manualmente, força o status para visualização
-    if (this.idsChamadosManualmente && this.idsChamadosManualmente.includes(id)) {
-      return { ...item, situacao: 'EM_ATENDIMENTO', tipoAgendamento: tipoAg };
-    }
-    return { ...item, situacao: status, tipoAgendamento: tipoAg };
-  });
+        // Se o ID foi chamado manualmente, força o status para visualização
+        if (this.idsChamadosManualmente && this.idsChamadosManualmente.includes(id)) {
+          return { ...item, situacao: 'EM_ATENDIMENTO', tipoAgendamento: tipoAg }
+        }
+        return { ...item, situacao: status, tipoAgendamento: tipoAg }
+      })
 
-  // 2. Filtra de acordo com a aba ativa
-  if (this.abaAtiva === 'AGUARDANDO') {
-    return listaNormalizada.filter(a => a.situacao === 'AGENDADO');
-  }
+      // 2. Filtra de acordo com a aba ativa
+      if (this.abaAtiva === 'AGUARDANDO') {
+        return listaNormalizada.filter((a) => a.situacao === 'AGENDADO')
+      }
 
-  if (this.abaAtiva === 'ESPONTANEO') {
-    return listaNormalizada.filter(a => a.tipoAgendamento === 'ESPONTANEO');
-  }
+      if (this.abaAtiva === 'ESPONTANEO') {
+        return listaNormalizada.filter((a) => a.tipoAgendamento === 'ESPONTANEO')
+      }
 
-  if (this.abaAtiva === 'ATENDIMENTO') {
-    return listaNormalizada.filter(a => 
-      ['EM_ATENDIMENTO', 'CHAMADO'].includes(a.situacao)
-    );
-  }
+      if (this.abaAtiva === 'ATENDIMENTO') {
+        return listaNormalizada.filter((a) => ['EM_ATENDIMENTO', 'CHAMADO'].includes(a.situacao))
+      }
 
-  return listaNormalizada;
-},
+      if (this.abaAtiva === 'CANCELADOS') {
+        return listaNormalizada.filter((a) => ['FALTOU'].includes(a.situacao))
+      }
+
+      if (this.abaAtiva === 'FINALIZADOS') {
+        return listaNormalizada.filter((a) => ['ATENDIDO'].includes(a.situacao))
+      }
+
+      return listaNormalizada
+    },
 
     agendamentosPaginados() {
       const inicio = (this.paginaAtual - 1) * this.itensPorPagina

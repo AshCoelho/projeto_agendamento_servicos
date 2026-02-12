@@ -56,7 +56,7 @@ router.beforeEach((to, from, next) => {
 
 
   if (to.meta.requiredPerfil && usuario.perfil !== to.meta.requiredPerfil) {
-    return next({ name: 'atendente' }) 
+    return next({ name: 'login' }) 
   }
 
 
