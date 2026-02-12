@@ -7,7 +7,7 @@ import ConfiguracaoView from '@/views/ConfiguracaoView.vue'
 const routes = [
   // 🔓 Rotas públicas
   { path: '/login', name: 'login', component: LoginView },
-  { path: '/tv', name: 'painel-tv', component: () => import('../views/PainelTvView.vue') },
+  {path: '/tv/:enderecoId', name: 'painel-tv', component: () => import('../views/PainelTvView.vue'), props: true},
 
   {
     path: '/atendente',

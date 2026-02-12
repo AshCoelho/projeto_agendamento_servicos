@@ -103,6 +103,14 @@
             <p class="text-[12px] font-bold text-gray-400 uppercase mb-1">Atendimentos Hoje</p>
             <h3 class="text-3xl font-black text-gray-800">{{ agendamentosPorSec.length }}</h3>
             <span class="inline-block w-8 h-1 bg-blue-grey-darken-4 rounded-full"></span>
+            <div class="flex gap-2 mt-2">
+              <span class="text-[11px] font-bold text-blue-500 uppercase">
+                {{ totalNormal }} Normal
+              </span>
+              <span class="text-[11px] font-bold text-orange-500 uppercase">
+                {{ totalPrioridade }} Prioridade
+              </span>
+            </div>
           </div>
           <div
             class="w-10 h-10 bg-gray-100 rounded-[10px] flex items-center justify-center text-gray"
@@ -121,14 +129,7 @@
             </h3>
             <span class="inline-block w-8 h-1 bg-amber-lighten-2 rounded-full"></span>
 
-            <div class="flex gap-2 mt-2">
-              <span class="text-[11px] font-bold text-blue-500 uppercase">
-                {{ totalNormal }} Normal
-              </span>
-              <span class="text-[11px] font-bold text-orange-500 uppercase">
-                {{ totalPrioridade }} Prioridade
-              </span>
-            </div>
+            
           </div>
 
           <div
@@ -162,9 +163,10 @@
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div
+              @click="handleChamarNormal"
               class="cursor-pointer bg-[#2563eb] hover:bg-[#1d4ed8] p-6 rounded-[15px] shadow-md flex justify-between items-center transition-all active:scale-95"
             >
-              <div @click="handleChamarNormal(usuario?.secretaria?.id || 1)">
+              <div>
                 <p class="text-[10px] font-bold text-white/70 uppercase mb-1 tracking-wider">
                   Ação
                 </p>
@@ -180,7 +182,7 @@
             <div
               class="cursor-pointer bg-[#FFA000] hover:bg-[#FF8F00] p-6 rounded-[15px] shadow-md flex justify-between items-center transition-all active:scale-95"
             >
-              <div @click="handleChamarPrioridade(usuario?.secretaria?.id || 1)">
+              <div @click="handleChamarPrioridade">
                 <p class="text-[10px] font-bold text-white/70 uppercase mb-1 tracking-wider">
                   Ação
                 </p>
@@ -236,7 +238,6 @@
               </button>
 
               <button
-              
                 @click="mudarAba('CANCELADOS')"
                 :class="
                   abaAtiva === 'CANCELADOS'
@@ -326,6 +327,7 @@
                         bg-color="transparent"
                         class=""
                         required
+                        readonly
                       >
                       </v-text-field>
                     </div>
@@ -453,7 +455,7 @@
                 <td class="px-6 text-xs font-bold text-gray-400">{{ item.horaAgendamento }}</td>
                 <td class="px-6 text-right pr-6 mt-6 flex gap-2 justify-end">
                   <v-btn
-                    v-if="item.situacao === 'AGENDADO'"
+                    v-if="['AGENDADO', 'EM_ATENDIMENTO'].includes(item.situacao)"
                     color="#2563eb"
                     size="small"
                     class="text-white text-[10px] font-black"
@@ -470,7 +472,7 @@
                     >Finalizar</v-btn
                   >
                   <v-btn
-                  v-if="abaAtiva === 'ATENDIMENTO' "
+                    v-if="abaAtiva === 'ATENDIMENTO'"
                     color="#e61919"
                     size="small"
                     class="text-white text-[10px] font-black"
@@ -553,6 +555,7 @@ export default {
       { title: 'Prioridade', value: 'PRIORIDADE' },
     ],
   }),
+
   watch: {
     mostrarModalEspontaneo(novoValor) {
       if (novoValor) {
@@ -631,6 +634,7 @@ export default {
           }
 
           this.abaAtiva = 'ATENDIMENTO'
+        
 
           await this.buscarAgendamentos()
         }
@@ -640,7 +644,7 @@ export default {
       }
     },
 
-    async handleChamarNormal() {
+   async handleChamarNormal() {
       try {
         if (!this.usuario?.id) await this.getUsuarioLogado()
 
@@ -753,6 +757,7 @@ export default {
           console.error('ID da secretaria não encontrado no usuário logado.')
           return
         }
+        console.log(secretariaId)
 
         const payload = {
           nomeCidadao: this.novoAgendamento.nomeCidadao,
@@ -832,13 +837,16 @@ export default {
         return { ...item, situacao: status, tipoAgendamento: tipoAg }
       })
 
-      // 2. Filtra de acordo com a aba ativa
       if (this.abaAtiva === 'AGUARDANDO') {
-        return listaNormalizada.filter((a) => a.situacao === 'AGENDADO')
+        return listaNormalizada.filter(
+          (a) => a.situacao === 'AGENDADO' && a.tipoAgendamento === 'AGENDADO',
+        )
       }
 
       if (this.abaAtiva === 'ESPONTANEO') {
-        return listaNormalizada.filter((a) => a.tipoAgendamento === 'ESPONTANEO')
+        return listaNormalizada.filter(
+          (a) => a.situacao === 'AGENDADO' && a.tipoAgendamento === 'ESPONTANEO',
+        )
       }
 
       if (this.abaAtiva === 'ATENDIMENTO') {
