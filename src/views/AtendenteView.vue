@@ -14,38 +14,48 @@
         ></i>
       </button>
 
-      <div class="flex items-center gap-2 mb-10 self-start px-6 overflow-hidden">
+      <div
+        :class="[sidebarAberta ? 'px-6' : 'px-0']"
+        class="flex items-center gap-2 mb-10 w-full transition-all duration-300 justify-center"
+      >
         <div
           class="min-w-[40px] w-10 h-10 bg-[#2563eb] rounded-[13px] flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-200"
         >
           SA
         </div>
-        <div v-if="sidebarAberta" class="leading-3 whitespace-nowrap">
-          <p class="text-[12px] font-medium text-[#1e3a8a] uppercase">Sistema de</p>
-          <p class="text-[12px] font-black text-[#1e3a8a] tracking-tighter uppercase">
+        <div v-if="sidebarAberta" class="flex flex-col justify-start mr-15 leading-tight">
+          <span class="text-[11px] font-medium text-blue-800 uppercase tracking-wide">
+            Sistema de
+          </span>
+
+          <span class="text-[14px] font-extrabold text-blue-900 uppercase tracking-tight">
             Agendamento
-          </p>
+          </span>
         </div>
       </div>
 
       <nav class="w-full px-4 space-y-2">
         <a
           href="#"
-          class="flex items-center gap-3 px-4 py-3 bg-[#2563eb] text-white rounded-[13px] shadow-xl shadow-blue-100"
+          :class="[sidebarAberta ? 'justify-start px-4' : 'justify-center px-0']"
+          class="flex items-center gap-3 py-3 bg-[#2563eb] text-white rounded-[13px] shadow-xl shadow-blue-100 transition-all duration-300"
         >
           <i class="pi pi-grid-view"></i>
           <span v-if="sidebarAberta" class="text-sm font-bold whitespace-nowrap">Painel</span>
         </a>
       </nav>
 
-      <div class="mt-auto w-full px-4 pb-4 overflow-hidden">
-        <div class="flex items-center gap-3 bg-gray-50 p-3 rounded-2xl mb-4 border border-gray-100">
+      <div class="mt-auto w-full px-4 pb-4">
+        <div
+          :class="[sidebarAberta ? 'p-3' : 'p-0 bg-transparent border-none shadow-none']"
+          class="flex items-center gap-3 bg-gray-50 rounded-2xl mb-4 border border-gray-100 transition-all duration-300 justify-center"
+        >
           <div
             class="min-w-[40px] w-10 h-10 bg-[#2563eb] rounded-full flex items-center justify-center text-white font-bold shadow-sm"
           >
             {{ usuario?.nome?.charAt(0).toUpperCase() || 'U' }}
           </div>
-          <div v-if="sidebarAberta" class="leading-tight whitespace-nowrap">
+          <div v-if="sidebarAberta" class="leading-tight whitespace-nowrap overflow-hidden">
             <p class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
               {{ usuario?.perfil || 'Atendente' }}
             </p>
@@ -54,9 +64,11 @@
             </p>
           </div>
         </div>
+
         <button
           @click="handleLogout"
-          class="flex items-center gap-2 text-red-500 font-bold text-xs uppercase tracking-tight px-2"
+          :class="[sidebarAberta ? 'justify-start px-2' : 'justify-center px-0']"
+          class="flex items-center gap-2 w-full text-red-500 font-bold text-xs uppercase tracking-tight transition-all duration-300"
         >
           <i class="pi pi-sign-out"></i>
           <span v-if="sidebarAberta">Sair</span>
@@ -128,8 +140,6 @@
               {{ agendamentosAguardando }}
             </h3>
             <span class="inline-block w-8 h-1 bg-amber-lighten-2 rounded-full"></span>
-
-            
           </div>
 
           <div
@@ -567,6 +577,7 @@ export default {
   },
 
   methods: {
+    
     handleEsc(event) {
       if (event.key === 'Escape') {
         this.mostrarModalEspontaneo = false
@@ -634,7 +645,6 @@ export default {
           }
 
           this.abaAtiva = 'ATENDIMENTO'
-        
 
           await this.buscarAgendamentos()
         }
@@ -644,7 +654,7 @@ export default {
       }
     },
 
-   async handleChamarNormal() {
+    async handleChamarNormal() {
       try {
         if (!this.usuario?.id) await this.getUsuarioLogado()
 
@@ -694,9 +704,7 @@ export default {
           return
         }
 
-        const { data } = await api.get('/gerenciador/usuario-logado', {
-          headers: { Authorization: `Bearer ${token}` },
-        })
+        const { data } = await api.get('/gerenciador/usuario-logado')
 
         this.usuario = data
         console.log('usuario-logado:', data)
@@ -893,7 +901,6 @@ export default {
     this.atualizarRelogioLocal()
     this.carregarServicos()
     setInterval(() => this.atualizarRelogioLocal(), 1000)
-
     this.enderecoEstatico = `${this.usuario?.endereco?.bairro}, ${this.usuario?.endereco?.logradouro}`
   },
 }
