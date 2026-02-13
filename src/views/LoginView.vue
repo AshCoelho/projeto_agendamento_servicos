@@ -2,6 +2,7 @@
   <div
     class="absolute top-0 left-0 w-full h-[4px] bg-gradient-to-r from-[#FFC107] via-[#f0d924] to-[#3da1d5] z-50"
   ></div>
+
   <div
     class="flex min-h-screen items-center justify-center bg-[#f1f5f9] font-sans relative overflow-hidden"
   >
@@ -12,11 +13,15 @@
       class="z-10 w-full max-w-md bg-white p-10 rounded-[32px] shadow-2xl shadow-blue-100 border border-gray-50"
     >
       <div class="flex flex-col items-center mb-8">
-        <img src="@/assets/logo-prefeitura.png" alt="Prefeitura de São Luís" class="h-14 mb-4" />
+        <img
+          src="@/assets/logo-prefeitura.png"
+          alt="Prefeitura de São Luís"
+          class="h-14 mb-4"
+        />
         <div class="h-1 w-12 bg-blue-600 rounded-full mb-6"></div>
 
         <h2
-          class="text-xl font-black text-[#1e3a8a] uppercase tracking-tighter flex items-center gap-2"
+          class="text-xl font-black text-[#1e3a8a] uppercase tracking-tighter"
         >
           Acesso ao <span class="text-blue-600">Sistema</span>
         </h2>
@@ -26,106 +31,57 @@
       </div>
 
       <form @submit.prevent="handleLogin" class="space-y-5">
+        <!-- LOGIN -->
         <div>
           <label
             class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1 tracking-widest"
-            >E-mail</label
           >
+            E-mail ou CPF
+          </label>
           <div class="relative">
-            <i
-              class="pi pi-user absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 text-sm"
-            ></i>
+            <i class="pi pi-user absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 text-sm"></i>
             <input
               v-model="login.login"
               type="text"
               placeholder="seu@email.com"
-              class="w-full bg-[#f8fafc] border border-gray-100 rounded-2xl py-3.5 pl-12 pr-4 text-xs font-semibold focus:ring-4 focus:ring-blue-50 focus:border-blue-300 transition-all outline-none"
+              class="w-full bg-[#f8fafc] border border-gray-100 rounded-2xl py-3.5 pl-12 pr-4 text-xs font-semibold focus:ring-4 focus:ring-blue-50 focus:border-blue-300 outline-none"
               required
             />
           </div>
         </div>
 
+        <!-- SENHA -->
         <div>
           <label
             class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1 tracking-widest"
-            >Senha</label
           >
+            Senha
+          </label>
           <div class="relative">
-            <i
-              class="pi pi-lock absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 text-sm"
-            ></i>
+            <i class="pi pi-lock absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 text-sm"></i>
 
             <input
               v-model="login.senha"
               :type="mostrarSenha ? 'text' : 'password'"
               placeholder="********"
-              class="w-full bg-[#f8fafc] border border-gray-100 rounded-2xl py-3.5 pl-12 pr-12 text-xs font-semibold focus:ring-4 focus:ring-blue-50 focus:border-blue-300 transition-all outline-none"
+              class="w-full bg-[#f8fafc] border border-gray-100 rounded-2xl py-3.5 pl-12 pr-12 text-xs font-semibold focus:ring-4 focus:ring-blue-50 focus:border-blue-300 outline-none"
               required
             />
 
             <button
               type="button"
               @click="mostrarSenha = !mostrarSenha"
-              class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 hover:text-blue-500 transition-colors focus:outline-none"
+              class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 hover:text-blue-500"
             >
               <i :class="['pi', mostrarSenha ? 'pi-eye-slash' : 'pi-eye']"></i>
             </button>
           </div>
         </div>
-        <div>
-          <label
-            class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1 tracking-widest"
-          >
-            Perfil
-          </label>
-          <div class="relative">
-            <i
-              class="pi pi-users absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 text-sm"
-            ></i>
 
-            <select
-              v-model="roleSelecionado"
-              @change="roleSelecionado === 'ATENDENTE' ? carregarGuichesDinamicos() : null"
-              class="w-full bg-[#f8fafc] border border-gray-100 rounded-2xl py-3.5 pl-12 pr-4 text-xs font-semibold focus:ring-4 focus:ring-blue-50 focus:border-blue-300 transition-all outline-none appearance-none cursor-pointer"
-            >
-              <option value="" disabled selected>Selecione seu perfil</option>
-              <option v-for="role in roles" :key="role.value" :value="role.value">
-                {{ role.title }}
-              </option>
-            </select>
-
-            <i
-              class="pi pi-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 text-[10px] pointer-events-none"
-            ></i>
-          </div>
-        </div>
-
-        <!-- <div v-if="roleSelecionado === 'ATENDENTE'" class="mt-4">
-          <label
-            class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1 tracking-widest"
-          >
-            Selecione seu Guichê
-          </label>
-          <div class="relative">
-            <i
-              class="pi pi-desktop absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 text-sm"
-            ></i>
-            <select v-model="guicheSelecionado" class="..." required>
-              <option value="" disabled selected>Selecione o guichê</option>
-              <option v-for="g in guichesDoBanco" :key="g.value" :value="g.value">
-                {{ g.title }}
-              </option>
-            </select>
-            <i
-              class="pi pi-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 text-[10px] pointer-events-none"
-            ></i>
-          </div>
-        </div> -->
-
-        <div class="flex items-center justify-between px-1">
-          <a href="#" class="text-[10px] font-bold text-blue-600 uppercase hover:underline"
-            >Esqueci a senha</a
-          >
+        <div class="flex justify-end px-1">
+          <a href="#" class="text-[10px] font-bold text-blue-600 uppercase hover:underline">
+            Esqueci a senha
+          </a>
         </div>
 
         <button
@@ -139,10 +95,10 @@
       </form>
 
       <div class="mt-10 text-center">
-        <p class="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">
+        <p class="text-[9px] font-bold text-gray-400 uppercase">
           © 2026 Prefeitura de São Luís
         </p>
-        <p class="text-[9px] font-black text-blue-700 uppercase tracking-tighter mt-1">
+        <p class="text-[9px] font-black text-blue-700 uppercase mt-1">
           Secretaria Municipal de Tecnologia da Informação
         </p>
       </div>
@@ -163,94 +119,51 @@ export default {
       },
       mostrarSenha: false,
       carregando: false,
-      roles: [
-        {
-          title: 'Administrador',
-          value: 'ADMINISTRADOR',
-        },
-        {
-          title: 'Atendente',
-          value: 'ATENDENTE',
-        },
-        {
-          title: 'Usuário',
-          value: 'USUARIO',
-        },
-      ],
-      roleSelecionado: '',
-      guicheDoBanco: [],
-      guicheSelecionado: '',
     }
-  },
-
-  watch: {
-    async roleSelecionado(novoPerfil) {
-      if (novoPerfil === 'ATENDENTE') {
-        // Nome da função deve ser igual ao definido nos methods
-        await this.carregarGuichesDinamicos()
-      }
-    },
   },
 
   methods: {
     async handleLogin() {
       this.carregando = true
       try {
-        const resposta = await api.post('/gerenciador/login', this.login)
+        const { data } = await api.post('/gerenciador/login', this.login)
 
-        if (resposta.status === 200) {
-          const usuario = resposta.data
-          localStorage.setItem('usuario', JSON.stringify(usuario))
+        if (!data?.token) {
+          throw new Error('Token não retornado no login')
+        }
 
-          const perfilFormatado = usuario.perfil ? usuario.perfil.toUpperCase() : ''
+        // ✅ sessão
+        localStorage.setItem('token', data.token)
+        localStorage.setItem('usuario', JSON.stringify(data))
 
-          switch (perfilFormatado) {
-            case 'ADMINISTRADOR':
-              this.$router.push('/administrador')
-              break
-            case 'ATENDENTE':
-              this.$router.push('/atendente')
-              break
-            case 'USUARIO':
-              this.$router.push('/agendamento')
-              break
-            default:
-              console.log('Perfil recebido do banco:', usuario.perfil)
-              alert('Perfil de acesso não reconhecido: ' + usuario.perfil)
-              this.$router.push('/')
-          }
+        const perfil = (data.perfil || '').toUpperCase()
+
+        
+        switch (perfil) {
+          case 'ADMINISTRADOR':
+            this.$router.push('/administrador')
+            break
+          case 'ATENDENTE':
+            this.$router.push('/atendente')
+            break
+          case 'USUARIO':
+            this.$router.push('/agendamento')
+            break
+          default:
+            alert('Perfil não reconhecido: ' + perfil)
+            this.$router.push('/')
         }
       } catch (error) {
-        console.error('Erro ao autenticar:', error)
-        alert('Credenciais inválidas ou erro no servidor.')
+        const msg =
+          error?.response?.data?.mensagem ||
+          error?.response?.data ||
+          'Login ou senha inválidos'
+
+        alert(msg)
+        localStorage.removeItem('token')
+        localStorage.removeItem('usuario')
       } finally {
         this.carregando = false
-      }
-    },
-
-    async carregarGuichesDinamicos() {
-      try {
-        // Chama a rota de listagem que já existe no seu Backend
-        const resposta = await api.get('/gerenciador')
-
-        if (resposta.status === 200) {
-          const todosUsuarios = resposta.data
-
-          // Filtra os guichês: remove nulos e números repetidos
-          const numerosUnicos = [
-            ...new Set(
-              todosUsuarios.map((u) => u.guiche).filter((g) => g !== null && g !== undefined),
-            ),
-          ].sort((a, b) => a - b)
-
-          // Formata para o seu <select>
-          this.guichesDoBanco = numerosUnicos.map((num) => ({
-            title: `Guichê ${String(num).padStart(2, '0')}`,
-            value: num,
-          }))
-        }
-      } catch (error) {
-        console.error('Erro ao buscar usuários para filtrar guichês:', error)
       }
     },
   },

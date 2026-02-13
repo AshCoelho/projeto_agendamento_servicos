@@ -16,6 +16,7 @@
       <div
         class="absolute top-0 left-0 w-full h-[4px] bg-gradient-to-r from-[#FFC107] via-[#f0d924] to-[#3da1d5] z-50"
       ></div>
+
       <div
         class="flex-[4] bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden relative"
       >
@@ -39,7 +40,7 @@
               >GUICHÊ</span
             >
             <h1 class="text-[14vw] leading-[0.8] font-black text-[#1A237E]">
-              {{ String(senhaAtual.guiche).padStart(2, '0') || '--' }}
+              {{ guicheFormatado }}
             </h1>
           </div>
         </div>
@@ -56,23 +57,23 @@
           <div
             v-for="(item, index) in historico.slice(0, 4)"
             :key="index"
-            class="flex-1 bg-white p-5 rounded-[25px] border-l-[8px] border-[#0056B3] flex justify-between items-center shadow-xl transition-all"
+            class="h-1/4 bg-white p-5 rounded-[25px] border-l-[8px] border-[#0056B3] flex justify-between items-center shadow-xl transition-all"
           >
             <div class="flex flex-col leading-none">
-              <span class="text-[13px] text-gray-400 font-bold uppercase mb-2 tracking-wider"
-                >Senha</span
-              >
+              <span class="text-[13px] text-gray-400 font-bold uppercase mb-2 tracking-wider">
+                Senha
+              </span>
               <span class="text-6xl font-black text-gray-700 tracking-tighter">
                 {{ item.numero }}
               </span>
             </div>
 
             <div class="flex flex-col text-right leading-none">
-              <span class="text-[13px] text-gray-400 font-bold uppercase mb-2 tracking-wider"
-                >Guichê</span
-              >
+              <span class="text-[13px] text-gray-400 font-bold uppercase mb-2 tracking-wider">
+                Guichê
+              </span>
               <span class="text-6xl font-black text-[#0056B3] tracking-tighter">
-                {{ String(item.guiche).padStart(2, '0') }}
+                {{ String(item.guiche ?? '01').padStart(2, '0') }}
               </span>
             </div>
           </div>
@@ -94,14 +95,7 @@
           <div
             class="bg-white p-2 rounded-2xl shadow-2xl border border-gray-100 flex flex-col items-center"
           >
-            <img
-              src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=SEMIT"
-              alt="QR"
-              class="w-20 h-20"
-            />
-            <span class="text-[10px] font-black text-gray-800 mt-1 tracking-widest uppercase">{{
-              sigla
-            }}</span>
+            <img :src="qrSrc" alt="QR" class="w-20 h-20" />
           </div>
         </div>
 
@@ -120,15 +114,42 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
-import api from '@/services/api'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import axios from 'axios'
+
+const route = useRoute()
+
+const enderecoId = computed(() => Number(route.params.enderecoId || 0))
+
+const apiPublico = axios.create({
+  baseURL: 'http://localhost:8080',
+  timeout: 8000,
+})
 
 const relogio = ref('')
 const audioPlayer = ref(null)
 const somAtivado = ref(false)
 
-const senhaAtual = ref({ numero: '---', guiche: '--', cidadao: 'Aguardando...' })
+const senhaAtual = ref({ numero: '---', guiche: null, cidadao: 'Aguardando...' })
 const historico = ref([])
+
+let intervalChamada = null
+let intervalRelogio = null
+
+const lastKey = ref(null)
+const fetching = ref(false)
+
+const qrSrc = computed(() => {
+  const data = encodeURIComponent(`ENDERECO:${enderecoId.value}`)
+  return `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${data}`
+})
+
+const guicheFormatado = computed(() => {
+  const g = senhaAtual.value?.guiche
+  if (g == null || g === '' || g === '--') return '--'
+  return String(g).padStart(2, '0')
+})
 
 const atualizarRelogio = () => {
   const agora = new Date()
@@ -139,70 +160,107 @@ const atualizarRelogio = () => {
   })
 }
 
+function extrairLista(payload) {
+  if (Array.isArray(payload)) return payload
+  if (Array.isArray(payload?.content)) return payload.content
+  if (Array.isArray(payload?.data)) return payload.data
+  if (Array.isArray(payload?.ultimasChamadas)) return payload.ultimasChamadas
+  return []
+}
+
+function pegarCampo(item, chaves) {
+  for (const k of chaves) {
+    if (item && item[k] != null && item[k] !== '') return item[k]
+  }
+  return null
+}
+
 const buscarChamadas = async () => {
+  if (!enderecoId.value) {
+    console.warn('enderecoId inválido na rota. Use /tv/1 por exemplo.')
+    return
+  }
+  if (fetching.value) return
+  fetching.value = true
+
   try {
-    const res = await api.get(`/agendamentos/ultimas-chamadas/SEMIT`)
+    const res = await apiPublico.get(
+      `/agendamentos/ultimas-chamadas/${enderecoId.value}?t=${Date.now()}`,
+      { headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' } },
+    )
 
-    if (res.status === 200 && res.data.length > 0) {
-      const novasChamadas = res.data
-      console.log(novasChamadas)
-      const ultima = novasChamadas[0]
+    const lista = extrairLista(res.data)
+    if (!lista.length) return
 
-      // Verifique se a senha realmente mudou para disparar a atualização
-      if (ultima.senha !== senhaAtual.value.numero) {
-        senhaAtual.value = {
-          numero: ultima.senha,
-          guiche: ultima.guiche || '01',
-          // Tente nomeCidadao ou usuarioNome dependendo do seu DTO
-          cidadao: ultima.nomeCidadao || ultima.usuarioNome || 'Cidadão', 
-        }
+    const ultima = lista[0]
 
-        falarChamada(senhaAtual.value.cidadao, ultima.senha, senhaAtual.value.guiche)
+    const senha =
+      pegarCampo(ultima, ['senha', 'numeroSenha', 'senhaAtual', 'nsenha', 'senha_agendamento']) ||
+      '---'
 
-        historico.value = novasChamadas.slice(1, 5).map((item) => ({
-          numero: item.senha,
-          guiche: item.guiche || '01',
-        }))
-      }
+    const guiche = pegarCampo(ultima, ['guiche', 'numeroGuiche', 'guicheNumero']) ?? null
+
+    const cidadao =
+      pegarCampo(ultima, [
+        'nomeCidadao',
+        'nome_cidadao',
+        'usuarioNome',
+        'nomeUsuario',
+        'cidadao',
+      ]) || 'Cidadão'
+
+    const horaChamada = pegarCampo(ultima, ['horaChamada', 'dataChamada', 'data_chamada'])
+    const agendamentoId = pegarCampo(ultima, ['agendamentoId', 'id'])
+    const key = String(agendamentoId ?? '') + '|' + String(horaChamada ?? '') + '|' + String(senha)
+
+    historico.value = lista.slice(0, 5).map((item) => ({
+      numero:
+        pegarCampo(item, ['senha', 'numeroSenha', 'senhaAtual', 'nsenha', 'senha_agendamento']) ||
+        '---',
+      guiche: pegarCampo(item, ['guiche', 'numeroGuiche', 'guicheNumero']) ?? null,
+      cidadao:
+        pegarCampo(item, [
+          'nomeCidadao',
+          'nome_cidadao',
+          'usuarioNome',
+          'nomeUsuario',
+          'cidadao',
+        ]) || 'Cidadão',
+    }))
+
+    const mudou = key !== lastKey.value
+    lastKey.value = key
+
+    senhaAtual.value = {
+      numero: String(senha),
+      guiche: guiche != null ? String(guiche) : null,
+      cidadao: String(cidadao),
+    }
+
+    if (mudou) {
+      falarChamada(senhaAtual.value.cidadao, senhaAtual.value.numero, guicheFormatado.value)
     }
   } catch (error) {
-    // Esse erro aparece no seu console
-    console.error('Servidor offline ou porta incorreta:', error)
+    console.error('Erro ao buscar chamadas:', error?.response?.data || error?.message || error)
+  } finally {
+    fetching.value = false
   }
 }
 
 const falarChamada = (nome, senha, guiche) => {
   if (!somAtivado.value) return
 
-  const mensagem = new SpeechSynthesisUtterance()
-  mensagem.text = `Senha ${senha}, ${nome}, comparecer ao guichê ${guiche}`
-  mensagem.lang = 'pt-BR'
-  mensagem.rate = 0.9
-  mensagem.pitch = 1
+  const msg = new SpeechSynthesisUtterance()
+  msg.text = `Senha ${senha}, ${nome}, comparecer ao guichê ${guiche}`
+  msg.lang = 'pt-BR'
+  msg.rate = 0.9
 
-  let repeticoes = 0
-  const totalRepeticoes = 2
-
-  // Função que gerencia a repetição
-  mensagem.onend = () => {
-    repeticoes++
-    if (repeticoes < totalRepeticoes) {
-      setTimeout(() => {
-        window.speechSynthesis.speak(mensagem)
-      }, 500)
-    }
-  }
-
-  // Toca o sino uma única vez antes de começar a falar
   if (audioPlayer.value) {
     audioPlayer.value.currentTime = 0
-    audioPlayer.value.play()
-
-    setTimeout(() => {
-      window.speechSynthesis.speak(mensagem)
-    }, 1200)
+    audioPlayer.value.play().catch(() => {})
+    setTimeout(() => window.speechSynthesis.speak(msg), 900)
   } else {
-    window.speechSynthesis.speak(mensagem)
+    window.speechSynthesis.speak(msg)
   }
 }
 
@@ -211,18 +269,24 @@ const ativarAudio = () => {
   audioPlayer.value?.play().catch(() => {})
 }
 
-let intervalChamada = null
-
-onMounted(() => {
+function start() {
+  stop()
   atualizarRelogio()
-  setInterval(atualizarRelogio, 1000)
+  intervalRelogio = setInterval(atualizarRelogio, 1000)
 
   buscarChamadas()
+  intervalChamada = setInterval(buscarChamadas, 1500)
+}
 
-  intervalChamada = setInterval(buscarChamadas, 3000)
-})
+function stop() {
+  if (intervalChamada) clearInterval(intervalChamada)
+  if (intervalRelogio) clearInterval(intervalRelogio)
+  intervalChamada = null
+  intervalRelogio = null
+}
 
-onUnmounted(() => {
-  clearInterval(intervalChamada)
-})
+onMounted(start)
+onUnmounted(stop)
+
+watch(enderecoId, () => start())
 </script>
