@@ -392,17 +392,6 @@
                   </form>
                 </div>
               </div>
-              <!-- <button
-                @click="mudarAba('ATENDIMENTO')"
-                :class="
-                  abaAtiva === 'ATENDIMENTO'
-                    ? 'bg-[#2563eb] text-white rounded-[10px] p-2 shadow-xl shadow-blue-100'
-                    : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
-                "
-                class="text-xs font-black border-b-2 pb-1 transition-all uppercase tracking-widest"
-              >
-                Em Atendimento
-              </button> -->
             </div>
             <div v-if="abaAtiva === 'ESPONTANEO'" class="flex justify-end mr-6">
               <button
@@ -462,7 +451,9 @@
                 <td class="px-6 text-[11px] font-black text-gray-400 uppercase">
                   {{ item.tipoAtendimento }}
                 </td>
-                <td class="px-6 text-xs font-bold text-gray-400">{{ item.horaAgendamento }}</td>
+                <td class="px-6 text-xs font-bold text-gray-400">
+                  {{ formatarDataHora(item.horaAgendamento) }}
+                </td>
                 <td class="px-6 text-right pr-6 mt-6 flex gap-2 justify-end">
                   <v-btn
                     v-if="['AGENDADO', 'EM_ATENDIMENTO'].includes(item.situacao)"
@@ -577,7 +568,19 @@ export default {
   },
 
   methods: {
-    
+    formatarDataHora(data) {
+      if (!data) return ''
+
+      return new Date(data).toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      })
+    },
+
     handleEsc(event) {
       if (event.key === 'Escape') {
         this.mostrarModalEspontaneo = false
@@ -601,12 +604,7 @@ export default {
           return
         }
 
-        // ✅ OPÇÃO A (se seu backend ficou assim):
-        // GET /agendamentos/enderecos/{enderecoId}
         const res = await api.get(`/agendamentos/enderecos/${enderecoId}`)
-
-        // ✅ OPÇÃO B (se você mudou pra secretaria + endereco):
-        // const res = await api.get(`/agendamentos/enderecos/${secretariaId}/${enderecoId}`)
 
         console.log('Agendamentos recebidos:', res.data)
 
@@ -800,9 +798,11 @@ export default {
       }
     },
 
-    async carregarServicos() {
+    async carregarServicos() { 
+      const secretariaId = this.usuario?.secretaria?.id
       try {
-        const res = await api.get('/agendamento/api/servico/listar-todos')
+
+        const res = await api.get(`/secretarias/${secretariaId}/servicos`)
         this.servicos = res.data
         console.log(this.servicos)
       } catch (e) {
