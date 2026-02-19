@@ -3,6 +3,7 @@ import AtendenteView from '../views/AtendenteView.vue'
 import LoginView from '../views/LoginView.vue'
 import AdministradorView from '@/views/AdministradorView.vue'
 import ConfiguracaoView from '@/views/ConfiguracaoView.vue'
+import ModalGuiche from '@/views/ModalGuiche.vue'
 
 const routes = [
   // 🔓 Rotas públicas
@@ -19,6 +20,13 @@ const routes = [
     path: '/configuracao',
     name: 'configuracao',
     component: ConfiguracaoView,
+    meta: { requiresAuth: true }
+  },
+
+  {
+    path: '/guiche',
+    name: 'guiche',
+    component: ModalGuiche,
     meta: { requiresAuth: true }
   },
 

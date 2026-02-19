@@ -392,6 +392,128 @@
                   </form>
                 </div>
               </div>
+
+              <div
+                v-if="mostrarModalEdicao"
+                class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+              >
+                <div class="bg-white w-full max-w-md rounded-[12px] p-8 shadow-2xl">
+                  <div class="d-flex align-center justify-space-between mb-6">
+                    <h2
+                      class="text-[#1e3a8a] text-lg font-black uppercase"
+                      style="line-height: 1; justify-content: center"
+                    >
+                      Edição de Senha Espontânea
+                    </h2>
+                    <v-btn
+                      @click="mostrarModalEdicao = false"
+                      icon
+                      size="small"
+                      class="bg-transparent elevation-0"
+                    >
+                      <v-icon> mdi-close </v-icon>
+                    </v-btn>
+                  </div>
+                  <form @submit.prevent="salvarEspontaneo" class="space-y-4">
+                    <div>
+                      <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1"
+                        >Nome do Cidadão</label
+                      >
+                      <v-text-field
+                        v-model="selectedItem.usuarioNome"
+                        type="text"
+                        rounded="12px"
+                        variant="solo"
+                        density="compact"
+                        class="w-full border-none text-xs font-bold ring-gray-500 focus:ring-gray-500"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1"
+                        >Secretaria</label
+                      >
+                      <v-text-field
+                        v-model="selectedItem.secretariaNome"
+                        density="compact"
+                        rounded="12px"
+                        variant="solo"
+                        bg-color="transparent"
+                        class=""
+                        required
+                        readonly
+                      >
+                      </v-text-field>
+                    </div>
+
+                    <div>
+                      <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1"
+                        >Endereço</label
+                      >
+                      <v-text-field
+                        v-model="enderecoEstatico"
+                        density="compact"
+                        rounded-2xl
+                        variant="solo"
+                        bg-color="transparent"
+                        class=""
+                        required
+                        readonly
+                      >
+                      </v-text-field>
+                    </div>
+
+                    <div>
+                      <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1"
+                        >Tipo de Atendimento</label
+                      >
+                      <v-select
+                        v-model="selectedItem.tipoAtendimento"
+                        :items="tiposAtendimento"
+                        item-title="title"
+                        item-value="value"
+                        density="compact"
+                        rounded-2xl
+                        variant="solo"
+                        bg-color="transparent"
+                        class=""
+                        required
+                      >
+                      </v-select>
+                    </div>
+
+                    <div>
+                      <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1"
+                        >Serviço</label
+                      >
+                      <v-select
+                        v-model="selectedItem.servicoNome"
+                        :items="servicos"
+                        item-title="nome"
+                        item-value="id"
+                        return-object
+                        density="compact"
+                        rounded-2xl
+                        variant="solo"
+                        bg-color="transparent"
+                        class=""
+                        required
+                      >
+                      </v-select>
+                    </div>
+                    <div>
+                      <v-btn
+                        color="primary"
+                        @click="atualizarEspontaneo"
+                        class="text-capitalize w-100"
+                      >
+                        Atualizar
+                      </v-btn>
+                    </div>
+                  </form>
+                </div>
+              </div>
               <!-- <button
                 @click="mudarAba('ATENDIMENTO')"
                 :class="
@@ -432,7 +554,7 @@
             <tbody class="divide-y divide-gray-50">
               <tr v-for="(item, index) in agendamentosPaginados" :key="index" class="group">
                 <td class="px-6 text-sm font-bold text-gray-500">
-                  <v-btn icon class="bg-transparent elevation-0">
+                  <v-btn icon class="bg-transparent elevation-0" @click="agendamentoSelecionado(item)">
                     <v-icon color="success"> mdi-pencil-outline </v-icon>
                   </v-btn>
                 </td>
@@ -542,6 +664,7 @@ export default {
   },
   data: () => ({
     enderecoEstatico: null,
+    selectedItem: null,
     usuario: null,
     sidebarAberta: true,
     fila: [],
@@ -552,6 +675,7 @@ export default {
     paginaAtual: 1,
     itensPorPagina: 3,
     idsChamadosManualmente: [],
+    mostrarModalEdicao: false,
     mostrarModalEspontaneo: false,
     novoAgendamento: {
       nomeCidadao: '',
@@ -577,6 +701,12 @@ export default {
   },
 
   methods: {
+
+    agendamentoSelecionado(item) {
+      this.selectedItem = item
+      console.log(this.selectedItem)
+      this.mostrarModalEdicao = true
+    },
     
     handleEsc(event) {
       if (event.key === 'Escape') {
