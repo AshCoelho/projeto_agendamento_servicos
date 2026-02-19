@@ -643,38 +643,35 @@
 </template>
 
 <script>
-import api from '@/services/api'
+import { AgendamentoService } from '@/services/agendamento.service'
+import { AtendenteApi } from '@/services/atendente.api'
 import StatsCards from '@/components/atendente/StatsCards.vue'
 import PainelComandos from '@/components/atendente/PainelComandos.vue'
 import 'primeicons/primeicons.css'
 
 export default {
-  components: {
-    StatsCards,
-    PainelComandos,
-  },
+  components: { StatsCards, PainelComandos },
+  
   data: () => ({
-    enderecoEstatico: null,
-    selectedItem: null,
-    usuario: null,
-    sidebarAberta: false,
-    fila: [],
-    agendamentosPorSec: [],
+    // UI/Controle
     abaAtiva: 'AGUARDANDO',
     relogio: '--:--:--',
-    filtroTexto: '',
     paginaAtual: 1,
     itensPorPagina: 3,
-    idsChamadosManualmente: [],
     mostrarModalEdicao: false,
     mostrarModalEspontaneo: false,
-    novoAgendamento: {
-      nomeCidadao: '',
-      servico: null,
-      tipoAtendimento: null,
-    },
+    sidebarAberta: false,
+    
+    // Dados
+    usuario: null,
+    enderecoEstatico: null,
+    agendamentosPorSec: [],
+    selectedItem: null,
+    idsChamadosManualmente: [],
     servicos: [],
-    secretarias: [],
+    
+    // Formulários
+    novoAgendamento: { nomeCidadao: '', servico: null, tipoAtendimento: 'NORMAL' },
     tiposAtendimento: [
       { title: 'Normal', value: 'NORMAL' },
       { title: 'Prioridade', value: 'PRIORIDADE' },
@@ -683,389 +680,156 @@ export default {
 
   watch: {
     mostrarModalEspontaneo(novoValor) {
-      if (novoValor) {
-        window.addEventListener('keydown', this.handleEsc)
-      } else {
-        window.removeEventListener('keydown', this.handleEsc)
-      }
+      const acao = novoValor ? 'addEventListener' : 'removeEventListener'
+      window[acao]('keydown', this.handleEsc)
     },
   },
 
+  computed: {
+    agendamentosFiltrados() {
+      return AgendamentoService.filtrarAgendamentos(
+        this.agendamentosPorSec, 
+        this.abaAtiva, 
+        this.idsChamadosManualmente
+      )
+    },
+
+    agendamentosPaginados() {
+      const inicio = (this.paginaAtual - 1) * this.itensPorPagina
+      return this.agendamentosFiltrados.slice(inicio, inicio + this.itensPorPagina)
+    },
+
+    totalPaginas() {
+      return Math.ceil(this.agendamentosFiltrados.length / this.itensPorPagina) || 1
+    },
+
+    // Totais para StatsCards
+    agendamentosAguardando() { return this.agendamentosPorSec.filter(a => a.situacao === 'AGENDADO').length },
+    agendamentosFinalizados() { return this.agendamentosPorSec.filter(a => a.situacao === 'ATENDIDO').length },
+    totalNormal() { return this.agendamentosPorSec.filter(a => a.tipoAtendimento === 'NORMAL').length },
+    totalPrioridade() { return this.agendamentosPorSec.filter(a => a.tipoAtendimento !== 'NORMAL').length }
+  },
+
   methods: {
-    agendamentoSelecionado(item) {
-      this.selectedItem = item
-      console.log(this.selectedItem)
-      this.mostrarModalEdicao = true
+    // --- Lógica de UI ---
+    mudarAba(novaAba) { this.abaAtiva = novaAba; this.paginaAtual = 1 },
+    handleEsc(e) { if (e.key === 'Escape') this.mostrarModalEspontaneo = false },
+    agendamentoSelecionado(item) { this.selectedItem = item; this.mostrarModalEdicao = true },
+    
+    atualizarRelogioLocal() {
+      this.relogio = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
     },
 
     formatarDataHora(data) {
       if (!data) return ''
-
-      return new Date(data).toLocaleString('pt-BR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      })
+      return new Date(data).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     },
 
-    handleEsc(event) {
-      if (event.key === 'Escape') {
-        this.mostrarModalEspontaneo = false
+    // --- Chamadas de API ---
+    async getUsuarioLogado() {
+      try {
+        const token = localStorage.getItem('token')
+        if (!token) return this.$router.push({ name: 'login' })
+        const { data } = await AtendenteApi.getUsuarioLogado()
+        this.usuario = data
+      } catch (error) {
+        localStorage.removeItem('token')
+        this.$router.push({ name: 'login' })
       }
-    },
-
-    mudarAba(novaAba) {
-      this.abaAtiva = novaAba
-      this.paginaAtual = 1
     },
 
     async buscarAgendamentos() {
       try {
         if (!this.usuario?.id) await this.getUsuarioLogado()
-
-        const enderecoId = this.usuario?.endereco?.id
-        const secretariaId = this.usuario?.secretaria?.id
-
-        if (!enderecoId) {
-          console.warn('Usuário logado não tem endereco.id')
-          return
-        }
-
-        const res = await api.get(`/agendamentos/enderecos/${enderecoId}`)
-
-        console.log('Agendamentos recebidos:', res.data)
-
-        if (Array.isArray(res.data)) {
-          this.agendamentosPorSec = res.data
-        } else {
-          this.agendamentosPorSec = []
-        }
-      } catch (e) {
-        console.error('Erro buscarAgendamentos:', e?.response?.data || e)
-      }
+        const id = this.usuario?.endereco?.id
+        if (id) this.agendamentosPorSec = await AtendenteApi.buscarAgendamentosPorEndereco(id)
+      } catch (e) { console.error(e) }
     },
 
     async handleChamar(senha) {
       try {
-        if (!this.usuario?.id) {
-          await this.getUsuarioLogado()
-        }
-
-        const gerenciadorId = this.usuario?.id
-        if (!gerenciadorId) {
-          alert('Usuário não carregado. Faça login novamente.')
-          return
-        }
-
-        const url = `/agendamentos/chamar/por-senha/${encodeURIComponent(senha)}/${gerenciadorId}`
-        console.log('POST:', url)
-
-        const res = await api.post(url)
-
+        const res = await AtendenteApi.chamarPorSenha(senha, this.usuario.id)
         if (res.status === 200) {
-          const item = this.agendamentosPorSec.find((a) => a.senha === senha)
-          if (item) {
-            this.idsChamadosManualmente.push(item.agendamentoId)
-            item.situacao = 'EM_ATENDIMENTO'
-          }
-
+          const item = this.agendamentosPorSec.find(a => a.senha === senha)
+          if (item) this.idsChamadosManualmente.push(item.agendamentoId || item.id)
           this.abaAtiva = 'ATENDIMENTO'
-
           await this.buscarAgendamentos()
         }
-      } catch (e) {
-        console.error('Erro ao chamar:', e?.response?.data || e)
-        alert(e?.response?.data?.mensagem || e?.response?.data || 'Falha na chamada.')
-      }
+      } catch (e) { alert(e?.response?.data?.mensagem || 'Falha na chamada.') }
     },
 
     async handleChamarNormal() {
       try {
-        if (!this.usuario?.id) await this.getUsuarioLogado()
-
-        const enderecoId = this.usuario?.endereco?.id
-        const gerenciadorId = this.usuario?.id
-
-        if (!enderecoId || !gerenciadorId) {
-          alert('Usuário incompleto: faltou enderecoId/gerenciadorId')
-          return
-        }
-
-        await api.post(`/agendamentos/chamar/normal/${enderecoId}/${gerenciadorId}`)
-      } catch (e) {
-        console.error('Erro chamar normal:', e?.response?.data || e)
-        alert(e?.response?.data?.mensagem || 'Falha ao chamar normal.')
-      } finally {
-        this.buscarAgendamentos()
-      }
+        await AtendenteApi.chamarNormal(this.usuario.endereco.id, this.usuario.id)
+      } finally { this.buscarAgendamentos() }
     },
 
     async handleChamarPrioridade() {
       try {
-        if (!this.usuario?.id) await this.getUsuarioLogado()
-
-        const enderecoId = this.usuario?.endereco?.id
-        const gerenciadorId = this.usuario?.id
-
-        if (!enderecoId || !gerenciadorId) {
-          alert('Usuário incompleto: faltou enderecoId/gerenciadorId')
-          return
-        }
-
-        await api.post(`/agendamentos/chamar/prioridade/${enderecoId}/${gerenciadorId}`)
-      } catch (e) {
-        console.error('Erro chamar prioridade:', e?.response?.data || e)
-        alert(e?.response?.data?.mensagem || 'Falha ao chamar prioridade.')
-      } finally {
-        this.buscarAgendamentos()
-      }
-    },
-
-    async getUsuarioLogado() {
-      try {
-        const token = localStorage.getItem('token')
-        if (!token) {
-          this.$router.push({ name: 'login' })
-          return
-        }
-
-        const { data } = await api.get('/gerenciador/usuario-logado')
-
-        this.usuario = data
-        console.log('usuario-logado:', data)
-      } catch (error) {
-        console.error('Erro ao buscar usuário logado', error)
-        localStorage.removeItem('token')
-        this.$router.push({ name: 'login' })
-      }
-    },
-    handleLogout() {
-      localStorage.clear()
-      this.$router.push({ name: 'login' })
+        await AtendenteApi.chamarPrioridade(this.usuario.endereco.id, this.usuario.id)
+      } finally { this.buscarAgendamentos() }
     },
 
     async handleCancelar(id) {
-      if (!confirm('Deseja realmente cancelar este atendimento?')) return
+      if (!confirm('Deseja realmente cancelar?')) return
       try {
-        const usuario_logado = JSON.parse(localStorage.getItem('usuario'))
-        await api.put(
-          `/agendamentos/cancelar/${id}`,
-          {},
-          {
-            headers: { Authorization: `Bearer ${usuario_logado.token}` },
-          },
-        )
-      } catch (e) {
-        alert('Não foi possível cancelar o atendimento.')
-      } finally {
-        this.buscarAgendamentos()
-      }
+        const user = JSON.parse(localStorage.getItem('usuario'))
+        await AtendenteApi.cancelarAtendimento(id, user.token)
+      } finally { this.buscarAgendamentos() }
     },
 
     async handleFinalizar(id) {
-      if (!confirm('Deseja finalizar este atendimento?')) return
-      try {
-        await api.put(`/agendamentos/finalizar/${id}`)
-      } catch (e) {
-        console.error(e)
-      } finally {
-        this.buscarAgendamentos()
-      }
-    },
-
-    atualizarRelogioLocal() {
-      const agora = new Date()
-      this.relogio = agora.toLocaleTimeString('pt-BR', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-      })
-    },
-    async atualizarEspontaneo() {
-      try {
-        if (!this.selectedItem?.agendamentoId) {
-          alert('ID do agendamento não encontrado.')
-          return
-        }
-
-        const idServico = this.selectedItem.servicoId || this.selectedItem.servico?.id
-
-        const payload = {
-          nomeCidadao: this.selectedItem.usuarioNome, 
-          servicoId: Number(idServico), 
-        }
-
-        console.log('Payload enviado para o DTO:', payload)
-        const token = localStorage.getItem('token')
-
-        const res = await api.put(
-          `/agendamentos/espontaneo/${this.selectedItem.agendamentoId}`,
-          payload,
-          { headers: { Authorization: `Bearer ${token}` } },
-        )
-
-        if (res.status === 200 || res.status === 204) {
-          this.mostrarModalEdicao = false
-          await this.buscarAgendamentos()
-          alert('Cadastro atualizado com sucesso!')
-        }
-      } catch (e) {
-        console.error('Erro ao atualizar:', e.response?.data || e)
-        const mensagem = e.response?.data?.mensagem || 'Erro de permissão (403) ou dados inválidos.'
-        alert(mensagem)
-      }
+      if (!confirm('Deseja finalizar?')) return
+      try { await AtendenteApi.finalizarAtendimento(id) }
+      finally { this.buscarAgendamentos() }
     },
 
     async salvarEspontaneo() {
       try {
-        const secretariaId = this.usuario?.secretaria?.id
-
-        if (!secretariaId) {
-          console.error('ID da secretaria não encontrado no usuário logado.')
-          return
+        const payload = { 
+          ...this.novoAgendamento, 
+          secretaria: this.usuario.secretaria, 
+          endereco: this.usuario.endereco, 
+          status: 'AGUARDANDO' 
         }
-        console.log(secretariaId)
+        await AtendenteApi.salvarEspontaneo(this.usuario.secretaria.id, payload)
+        this.mostrarModalEspontaneo = false
+        this.novoAgendamento = { nomeCidadao: '', servico: null, tipoAtendimento: 'NORMAL' }
+        await this.buscarAgendamentos()
+      } catch (e) { console.error(e) }
+    },
 
-        const payload = {
-          nomeCidadao: this.novoAgendamento.nomeCidadao,
-          servico: this.novoAgendamento.servico,
-          tipoAtendimento: this.novoAgendamento.tipoAtendimento,
-          secretaria: this.usuario?.secretaria,
-          endereco: this.usuario?.endereco,
-          status: 'AGUARDANDO',
-        }
-        console.log('O que estou enviando para o banco:', JSON.stringify(payload, null, 2))
-
-        const res = await api.post(`/agendamentos/espontaneo/${secretariaId}`, payload)
-
-        if (res.status === 201 || res.status === 200) {
-          this.mostrarModalEspontaneo = false
-
-          this.novoAgendamento = {
-            nomeCidadao: '',
-            servico: null,
-            tipoAtendimento: 'NORMAL',
-          }
-
-          await this.buscarAgendamentos()
-
-          console.log('Agendamento salvo com sucesso:', res.data)
-        }
-      } catch (e) {
-        if (e.response) {
-          console.error('Erro do Servidor:', e.response.data)
-        }
-        console.error('Erro na requisição:', e.message)
-      }
+    async atualizarEspontaneo() {
+      try {
+        const idServico = this.selectedItem.servicoId || this.selectedItem.servico?.id
+        const payload = { nomeCidadao: this.selectedItem.usuarioNome, servicoId: Number(idServico) }
+        const token = localStorage.getItem('token')
+        await AtendenteApi.atualizarEspontaneo(this.selectedItem.agendamentoId, payload, token)
+        this.mostrarModalEdicao = false
+        await this.buscarAgendamentos()
+      } catch (e) { alert('Erro ao atualizar.') }
     },
 
     async carregarServicos() {
-      const secretariaId = this.usuario?.secretaria?.id
       try {
-        const res = await api.get(`/secretarias/${secretariaId}/servicos`)
+        const res = await AtendenteApi.carregarServicos(this.usuario.secretaria.id)
         this.servicos = res.data
-        console.log(this.servicos)
-      } catch (e) {
-        console.error(e)
-      }
-    },
-  },
-
-  async carregarSecretarias() {
-    try {
-      const res = await api.get('/secretarias')
-      this.secretariasId = res.data
-      console.log('Secretarias carregadas:', this.secretariaId)
-    } catch (e) {
-      console.error('Erro ao carregar secretarias:', e)
-    }
-  },
-
-  computed: {
-    agendamentosAguardando() {
-      console.log()
-      return this.agendamentosPorSec.filter((a) => a.situacao === 'AGENDADO').length
+      } catch (e) { console.error(e) }
     },
 
-    agendamentosFinalizados() {
-      return this.agendamentosPorSec.filter((a) => a.situacao === 'ATENDIDO').length
-    },
-
-    agendamentosFiltrados() {
-      // 1. Normaliza a lista para evitar erros de undefined/null
-      let listaNormalizada = this.agendamentosPorSec.map((item) => {
-        const status = item.situacao ? item.situacao.toUpperCase() : 'AGENDADO'
-        const tipoAg = item.tipoAgendamento ? item.tipoAgendamento.toUpperCase() : 'NORMAL'
-        const id = item.agendamentoId || item.id // Tenta pegar o ID de duas formas
-
-        // Se o ID foi chamado manualmente, força o status para visualização
-        if (this.idsChamadosManualmente && this.idsChamadosManualmente.includes(id)) {
-          return { ...item, situacao: 'EM_ATENDIMENTO', tipoAgendamento: tipoAg }
-        }
-        return { ...item, situacao: status, tipoAgendamento: tipoAg }
-      })
-
-      if (this.abaAtiva === 'AGUARDANDO') {
-        return listaNormalizada.filter(
-          (a) => a.situacao === 'AGENDADO' && a.tipoAgendamento === 'AGENDADO',
-        )
-      }
-
-      if (this.abaAtiva === 'ESPONTANEO') {
-        return listaNormalizada.filter(
-          (a) => a.situacao === 'AGENDADO' && a.tipoAgendamento === 'ESPONTANEO',
-        )
-      }
-
-      if (this.abaAtiva === 'ATENDIMENTO') {
-        return listaNormalizada.filter((a) => ['EM_ATENDIMENTO', 'CHAMADO'].includes(a.situacao))
-      }
-
-      if (this.abaAtiva === 'CANCELADOS') {
-        return listaNormalizada.filter((a) => ['FALTOU'].includes(a.situacao))
-      }
-
-      if (this.abaAtiva === 'FINALIZADOS') {
-        return listaNormalizada.filter((a) => ['ATENDIDO'].includes(a.situacao))
-      }
-
-      return listaNormalizada
-    },
-
-    agendamentosPaginados() {
-      const inicio = (this.paginaAtual - 1) * this.itensPorPagina
-      const fim = inicio + this.itensPorPagina
-      return this.agendamentosFiltrados.slice(inicio, fim)
-    },
-
-    totalPaginas() {
-      const total = Math.ceil(this.agendamentosFiltrados.length / this.itensPorPagina)
-      return total > 0 ? total : 1
-    },
-
-    totalNormal() {
-      return this.agendamentosPorSec.filter((a) => a.tipoAtendimento === 'NORMAL').length
-    },
-    totalPrioridade() {
-      return this.agendamentosPorSec.filter((a) => a.tipoAtendimento !== 'NORMAL').length
-    },
+    handleLogout() { localStorage.clear(); this.$router.push({ name: 'login' }) }
   },
 
   async mounted() {
-    try {
-      await this.getUsuarioLogado()
-    } catch (e) {
-      console.error(e)
-    }
+    await this.getUsuarioLogado()
     this.buscarAgendamentos()
-    this.atualizarRelogioLocal()
     this.carregarServicos()
-    setInterval(() => this.atualizarRelogioLocal(), 1000)
-    this.enderecoEstatico = `${this.usuario?.endereco?.bairro}, ${this.usuario?.endereco?.logradouro}`
-  },
+    this.atualizarRelogioLocal()
+    setInterval(this.atualizarRelogioLocal, 1000)
+    if (this.usuario?.endereco) {
+      this.enderecoEstatico = `${this.usuario.endereco.bairro}, ${this.usuario.endereco.logradouro}`
+    }
+  }
 }
 </script>
 
