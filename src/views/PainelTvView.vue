@@ -250,19 +250,35 @@ const buscarChamadas = async () => {
 const falarChamada = (nome, senha, guiche) => {
   if (!somAtivado.value) return
 
-  const msg = new SpeechSynthesisUtterance()
-  msg.text = `Senha ${senha}, ${nome}, comparecer ao guichê ${guiche}`
-  msg.lang = 'pt-BR'
-  msg.rate = 0.9
+  const texto = `Senha ${senha}, ${nome}, comparecer ao guichê ${guiche}`
+
+  const falar = (vezesRestantes) => {
+    const msg = new SpeechSynthesisUtterance()
+    msg.text = texto
+    msg.lang = 'pt-BR'
+    msg.rate = 0.9
+
+    msg.onend = () => {
+      if (vezesRestantes > 1) {
+        falar(vezesRestantes - 1)
+      }
+    }
+
+    window.speechSynthesis.speak(msg)
+  }
 
   if (audioPlayer.value) {
     audioPlayer.value.currentTime = 0
     audioPlayer.value.play().catch(() => {})
-    setTimeout(() => window.speechSynthesis.speak(msg), 900)
+
+    setTimeout(() => {
+      falar(2) // 👈 repete 2 vezes
+    }, 900)
   } else {
-    window.speechSynthesis.speak(msg)
+    falar(2) // 👈 repete 2 vezes
   }
 }
+
 
 const ativarAudio = () => {
   somAtivado.value = true

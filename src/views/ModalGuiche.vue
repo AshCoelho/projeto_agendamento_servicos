@@ -25,7 +25,6 @@
       </div>
 
       <form @submit.prevent="updateGerenciador()" class="space-y-5">
-        <!-- LOGIN -->
         <div>
           <label
             class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1 tracking-widest"
@@ -47,8 +46,6 @@
             />
           </div>
         </div>
-
-        <!-- SENHA -->
 
         <button
           type="submit"

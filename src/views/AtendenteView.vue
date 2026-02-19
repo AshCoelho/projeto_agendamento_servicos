@@ -215,10 +215,10 @@
                 @click="mudarAba('AGUARDANDO')"
                 :class="
                   abaAtiva === 'AGUARDANDO'
-                    ? 'bg-[#2563eb] text-white rounded-[10px] p-2 shadow-xl shadow-blue-100'
+                    ? 'bg-[#2563eb] text-white rounded-[7px] p-1 shadow-blue-100'
                     : 'bg-transparent text-gray-400 hover:bg-gray-20 hover:text-gray-100'
                 "
-                class="text-xs font-black border-b-2 pb-1 transition-all uppercase tracking-widest"
+                class="text-xs font-black border-b-2 pb-1 uppercase tracking-widest"
               >
                 Aguardando
               </button>
@@ -227,10 +227,10 @@
                 @click="mudarAba('ESPONTANEO')"
                 :class="
                   abaAtiva === 'ESPONTANEO'
-                    ? 'bg-[#2563eb] text-white rounded-[10px] p-2 shadow-xl shadow-blue-100'
+                    ? 'bg-[#2563eb] text-white rounded-[7px] p-1 shadow-blue-100'
                     : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
                 "
-                class="text-xs font-black border-b-2 pb-1 transition-all uppercase tracking-widest"
+                class="text-xs font-black border-b-2 pb-1 uppercase tracking-widest"
               >
                 Atendimento Avulso
               </button>
@@ -239,10 +239,10 @@
                 @click="mudarAba('ATENDIMENTO')"
                 :class="
                   abaAtiva === 'ATENDIMENTO'
-                    ? 'bg-[#2563eb] text-white rounded-[10px] p-2 shadow-xl shadow-blue-100'
+                    ? 'bg-[#2563eb] text-white rounded-[7px] p-1 shadow-blue-100'
                     : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
                 "
-                class="text-xs font-black border-b-2 pb-1 transition-all uppercase tracking-widest"
+                class="text-xs font-black border-b-2 pb-1 uppercase tracking-widest"
               >
                 Em Atendimento
               </button>
@@ -251,10 +251,10 @@
                 @click="mudarAba('CANCELADOS')"
                 :class="
                   abaAtiva === 'CANCELADOS'
-                    ? 'bg-[#2563eb] text-white rounded-[10px] p-2 shadow-xl shadow-blue-100'
+                    ? 'bg-[#2563eb] text-white rounded-[7px] p-1 shadow-blue-100'
                     : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
                 "
-                class="text-xs font-black border-b-2 pb-1 transition-all uppercase tracking-widest"
+                class="text-xs font-black border-b-2 pb-1 uppercase tracking-widest"
               >
                 CANCELADOS
               </button>
@@ -263,10 +263,10 @@
                 @click="mudarAba('FINALIZADOS')"
                 :class="
                   abaAtiva === 'FINALIZADOS'
-                    ? 'bg-[#2563eb] text-white rounded-[10px] p-2 shadow-xl shadow-blue-100'
+                    ? 'bg-[#2563eb] text-white rounded-[7px] p-1 shadow-blue-100'
                     : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
                 "
-                class="text-xs font-black border-b-2 pb-1 transition-all uppercase tracking-widest"
+                class="text-xs font-black border-b-2 pb-1 uppercase tracking-widest"
               >
                 FINALIZADOS
               </button>
@@ -393,7 +393,6 @@
                 </div>
               </div>
 
-
               <div
                 v-if="mostrarModalEdicao"
                 class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm"
@@ -489,19 +488,15 @@
                         >Serviço</label
                       >
                       <v-select
-                        v-model="selectedItem.servicoNome"
+                        v-model="selectedItem.servicoId"
                         :items="servicos"
                         item-title="nome"
                         item-value="id"
-                        return-object
+                        label="Serviço"
                         density="compact"
-                        rounded-2xl
                         variant="solo"
-                        bg-color="transparent"
-                        class=""
                         required
-                      >
-                      </v-select>
+                      ></v-select>
                     </div>
                     <div>
                       <v-btn
@@ -515,19 +510,6 @@
                   </form>
                 </div>
               </div>
-              <!-- <button
-                @click="mudarAba('ATENDIMENTO')"
-                :class="
-                  abaAtiva === 'ATENDIMENTO'
-                    ? 'bg-[#2563eb] text-white rounded-[10px] p-2 shadow-xl shadow-blue-100'
-                    : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
-                "
-                class="text-xs font-black border-b-2 pb-1 transition-all uppercase tracking-widest"
-              >
-                Em Atendimento
-              </button> -->
-
-
             </div>
             <div v-if="abaAtiva === 'ESPONTANEO'" class="flex justify-end mr-6">
               <button
@@ -557,7 +539,11 @@
             <tbody class="divide-y divide-gray-50">
               <tr v-for="(item, index) in agendamentosPaginados" :key="index" class="group">
                 <td class="px-6 text-sm font-bold text-gray-500">
-                  <v-btn icon class="bg-transparent elevation-0" @click="agendamentoSelecionado(item)">
+                  <v-btn
+                    icon
+                    class="bg-transparent elevation-0"
+                    @click="agendamentoSelecionado(item)"
+                  >
                     <v-icon color="success"> mdi-pencil-outline </v-icon>
                   </v-btn>
                 </td>
@@ -671,7 +657,7 @@ export default {
     enderecoEstatico: null,
     selectedItem: null,
     usuario: null,
-    sidebarAberta: true,
+    sidebarAberta: false,
     fila: [],
     agendamentosPorSec: [],
     abaAtiva: 'AGUARDANDO',
@@ -706,15 +692,13 @@ export default {
   },
 
   methods: {
-
-
     agendamentoSelecionado(item) {
       this.selectedItem = item
       console.log(this.selectedItem)
       this.mostrarModalEdicao = true
     },
-    
-formatarDataHora(data) {
+
+    formatarDataHora(data) {
       if (!data) return ''
 
       return new Date(data).toLocaleString('pt-BR', {
@@ -726,7 +710,6 @@ formatarDataHora(data) {
         hour12: false,
       })
     },
-
 
     handleEsc(event) {
       if (event.key === 'Escape') {
@@ -901,6 +884,40 @@ formatarDataHora(data) {
         second: '2-digit',
       })
     },
+    async atualizarEspontaneo() {
+      try {
+        if (!this.selectedItem?.agendamentoId) {
+          alert('ID do agendamento não encontrado.')
+          return
+        }
+
+        const idServico = this.selectedItem.servicoId || this.selectedItem.servico?.id
+
+        const payload = {
+          nomeCidadao: this.selectedItem.usuarioNome, 
+          servicoId: Number(idServico), 
+        }
+
+        console.log('Payload enviado para o DTO:', payload)
+        const token = localStorage.getItem('token')
+
+        const res = await api.put(
+          `/agendamentos/espontaneo/${this.selectedItem.agendamentoId}`,
+          payload,
+          { headers: { Authorization: `Bearer ${token}` } },
+        )
+
+        if (res.status === 200 || res.status === 204) {
+          this.mostrarModalEdicao = false
+          await this.buscarAgendamentos()
+          alert('Cadastro atualizado com sucesso!')
+        }
+      } catch (e) {
+        console.error('Erro ao atualizar:', e.response?.data || e)
+        const mensagem = e.response?.data?.mensagem || 'Erro de permissão (403) ou dados inválidos.'
+        alert(mensagem)
+      }
+    },
 
     async salvarEspontaneo() {
       try {
@@ -945,10 +962,9 @@ formatarDataHora(data) {
       }
     },
 
-    async carregarServicos() { 
+    async carregarServicos() {
       const secretariaId = this.usuario?.secretaria?.id
       try {
-
         const res = await api.get(`/secretarias/${secretariaId}/servicos`)
         this.servicos = res.data
         console.log(this.servicos)

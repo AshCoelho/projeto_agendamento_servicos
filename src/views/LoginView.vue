@@ -132,13 +132,11 @@ export default {
           throw new Error('Token não retornado no login')
         }
 
-        // ✅ sessão
         localStorage.setItem('token', data.token)
         localStorage.setItem('usuario', JSON.stringify(data))
 
         const perfil = (data.perfil || '').toUpperCase()
 
-        
         switch (perfil) {
           case 'ADMINISTRADOR':
             this.$router.push('/administrador')
@@ -167,6 +165,7 @@ export default {
       }
     },
   },
+  
 }
 </script>
 

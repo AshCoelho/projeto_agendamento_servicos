@@ -7,7 +7,7 @@ import ModalGuiche from '@/views/ModalGuiche.vue'
 
 const routes = [
   // 🔓 Rotas públicas
-  { path: '/login', name: 'login', component: LoginView },
+  { path: '/', name: 'login', component: LoginView },
   {path: '/tv/:enderecoId', name: 'painel-tv', component: () => import('../views/PainelTvView.vue'), props: true},
 
   {
@@ -16,6 +16,7 @@ const routes = [
     component: AtendenteView,
     meta: { requiresAuth: true }
   },
+
   {
     path: '/configuracao',
     name: 'configuracao',
@@ -29,7 +30,6 @@ const routes = [
     component: ModalGuiche,
     meta: { requiresAuth: true }
   },
-
 
   {
     path: '/administrador',
@@ -47,7 +47,6 @@ const router = createRouter({
   routes
 })
 
-
 router.beforeEach((to, from, next) => {
   const usuarioStr = localStorage.getItem('usuario')
   const usuario = usuarioStr ? JSON.parse(usuarioStr) : null
@@ -57,22 +56,15 @@ router.beforeEach((to, from, next) => {
     return next()
   }
 
-
   if (!usuario) {
     return next({ name: 'login' })
   }
 
-
   if (to.meta.requiredPerfil && usuario.perfil !== to.meta.requiredPerfil) {
     return next({ name: 'login' }) 
   }
-
-
   next()
 })
-
-
-
 
 export default router;
 
