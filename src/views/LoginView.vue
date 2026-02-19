@@ -4,15 +4,15 @@
   ></div>
 
   <div
-    class="flex min-h-screen items-center justify-center bg-[#f1f5f9] font-sans relative overflow-hidden"
+    class="flex min-h-screen items-center justify-center bg-[#f1f5f9] font-sans relative overflow-hidden "
   >
-    <div class="absolute -top-24 -left-24 w-96 h-96 bg-blue-50 rounded-full opacity-50"></div>
-    <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-blue-50 rounded-full opacity-50"></div>
+    <div class="absolute -top-24 -left-24 w-96 h-96 bg-blue-50 rounded-full opacity-50 " ></div>
+    <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-blue-50 rounded-full opacity-50 "></div>
 
     <div
-      class="z-10 w-full max-w-md bg-white p-10 rounded-[32px] shadow-2xl shadow-blue-100 border border-gray-50"
+      class="z-10 w-full max-w-md bg-white p-10 rounded-[32px] shadow-2xl shadow-blue-100 border border-gray-50 "
     >
-      <div class="flex flex-col items-center mb-8">
+      <div class="flex flex-col items-center mb-8 ">
         <img
           src="@/assets/logo-prefeitura.png"
           alt="Prefeitura de São Luís"
@@ -144,7 +144,7 @@ export default {
             this.$router.push('/administrador')
             break
           case 'ATENDENTE':
-            this.$router.push('/atendente')
+            this.$router.push('/guiche')
             break
           case 'USUARIO':
             this.$router.push('/agendamento')
