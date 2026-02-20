@@ -113,7 +113,7 @@
         >
           <div>
             <p class="text-[12px] font-bold text-gray-400 uppercase mb-1">Atendimentos Hoje</p>
-            <h3 class="text-3xl font-black text-gray-800">{{ agendamentosPorSec.length }}</h3>
+            <h3 class="text-3xl font-black text-gray-800">{{ agendamentosPorSetor.length }}</h3>
             <span class="inline-block w-8 h-1 bg-blue-grey-darken-4 rounded-full"></span>
             <div class="flex gap-2 mt-2">
               <span class="text-[11px] font-bold text-blue-500 uppercase">
@@ -645,12 +645,9 @@
 <script>
 import { AgendamentoService } from '@/services/agendamento.service'
 import { AtendenteApi } from '@/services/atendente.api'
-import StatsCards from '@/components/atendente/StatsCards.vue'
-import PainelComandos from '@/components/atendente/PainelComandos.vue'
 import 'primeicons/primeicons.css'
 
 export default {
-  components: { StatsCards, PainelComandos },
   
   data: () => ({
     // UI/Controle
@@ -663,9 +660,10 @@ export default {
     sidebarAberta: false,
     
     // Dados
+    filtroTexto: '',
     usuario: null,
     enderecoEstatico: null,
-    agendamentosPorSec: [],
+    agendamentosPorSetor: [],
     selectedItem: null,
     idsChamadosManualmente: [],
     servicos: [],
@@ -688,7 +686,7 @@ export default {
   computed: {
     agendamentosFiltrados() {
       return AgendamentoService.filtrarAgendamentos(
-        this.agendamentosPorSec, 
+        this.agendamentosPorSetor, 
         this.abaAtiva, 
         this.idsChamadosManualmente
       )
@@ -704,10 +702,10 @@ export default {
     },
 
     // Totais para StatsCards
-    agendamentosAguardando() { return this.agendamentosPorSec.filter(a => a.situacao === 'AGENDADO').length },
-    agendamentosFinalizados() { return this.agendamentosPorSec.filter(a => a.situacao === 'ATENDIDO').length },
-    totalNormal() { return this.agendamentosPorSec.filter(a => a.tipoAtendimento === 'NORMAL').length },
-    totalPrioridade() { return this.agendamentosPorSec.filter(a => a.tipoAtendimento !== 'NORMAL').length }
+    agendamentosAguardando() { return this.agendamentosPorSetor.filter(a => a.situacao === 'AGENDADO').length },
+    agendamentosFinalizados() { return this.agendamentosPorSetor.filter(a => a.situacao === 'ATENDIDO').length },
+    totalNormal() { return this.agendamentosPorSetor.filter(a => a.tipoAtendimento === 'NORMAL').length },
+    totalPrioridade() { return this.agendamentosPorSetor.filter(a => a.tipoAtendimento !== 'NORMAL').length }
   },
 
   methods: {
@@ -744,7 +742,7 @@ export default {
         // ✅ CORRIGIDO: Agora pega o ID do setor
         const setorId = this.usuario?.setor?.id
         if (setorId) {
-          this.agendamentosPorSec = await AtendenteApi.buscarAgendamentosPorSetor(setorId)
+          this.agendamentosPorSetor = await AtendenteApi.buscarAgendamentosPorSetor(setorId)
         }
       } catch (e) { console.error("Erro ao buscar agendamentos:", e) }
     },
@@ -753,7 +751,7 @@ export default {
       try {
         const res = await AtendenteApi.chamarPorSenha(senha, this.usuario.id)
         if (res.status === 200) {
-          const item = this.agendamentosPorSec.find(a => a.senha === senha)
+          const item = this.agendamentosPorSetor.find(a => a.senha === senha)
           if (item) this.idsChamadosManualmente.push(item.agendamentoId || item.id)
           this.abaAtiva = 'ATENDIMENTO'
           await this.buscarAgendamentos()
@@ -792,7 +790,7 @@ export default {
         const payload = { 
           ...this.novoAgendamento, 
           secretaria: { id: this.usuario.secretaria.id }, 
-          setor: { id: this.usuario.setor.id }, // ✅ Alterado: Envia objeto setor
+          setor: { id: this.usuario.setor.id }, 
           status: 'AGUARDANDO' 
         }
         await AtendenteApi.salvarEspontaneo(this.usuario.secretaria.id, payload)

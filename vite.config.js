@@ -18,8 +18,8 @@ export default defineConfig({
   },
 
    server: {
-    host: '0.0.0.0',   // aceita conexões externas
-    port: 5173,        // pode manter padrão
+    host: '0.0.0.0',   
+    port: 5173,        
     strictPort: true
   }
 })

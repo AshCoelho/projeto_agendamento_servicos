@@ -25,6 +25,26 @@
       </div>
 
       <form @submit.prevent="updateGerenciador()" class="space-y-5">
+        
+        <div>
+          <label
+            class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1 tracking-widest"
+          >
+            Escolha a secretaria
+          </label>
+          <div class="relative d-flex">
+            <v-select
+              v-model="selectedSecretaria"
+              prepend-inner-icon="mdi-account-tie"
+              :items="secretarias"
+              item-title="title"
+              item-value="value"
+              variant="outlined"
+              density="compact"
+            />
+          </div>
+        </div>
+
         <div>
           <label
             class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1 tracking-widest"
@@ -32,9 +52,7 @@
             Escolha seu Guichê
           </label>
           <div class="relative d-flex">
-            <!-- <i
-              class="pi pi-desktop  absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 text-sm"
-            ></i> -->
+      
             <v-select
               v-model="selectedGuiche"
               prepend-inner-icon="mdi-monitor"
@@ -47,6 +65,7 @@
           </div>
         </div>
 
+      
         <button
           type="submit"
           :disabled="carregando"
@@ -73,7 +92,10 @@ import api from '@/services/api'
 export default {
   data: () => ({
     selectedGuiche: null,
+    selectedSecretaria: null,
     usuario: null,
+    secretarias: [],
+    servicos: [],
     guiches: [
       { title: 'Guichê 01', value: 1 },
       { title: 'Guichê 02', value: 2 },
@@ -82,28 +104,68 @@ export default {
       { title: 'Guichê 05', value: 5 },
     ],
   }),
+
   methods: {
     getUsuarioLogado() {
-        this.usuario = JSON.parse(localStorage.getItem('usuario'))
-        console.log(this.usuario)
+      this.usuario = JSON.parse(localStorage.getItem('usuario'))
     },
 
     async updateGerenciador() {
-        try {
-            const payload = {
-                guiche: this.selectedGuiche,
-            }
-            const response = await api.put(`/gerenciador/${this.usuario?.id}/guiche`, payload)
-            if(response.status === 200) {
-                this.$router.push('/atendente')
-            }
-        } catch(e) {
-            console.error(e)
+      try {
+        const payload = {
+          guiche: this.selectedGuiche,
+          secretariaId: this.selectedSecretaria
         }
+
+        const response = await api.put(
+          `/gerenciador/${this.usuario?.id}/guiche`,
+          payload
+        )
+
+        if (response.status === 200) {
+          this.$router.push('/atendente')
+        }
+      } catch (e) {
+        console.error(e)
+      }
+    },
+
+    async getSecretarias() {
+      try {
+        const response = await api.get('/secretarias/ativas-visiveis')
+
+        this.secretarias = response.data.map(sec => ({
+          title: sec.nome,
+          value: sec.id
+        }))
+      } catch (error) {
+        console.error('Erro ao buscar secretarias', error)
+      }
+    },
+
+    async getServicos(secretariaId) {
+      try {
+        const response = await api.get(
+          `/secretarias/${secretariaId}/servicos`
+        )
+        this.servicos = response.data
+      } catch (error) {
+        console.error(error)
+      }
     }
   },
+
   mounted() {
     this.getUsuarioLogado()
+    this.getSecretarias()
+  },
+
+  watch: {
+    selectedSecretaria(newValue) {
+      if (newValue) {
+        this.getServicos(newValue)
+      }
+    }
   }
 }
 </script>
