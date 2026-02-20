@@ -741,9 +741,12 @@ export default {
     async buscarAgendamentos() {
       try {
         if (!this.usuario?.id) await this.getUsuarioLogado()
-        const id = this.usuario?.endereco?.id
-        if (id) this.agendamentosPorSec = await AtendenteApi.buscarAgendamentosPorEndereco(id)
-      } catch (e) { console.error(e) }
+        // ✅ CORRIGIDO: Agora pega o ID do setor
+        const setorId = this.usuario?.setor?.id
+        if (setorId) {
+          this.agendamentosPorSec = await AtendenteApi.buscarAgendamentosPorSetor(setorId)
+        }
+      } catch (e) { console.error("Erro ao buscar agendamentos:", e) }
     },
 
     async handleChamar(senha) {
@@ -760,13 +763,13 @@ export default {
 
     async handleChamarNormal() {
       try {
-        await AtendenteApi.chamarNormal(this.usuario.endereco.id, this.usuario.id)
+        await AtendenteApi.chamarNormal(this.usuario.setor.id, this.usuario.id)
       } finally { this.buscarAgendamentos() }
     },
 
     async handleChamarPrioridade() {
       try {
-        await AtendenteApi.chamarPrioridade(this.usuario.endereco.id, this.usuario.id)
+        await AtendenteApi.chamarPrioridade(this.usuario.setor.id, this.usuario.id)
       } finally { this.buscarAgendamentos() }
     },
 
@@ -788,8 +791,8 @@ export default {
       try {
         const payload = { 
           ...this.novoAgendamento, 
-          secretaria: this.usuario.secretaria, 
-          endereco: this.usuario.endereco, 
+          secretaria: { id: this.usuario.secretaria.id }, 
+          setor: { id: this.usuario.setor.id }, // ✅ Alterado: Envia objeto setor
           status: 'AGUARDANDO' 
         }
         await AtendenteApi.salvarEspontaneo(this.usuario.secretaria.id, payload)
@@ -826,9 +829,13 @@ export default {
     this.carregarServicos()
     this.atualizarRelogioLocal()
     setInterval(this.atualizarRelogioLocal, 1000)
-    if (this.usuario?.endereco) {
-      this.enderecoEstatico = `${this.usuario.endereco.bairro}, ${this.usuario.endereco.logradouro}`
-    }
+    if (this.usuario?.setor?.endereco) {
+    const end = this.usuario.setor.endereco
+    this.enderecoEstatico = `${end.bairro || ''}, ${end.logradouro || ''}`
+  } else if (this.usuario?.setor) {
+    // Fallback caso você só queira mostrar o nome do setor
+    this.enderecoEstatico = `Setor: ${this.usuario.setor.nome}`
+  }
   }
 }
 </script>

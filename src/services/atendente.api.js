@@ -3,10 +3,10 @@ import api from '@/services/api'
 export const AtendenteApi = {
   // ✅ Alterado: Agora busca agendamentos por SETOR
   async buscarAgendamentosPorSetor(setorId) {
-    const res = await api.get(`/agendamentos/setor/${setorId}`)
+    // Certifique-se de que a URL no Backend é exatamente esta:
+    const res = await api.get(`/agendamentos/setor/${setorId}`) 
     return Array.isArray(res.data) ? res.data : []
   },
-
   async chamarPorSenha(senha, gerenciadorId) {
     return await api.post(`/agendamentos/chamar/por-senha/${encodeURIComponent(senha)}/${gerenciadorId}`)
   },
