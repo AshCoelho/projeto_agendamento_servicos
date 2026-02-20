@@ -41,6 +41,28 @@
               item-value="value"
               variant="outlined"
               density="compact"
+              placeholder="Selecione o órgão"
+            />
+          </div>
+        </div>
+
+        <div v-if="selectedSecretaria">
+          <label
+            class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1 tracking-widest"
+          >
+            Escolha o Setor / Unidade
+          </label>
+          <div class="relative d-flex">
+            <v-select
+              v-model="selectedSetor"
+              prepend-inner-icon="mdi-map-marker-radius"
+              :items="setores"
+              item-title="title"
+              item-value="value"
+              variant="outlined"
+              density="compact"
+              placeholder="Onde você irá atender?"
+              :loading="carregandoSetores"
             />
           </div>
         </div>
@@ -52,7 +74,6 @@
             Escolha seu Guichê
           </label>
           <div class="relative d-flex">
-      
             <v-select
               v-model="selectedGuiche"
               prepend-inner-icon="mdi-monitor"
@@ -61,18 +82,18 @@
               item-value="value"
               variant="outlined"
               density="compact"
+              placeholder="Número do guichê"
             />
           </div>
         </div>
 
-      
         <button
           type="submit"
-          :disabled="carregando"
+          :disabled="!selectedSetor || !selectedGuiche || carregando"
           class="w-full bg-gradient-to-r from-[#1d4ed8] to-[#2563eb] text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-blue-200 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-70"
         >
-          <span>Entrar no Sistema</span>
-          <!-- <i class="pi pi-spin pi-spinner text-sm"></i> -->
+          <span v-if="!carregando">Entrar no Sistema</span>
+          <v-progress-circular v-else indeterminate size="20" width="2" color="white" />
         </button>
       </form>
 
@@ -85,7 +106,6 @@
     </div>
   </div>
 </template>
-
 <script>
 import api from '@/services/api'
 
@@ -93,9 +113,10 @@ export default {
   data: () => ({
     selectedGuiche: null,
     selectedSecretaria: null,
+    selectedSetor: null,
     usuario: null,
     secretarias: [],
-    servicos: [],
+    setores: [], 
     guiches: [
       { title: 'Guichê 01', value: 1 },
       { title: 'Guichê 02', value: 2 },
@@ -107,14 +128,29 @@ export default {
 
   methods: {
     getUsuarioLogado() {
-      this.usuario = JSON.parse(localStorage.getItem('usuario'))
+      const userData = localStorage.getItem('usuario');
+      if (userData) {
+        this.usuario = JSON.parse(userData);
+      } else {
+        this.$router.push('/login');
+      }
     },
 
     async updateGerenciador() {
       try {
+        if (!this.selectedSetor || !this.selectedSecretaria || !this.selectedGuiche) {
+           alert("Por favor, selecione a secretaria, o setor e o guichê.");
+           return;
+        }
+
+        // Salva a escolha exata para o contexto da aplicação
+        localStorage.setItem('setorTrabalhoId', this.selectedSetor);
+        localStorage.setItem('secretariaTrabalhoId', this.selectedSecretaria);
+        localStorage.setItem('guicheTrabalho', this.selectedGuiche);
+
         const payload = {
           guiche: this.selectedGuiche,
-          secretariaId: this.selectedSecretaria
+          setorId: this.selectedSetor 
         }
 
         const response = await api.put(
@@ -126,44 +162,55 @@ export default {
           this.$router.push('/atendente')
         }
       } catch (e) {
-        console.error(e)
+        console.error("Erro ao atualizar guichê:", e);
+        alert(e.response?.data?.mensagem || "Erro ao salvar configurações");
       }
     },
 
-    async getSecretarias() {
-      try {
-        const response = await api.get('/secretarias/ativas-visiveis')
-
-        this.secretarias = response.data.map(sec => ({
+    preencherSecretarias() {
+      if (this.usuario && this.usuario.secretarias) {
+        this.secretarias = this.usuario.secretarias.map(sec => ({
           title: sec.nome,
           value: sec.id
-        }))
-      } catch (error) {
-        console.error('Erro ao buscar secretarias', error)
+        }));
       }
     },
 
-    async getServicos(secretariaId) {
-      try {
-        const response = await api.get(
-          `/secretarias/${secretariaId}/servicos`
-        )
-        this.servicos = response.data
-      } catch (error) {
-        console.error(error)
+    // ✅ FILTRO RESTRITO: Só mostra o setor se o secretariaId bater com a escolha
+    filtrarSetores(secretariaId) {
+      if (!this.usuario || !this.usuario.setores) {
+        this.setores = [];
+        return;
+      }
+
+      // Filtra apenas os setores que pertencem à secretaria selecionada no combo acima
+      this.setores = this.usuario.setores
+        .filter(s => s.secretariaId === secretariaId) 
+        .map(s => ({
+          title: s.nome,
+          value: s.id
+        }));
+      
+      // Se após o filtro a lista for vazia, significa que o usuário 
+      // não tem setores vinculados a essa secretaria específica.
+      if (this.setores.length === 0) {
+        console.warn("Usuário não possui setores vinculados a esta secretaria.");
       }
     }
   },
 
   mounted() {
     this.getUsuarioLogado()
-    this.getSecretarias()
+    this.preencherSecretarias() 
   },
 
   watch: {
     selectedSecretaria(newValue) {
+      this.selectedSetor = null; 
       if (newValue) {
-        this.getServicos(newValue)
+        this.filtrarSetores(newValue)
+      } else {
+        this.setores = [];
       }
     }
   }
