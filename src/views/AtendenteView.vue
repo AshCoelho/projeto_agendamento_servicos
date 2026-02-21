@@ -313,7 +313,7 @@
                         >Secretaria</label
                       >
                       <v-text-field
-                        v-model="usuario.secretaria.nome"
+                        :model-value="usuario?.secretarias?.find(s => s.id == secretariaTrabalhoId)?.nome || 'Não identificada'"
                         density="compact"
                         rounded="12px"
                         variant="solo"
@@ -370,7 +370,7 @@
                         :items="servicos"
                         item-title="nome"
                         item-value="id"
-                        return-object
+                        
                         density="compact"
                         rounded-2xl
                         variant="solo"
@@ -789,41 +789,41 @@ export default {
     },
 
     async salvarEspontaneo() {
-      try {
-        // 🔍 Validação simples antes de enviar
-        if (!this.novoAgendamento.nomeCidadao || !this.novoAgendamento.servico) {
-          alert("Preencha o nome e selecione o serviço.");
-          return;
-        }
+  try {
+    if (!this.novoAgendamento.nomeCidadao || !this.novoAgendamento.servico) {
+      alert("Preencha o nome e selecione o serviço.");
+      return;
+    }
 
-        const payload = { 
-          nomeCidadao: this.novoAgendamento.nomeCidadao,
-          tipoAtendimento: this.novoAgendamento.tipoAtendimento,
-          // Se o seu v-select de serviço retorna o ID diretamente:
-          servicoId: this.novoAgendamento.servico, 
-          // Se o seu v-select retorna o objeto, use: this.novoAgendamento.servico.id
-          
-          secretariaId: this.secretariaTrabalhoId,
-          setorId: this.setorTrabalhoId,
-          situacao: 'AGENDADO' // Certifique-se que o nome da constante bate com o Java (AGENDADO/AGUARDANDO)
-        }
+    const payload = { 
+      nomeCidadao: this.novoAgendamento.nomeCidadao,
+      tipoAtendimento: this.novoAgendamento.tipoAtendimento,
+      // Garante que o ID seja enviado como número
+      servicoId: Number(this.novoAgendamento.servico),
+      secretariaId: Number(this.secretariaTrabalhoId),
+      setorId: Number(this.setorTrabalhoId),
+      // ⚠️ Dica: Verifique se no Java é 'AGENDADO' ou 'AGUARDANDO'
+      situacao: 'AGENDADO' 
+    }
 
-        console.log("Enviando payload:", payload);
+    console.log("Payload que será enviado:", payload);
 
-        await AtendenteApi.salvarEspontaneo(this.secretariaTrabalhoId, payload);
-        
-        this.mostrarModalEspontaneo = false;
-        this.novoAgendamento = { nomeCidadao: '', servico: null, tipoAtendimento: 'NORMAL' };
-        
-        // Recarrega a lista para mostrar o novo registro na aba AGUARDANDO
-        await this.buscarAgendamentos();
-        
-        alert("Atendimento registrado com sucesso!");
-      } catch (e) { 
-        console.error("Erro ao salvar espontâneo:", e);
-        alert(e.response?.data?.mensagem || "Erro ao salvar novo registro.");
-      }
-    },
+    // Passamos o secretariaTrabalhoId na URL e o payload no corpo
+    const res = await AtendenteApi.salvarEspontaneo(this.secretariaTrabalhoId, payload);
+    
+    if (res.status === 200 || res.status === 201) {
+      this.mostrarModalEspontaneo = false;
+      this.novoAgendamento = { nomeCidadao: '', servico: null, tipoAtendimento: 'NORMAL' };
+      
+      // Atualiza a lista local
+      await this.buscarAgendamentos();
+      alert("Atendimento registrado com sucesso!");
+    }
+  } catch (e) { 
+    console.error("Erro detalhado:", e.response?.data);
+    alert(e.response?.data?.mensagem || "Erro ao salvar novo registro.");
+  }
+},
 
     async carregarServicos() {
       try {
