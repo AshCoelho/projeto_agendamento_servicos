@@ -825,6 +825,17 @@ export default {
   }
 },
 
+async atualizarEspontaneo() {
+      try {
+        const idServico = this.selectedItem.servicoId || this.selectedItem.servico?.id
+        const payload = { nomeCidadao: this.selectedItem.usuarioNome, servicoId: Number(idServico) }
+        const token = localStorage.getItem('token')
+        await AtendenteApi.atualizarEspontaneo(this.selectedItem.agendamentoId, payload, token)
+        this.mostrarModalEdicao = false
+        await this.buscarAgendamentos()
+      } catch (e) { alert('Erro ao atualizar.') }
+    },
+
     async carregarServicos() {
       try {
         // ✅ Carrega serviços da secretaria selecionada
