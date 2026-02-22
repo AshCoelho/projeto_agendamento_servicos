@@ -120,7 +120,7 @@ import axios from 'axios'
 
 const route = useRoute()
 
-const enderecoId = computed(() => Number(route.params.enderecoId || 0))
+const setorId = computed(() => Number(route.params.setorId || 0))
 
 const apiPublico = axios.create({
   baseURL: 'http://localhost:8080',
@@ -141,7 +141,7 @@ const lastKey = ref(null)
 const fetching = ref(false)
 
 const qrSrc = computed(() => {
-  const data = encodeURIComponent(`ENDERECO:${enderecoId.value}`)
+  const data = encodeURIComponent(`ENDERECO:${setorId.value}`)
   return `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${data}`
 })
 
@@ -176,7 +176,7 @@ function pegarCampo(item, chaves) {
 }
 
 const buscarChamadas = async () => {
-  if (!enderecoId.value) {
+  if (!setorId.value) {
     console.warn('enderecoId inválido na rota. Use /tv/1 por exemplo.')
     return
   }
@@ -185,7 +185,7 @@ const buscarChamadas = async () => {
 
   try {
     const res = await apiPublico.get(
-      `/agendamentos/ultimas-chamadas/${enderecoId.value}?t=${Date.now()}`,
+      `/agendamentos/ultimas-chamadas/${setorId.value}?t=${Date.now()}`,
       { headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' } },
     )
 
@@ -304,5 +304,5 @@ function stop() {
 onMounted(start)
 onUnmounted(stop)
 
-watch(enderecoId, () => start())
+watch(setorId, () => start())
 </script>
