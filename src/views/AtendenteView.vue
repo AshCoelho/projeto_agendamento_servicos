@@ -661,8 +661,8 @@ export default {
     // Dados
     filtroTexto: '',
     usuario: null,
-    setorTrabalhoId: null,      // 🔴 ID do setor selecionado no login
-    secretariaTrabalhoId: null, // 🔴 ID da secretaria selecionada no login
+    setorTrabalhoId: null,      // ID do setor selecionado no login
+    secretariaTrabalhoId: null, // ID da secretaria selecionada no login
     enderecoEstatico: null,
     agendamentosPorSetor: [],
     selectedItem: null,
@@ -723,7 +723,7 @@ export default {
     async getUsuarioLogado() {
       try {
         const token = localStorage.getItem('token')
-        // 🔴 Recupera a seleção feita no Login/Seleção
+        //Recupera a seleção feita no Login/Seleção
         this.setorTrabalhoId = localStorage.getItem('setorTrabalhoId')
         this.secretariaTrabalhoId = localStorage.getItem('secretariaTrabalhoId')
 
@@ -743,7 +743,7 @@ export default {
       if (this.setorTrabalhoId) {
         const data = await AtendenteApi.buscarAgendamentosPorSetor(this.setorTrabalhoId)
         
-        // ✅ O segredo: [...data] cria um NOVO array. 
+        //O segredo: [...data] cria um NOVO array. 
         // Isso obriga o Vue a re-executar o "agendamentosFiltrados"
         this.agendamentosPorSetor = [...data]
         
@@ -769,14 +769,14 @@ export default {
 
     async handleChamarNormal() {
       try {
-        // ✅ Usa setorTrabalhoId
+        //Usa setorTrabalhoId
         await AtendenteApi.chamarNormal(this.setorTrabalhoId, this.usuario.id)
       } finally { this.buscarAgendamentos() }
     },
 
     async handleChamarPrioridade() {
       try {
-        // ✅ Usa setorTrabalhoId
+        //Usa setorTrabalhoId
         await AtendenteApi.chamarPrioridade(this.setorTrabalhoId, this.usuario.id)
       } finally { this.buscarAgendamentos() }
     },
@@ -809,7 +809,6 @@ export default {
         await AtendenteApi.finalizarAtendimento(id)
         
         // 2. Pequeno "delay" para garantir que o BD do servidor terminou o commit
-        // Especialmente útil se você estiver usando bases de dados com latência
         await new Promise(resolve => setTimeout(resolve, 200))
         
         // 3. Força a atualização da lista
@@ -836,7 +835,6 @@ export default {
       servicoId: Number(this.novoAgendamento.servico),
       secretariaId: Number(this.secretariaTrabalhoId),
       setorId: Number(this.setorTrabalhoId),
-      // ⚠️ Dica: Verifique se no Java é 'AGENDADO' ou 'AGUARDANDO'
       situacao: 'AGENDADO' 
     }
 
