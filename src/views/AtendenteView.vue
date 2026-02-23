@@ -805,18 +805,27 @@ export default {
     async handleFinalizar(id) {
       if (!confirm('Deseja finalizar?')) return
       try {
-        // 1. Aguarda a resposta positiva do servidor
+        // 1. Envia a finalização para o servidor
         await AtendenteApi.finalizarAtendimento(id)
         
-        // 2. Pequeno "delay" para garantir que o BD do servidor terminou o commit
-        await new Promise(resolve => setTimeout(resolve, 200))
+        // 🟢 O SEGREDO: Remove o ID da lista de chamados manuais.
+        // Se não remover, o "computed" do Vue acha que ele ainda está sendo chamado.
+        this.idsChamadosManualmente = this.idsChamadosManualmente.filter(itemId => itemId !== id)
+
+        // 2. Delay levemente maior (400ms) para o banco de dados processar o commit
+        await new Promise(resolve => setTimeout(resolve, 400))
         
-        // 3. Força a atualização da lista
+        // 3. Fecha o modal primeiro para melhorar a experiência do usuário (UX)
+        this.mostrarModalEdicao = false
+
+        // 4. Força a busca dos novos dados
         await this.buscarAgendamentos()
         
-        // 4. Se estiver em um modal, feche-o
-        this.mostrarModalEdicao = false
+        // 5. Opcional: Se quiser que ele vá direto para a aba de finalizados após concluir
+        // this.abaAtiva = 'FINALIZADO'
+
       } catch (e) {
+        console.error("Erro ao finalizar:", e)
         alert('Erro ao finalizar atendimento.')
       }
     },
