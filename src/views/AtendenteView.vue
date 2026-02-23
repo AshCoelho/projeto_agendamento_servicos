@@ -737,15 +737,22 @@ export default {
     },
 
     async buscarAgendamentos() {
-      try {
-        if (!this.usuario?.id) await this.getUsuarioLogado()
+    try {
+      if (!this.usuario?.id) await this.getUsuarioLogado()
+      
+      if (this.setorTrabalhoId) {
+        const data = await AtendenteApi.buscarAgendamentosPorSetor(this.setorTrabalhoId)
         
-        // ✅ Usa o ID do setor do localStorage
-        if (this.setorTrabalhoId) {
-          this.agendamentosPorSetor = await AtendenteApi.buscarAgendamentosPorSetor(this.setorTrabalhoId)
-        }
-      } catch (e) { console.error("Erro ao buscar agendamentos:", e) }
-    },
+        // ✅ O segredo: [...data] cria um NOVO array. 
+        // Isso obriga o Vue a re-executar o "agendamentosFiltrados"
+        this.agendamentosPorSetor = [...data]
+        
+        console.log("Lista sincronizada com o banco")
+      }
+    } catch (e) { 
+      console.error("Erro ao buscar agendamentos:", e) 
+    }
+  },
 
     async handleChamar(senha) {
       try {
@@ -778,11 +785,17 @@ export default {
       if (!confirm('Deseja realmente cancelar?')) return
       try {
         const token = localStorage.getItem('token')
+        
+        // 1. Aguarda a conclusão da API
         await AtendenteApi.cancelarAtendimento(id, token)
-        
-        await new Promise(resolve => setTimeout(resolve, 200))
+
+        // 2. ✅ REMOVE o ID da lista de chamados (importante para o filtro computed)
+        this.idsChamadosManualmente = this.idsChamadosManualmente.filter(itemId => itemId !== id)
+
+        // 3. Aguarda um fôlego para o banco e recarrega
+        await new Promise(resolve => setTimeout(resolve, 300))
         await this.buscarAgendamentos()
-        
+
         this.mostrarModalEdicao = false
       } catch (e) {
         alert('Erro ao cancelar.')
