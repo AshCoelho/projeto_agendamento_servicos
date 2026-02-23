@@ -779,13 +779,34 @@ export default {
       try {
         const token = localStorage.getItem('token')
         await AtendenteApi.cancelarAtendimento(id, token)
-      } finally { this.buscarAgendamentos() }
+        
+        await new Promise(resolve => setTimeout(resolve, 200))
+        await this.buscarAgendamentos()
+        
+        this.mostrarModalEdicao = false
+      } catch (e) {
+        alert('Erro ao cancelar.')
+      }
     },
 
     async handleFinalizar(id) {
       if (!confirm('Deseja finalizar?')) return
-      try { await AtendenteApi.finalizarAtendimento(id) }
-      finally { this.buscarAgendamentos() }
+      try {
+        // 1. Aguarda a resposta positiva do servidor
+        await AtendenteApi.finalizarAtendimento(id)
+        
+        // 2. Pequeno "delay" para garantir que o BD do servidor terminou o commit
+        // Especialmente útil se você estiver usando bases de dados com latência
+        await new Promise(resolve => setTimeout(resolve, 200))
+        
+        // 3. Força a atualização da lista
+        await this.buscarAgendamentos()
+        
+        // 4. Se estiver em um modal, feche-o
+        this.mostrarModalEdicao = false
+      } catch (e) {
+        alert('Erro ao finalizar atendimento.')
+      }
     },
 
     async salvarEspontaneo() {

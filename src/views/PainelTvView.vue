@@ -176,9 +176,10 @@ function pegarCampo(item, chaves) {
 }
 
 const buscarChamadas = async () => {
-  if (!setorId.value) {
-    console.warn('enderecoId inválido na rota. Use /tv/1 por exemplo.')
-    return
+  console.log("Buscando chamadas para o setor:", setorId.value);
+  if (!setorId.value || setorId.value === 0) {
+    console.warn('setorId inválido na rota.');
+    return;
   }
   if (fetching.value) return
   fetching.value = true
@@ -187,6 +188,7 @@ const buscarChamadas = async () => {
     const res = await apiPublico.get(
       `/agendamentos/ultimas-chamadas/${setorId.value}?t=${Date.now()}`,
       { headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' } },
+      
     )
 
     const lista = extrairLista(res.data)
@@ -304,5 +306,12 @@ function stop() {
 onMounted(start)
 onUnmounted(stop)
 
-watch(setorId, () => start())
+onMounted(() => {
+  if (route.params.setorId) {
+    setorId.value = Number(route.params.setorId)
+    start()
+  } else {
+    console.error("Nenhum setorId encontrado na URL")
+  }
+})
 </script>
