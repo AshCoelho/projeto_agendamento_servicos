@@ -117,13 +117,8 @@ export default {
     usuario: null,
     secretarias: [],
     setores: [], 
-    guiches: [
-      { title: 'Guichê 01', value: 1 },
-      { title: 'Guichê 02', value: 2 },
-      { title: 'Guichê 03', value: 3 },
-      { title: 'Guichê 04', value: 4 },
-      { title: 'Guichê 05', value: 5 },
-    ],
+    guiches: [], // 🟢 Agora começa vazio
+    carregandoGuiches: false
   }),
 
   methods: {
@@ -143,17 +138,17 @@ export default {
            return;
         }
 
-        // Salva a escolha exata para o contexto da aplicação
+        // 🟢 Guardar no localStorage para o contexto da aplicação
         localStorage.setItem('setorTrabalhoId', this.selectedSetor);
         localStorage.setItem('secretariaTrabalhoId', this.selectedSecretaria);
-        localStorage.setItem('guicheTrabalho', this.selectedGuiche);
+        localStorage.setItem('guicheTrabalho', this.selectedGuiche); // Aqui guarda o ID
 
         const payload = {
-          guiche: this.selectedGuiche,
-          setorId: this.selectedSetor 
+          guicheId: this.selectedGuiche // 🟢 Alterado para bater com o DTO do Java
         }
 
-        const response = await api.put(
+        // Endpoint que criamos no Service: atualizarGuiche(Long id, Long guicheId)
+        const response = await api.patch(
           `/gerenciador/${this.usuario?.id}/guiche`,
           payload
         )
@@ -169,32 +164,38 @@ export default {
 
     preencherSecretarias() {
       if (this.usuario && this.usuario.secretarias) {
-        this.secretarias = this.usuario.secretarias.map(sec => ({
-          title: sec.nome,
-          value: sec.id
-        }));
+        this.secretarias = this.usuario.secretarias
+          .map(sec => ({ title: sec.nome, value: sec.id }))
+          .sort((a, b) => a.title.localeCompare(b.title));
       }
     },
 
-    // ✅ FILTRO RESTRITO: Só mostra o setor se o secretariaId bater com a escolha
     filtrarSetores(secretariaId) {
       if (!this.usuario || !this.usuario.setores) {
         this.setores = [];
         return;
       }
-
-      // Filtra apenas os setores que pertencem à secretaria selecionada no combo acima
       this.setores = this.usuario.setores
         .filter(s => s.secretariaId === secretariaId) 
-        .map(s => ({
-          title: s.nome,
-          value: s.id
+        .map(s => ({ title: s.nome, value: s.id }))
+        .sort((a, b) => a.title.localeCompare(b.title));
+    },
+
+    // 🟢 NOVO MÉTODO: Busca guichês do banco por Setor
+    async buscarGuichesDoSetor(setorId) {
+      this.carregandoGuiches = true;
+      try {
+        // Você precisará criar esse endpoint no Java ou buscar de uma rota pública
+        const response = await api.get(`/guiches/setor/${setorId}`);
+        this.guiches = response.data.map(g => ({
+          title: `Guichê ${String(g.numero).padStart(2, '0')}`,
+          value: g.id // O value agora é o ID do banco
         }));
-      
-      // Se após o filtro a lista for vazia, significa que o usuário 
-      // não tem setores vinculados a essa secretaria específica.
-      if (this.setores.length === 0) {
-        console.warn("Usuário não possui setores vinculados a esta secretaria.");
+      } catch (e) {
+        console.error("Erro ao carregar guichês:", e);
+        this.guiches = [];
+      } finally {
+        this.carregandoGuiches = false;
       }
     }
   },
@@ -207,10 +208,20 @@ export default {
   watch: {
     selectedSecretaria(newValue) {
       this.selectedSetor = null; 
+      this.selectedGuiche = null;
       if (newValue) {
         this.filtrarSetores(newValue)
       } else {
         this.setores = [];
+      }
+    },
+    // 🟢 NOVO WATCHER: Quando mudar o setor, busca os guichês
+    selectedSetor(newValue) {
+      this.selectedGuiche = null;
+      if (newValue) {
+        this.buscarGuichesDoSetor(newValue);
+      } else {
+        this.guiches = [];
       }
     }
   }
