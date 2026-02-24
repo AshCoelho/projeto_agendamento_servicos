@@ -140,31 +140,26 @@ export default {
       this.carregando = true;
       try {
         const payload = { guicheId: this.selectedGuiche };
-
-        // 1. Envia para o servidor
         const response = await api.patch(`/gerenciador/${this.usuario?.id}/guiche`, payload);
 
-        // 2. Se o status for 200, SUCESSO!
-        // Não precisamos checar response.data.guiche, pois o banco já confirmou o salvamento.
-        if (response.status === 200 || response.status === 201) {
-          
-          // Atualizamos o LocalStorage com os valores que acabamos de usar
+        // SÓ REDIRECIONA SE: Status for 200 E o objeto retornado tiver o guichê (validação dupla)
+        if (response.status === 200 && response.data.guiche) {
           localStorage.setItem('guicheTrabalho', this.selectedGuiche);
           localStorage.setItem('setorTrabalhoId', this.selectedSetor);
           localStorage.setItem('secretariaTrabalhoId', this.selectedSecretaria);
 
-          // Redireciona para a tela de atendimento
           this.$router.push('/atendente');
+        } else {
+          // Se por um erro bizarro o Java retornou 200 mas guiche null
+          alert("⚠️ Erro de sincronização: O guichê não foi atribuído corretamente.");
         }
-      } catch (e) {
-        console.error('Erro ao atualizar:', e);
-        
-        // Pega a mensagem de erro do Java (ex: "Guichê já está sendo utilizado")
-        const msgServidor = e.response?.data?.mensagem || e.response?.data?.message || "Erro ao salvar guichê";
-        
-        alert("⚠️ BLOQUEIO: " + msgServidor);
 
-        // Limpa a seleção para o usuário tentar outro
+      } catch (e) {
+        console.error('Erro:', e);
+        const msgServidor = e.response?.data?.mensagem || "Guichê já ocupado por outro colega.";
+        alert("⚠️ BLOQUEIO: " + msgServidor);
+        
+        // Limpa para não deixar lixo
         this.selectedGuiche = null;
         localStorage.removeItem('guicheTrabalho');
       } finally {
