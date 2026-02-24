@@ -8,7 +8,7 @@ import ModalGuiche from '@/views/ModalGuiche.vue'
 const routes = [
   // 🔓 Rotas públicas
   { path: '/', name: 'login', component: LoginView },
-  {path: '/tv/:enderecoId', name: 'painel-tv', component: () => import('../views/PainelTvView.vue'), props: true},
+  {path: '/tv/:setorId', name: 'painel-tv', component: () => import('../views/PainelTvView.vue'), props: true},
 
   {
     path: '/atendente',

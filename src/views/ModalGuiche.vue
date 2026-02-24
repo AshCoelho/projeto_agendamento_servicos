@@ -29,12 +29,50 @@
           <label
             class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1 tracking-widest"
           >
+            Escolha a secretaria
+          </label>
+          <div class="relative d-flex">
+            <v-select
+              v-model="selectedSecretaria"
+              prepend-inner-icon="mdi-account-tie"
+              :items="secretarias"
+              item-title="title"
+              item-value="value"
+              variant="outlined"
+              density="compact"
+              placeholder="Selecione o órgão"
+            />
+          </div>
+        </div>
+
+        <div v-if="selectedSecretaria">
+          <label
+            class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1 tracking-widest"
+          >
+            Escolha o Setor / Unidade
+          </label>
+          <div class="relative d-flex">
+            <v-select
+              v-model="selectedSetor"
+              prepend-inner-icon="mdi-map-marker-radius"
+              :items="setores"
+              item-title="title"
+              item-value="value"
+              variant="outlined"
+              density="compact"
+              placeholder="Onde você irá atender?"
+              :loading="carregandoSetores"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label
+            class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1 tracking-widest"
+          >
             Escolha seu Guichê
           </label>
           <div class="relative d-flex">
-            <!-- <i
-              class="pi pi-desktop  absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 text-sm"
-            ></i> -->
             <v-select
               v-model="selectedGuiche"
               prepend-inner-icon="mdi-monitor"
@@ -43,17 +81,18 @@
               item-value="value"
               variant="outlined"
               density="compact"
+              placeholder="Número do guichê"
             />
           </div>
         </div>
 
         <button
           type="submit"
-          :disabled="carregando"
+          :disabled="!selectedSetor || !selectedGuiche || carregando"
           class="w-full bg-gradient-to-r from-[#1d4ed8] to-[#2563eb] text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-blue-200 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-70"
         >
-          <span>Entrar no Sistema</span>
-          <!-- <i class="pi pi-spin pi-spinner text-sm"></i> -->
+          <span v-if="!carregando">Entrar no Sistema</span>
+          <v-progress-circular v-else indeterminate size="20" width="2" color="white" />
         </button>
       </form>
 
@@ -66,44 +105,119 @@
     </div>
   </div>
 </template>
-
 <script>
 import api from '@/services/api'
 
 export default {
   data: () => ({
     selectedGuiche: null,
+    selectedSecretaria: null,
+    selectedSetor: null,
     usuario: null,
-    guiches: [
-      { title: 'Guichê 01', value: 1 },
-      { title: 'Guichê 02', value: 2 },
-      { title: 'Guichê 03', value: 3 },
-      { title: 'Guichê 04', value: 4 },
-      { title: 'Guichê 05', value: 5 },
-    ],
+    secretarias: [],
+    setores: [],
+    guiches: [],
+    carregandoGuiches: false,
   }),
+
   methods: {
     getUsuarioLogado() {
-        this.usuario = JSON.parse(localStorage.getItem('usuario'))
-        console.log(this.usuario)
+      const userData = localStorage.getItem('usuario')
+      if (userData) {
+        this.usuario = JSON.parse(userData)
+      } else {
+        this.$router.push('/login')
+      }
     },
 
     async updateGerenciador() {
-        try {
-            const payload = {
-                guiche: this.selectedGuiche,
-            }
-            const response = await api.put(`/gerenciador/${this.usuario?.id}/guiche`, payload)
-            if(response.status === 200) {
-                this.$router.push('/atendente')
-            }
-        } catch(e) {
-            console.error(e)
+      try {
+        if (!this.selectedSetor || !this.selectedSecretaria || !this.selectedGuiche) {
+          alert('Por favor, selecione a secretaria, o setor e o guichê.')
+          return
         }
-    }
+
+        localStorage.setItem('setorTrabalhoId', this.selectedSetor)
+        localStorage.setItem('secretariaTrabalhoId', this.selectedSecretaria)
+        localStorage.setItem('guicheTrabalho', this.selectedGuiche)
+
+        const payload = {
+          guicheId: this.selectedGuiche,
+        }
+
+        const response = await api.patch(`/gerenciador/${this.usuario?.id}/guiche`, payload)
+
+        if (response.status === 200) {
+          this.$router.push('/atendente')
+        }
+      } catch (e) {
+        console.error('Erro ao atualizar guichê:', e)
+        alert(e.response?.data?.mensagem || 'Erro ao salvar configurações')
+      }
+    },
+
+    preencherSecretarias() {
+      if (this.usuario && this.usuario.secretarias) {
+        this.secretarias = this.usuario.secretarias
+          .map((sec) => ({ title: sec.nome, value: sec.id }))
+          .sort((a, b) => a.title.localeCompare(b.title))
+      }
+    },
+
+    filtrarSetores(secretariaId) {
+      if (!this.usuario || !this.usuario.setores) {
+        this.setores = []
+        return
+      }
+      this.setores = this.usuario.setores
+        .filter((s) => s.secretariaId === secretariaId)
+        .map((s) => ({ title: s.nome, value: s.id }))
+        .sort((a, b) => a.title.localeCompare(b.title))
+    },
+
+    async buscarGuichesDoSetor(setorId) {
+      this.carregandoGuiches = true
+      try {
+        const response = await api.get(`/guiches/setor/${setorId}`)
+        this.guiches = response.data.map((g) => ({
+          title: `Guichê ${String(g.numero).padStart(2, '0')}`,
+          value: g.id,
+        }))
+      } catch (e) {
+        console.error('Erro ao carregar guichês:', e)
+        this.guiches = []
+      } finally {
+        this.carregandoGuiches = false
+      }
+    },
   },
+
   mounted() {
     this.getUsuarioLogado()
-  }
+    this.preencherSecretarias()
+  },
+
+  watch: {
+    selectedSecretaria(newValue) {
+      this.selectedSetor = null
+      this.selectedGuiche = null
+      if (newValue) {
+        this.filtrarSetores(newValue)
+      } else {
+        this.setores = []
+      }
+    },
+
+    selectedSetor(newValue) {
+      this.selectedGuiche = null
+      if (newValue) {
+        this.buscarGuichesDoSetor(newValue)
+      } else {
+        this.guiches = []
+      }
+    },
+  },
 }
 </script>
+
+<style scoped></style>
