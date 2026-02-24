@@ -132,6 +132,9 @@ export default {
     },
 
     async updateGerenciador() {
+
+      console.log("Valor de selectedGuiche:", this.selectedGuiche);
+  console.log("Tipo do valor:", typeof this.selectedGuiche);
       if (!this.selectedGuiche) {
         alert("Por favor, selecione um guichê.");
         return;
