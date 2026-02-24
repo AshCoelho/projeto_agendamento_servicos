@@ -132,33 +132,49 @@ export default {
     },
 
     async updateGerenciador() {
+      // Impede envio se não houver guichê selecionado
       if (!this.selectedGuiche) {
-          alert("Selecione um guichê válido.");
-          return;
+        alert("Por favor, escolha um guichê.");
+        return;
       }
 
       this.carregando = true;
       try {
-          const payload = { guicheId: this.selectedGuiche };
-          const response = await api.patch(`/gerenciador/${this.usuario?.id}/guiche`, payload);
+        const payload = {
+          guicheId: this.selectedGuiche,
+        };
 
-          // CHECAGEM DE SEGURANÇA: Só redireciona se o status for 200
-          if (response.status === 200) {
-              localStorage.setItem('guicheTrabalho', this.selectedGuiche);
-              localStorage.setItem('setorTrabalhoId', this.selectedSetor);
-              localStorage.setItem('secretariaTrabalhoId', this.selectedSecretaria);
-              
-              this.$router.push('/atendente');
-          }
+        // 1. Tenta atualizar no banco de dados
+        const response = await api.patch(`/gerenciador/${this.usuario?.id}/guiche`, payload);
+
+        // 2. Se o backend responder Sucesso (200)
+        // Verificamos se o retorno do banco realmente trouxe um guichê (garantia dupla)
+        if (response.status === 200 && response.data.guiche) {
+          localStorage.setItem('setorTrabalhoId', this.selectedSetor);
+          localStorage.setItem('secretariaTrabalhoId', this.selectedSecretaria);
+          localStorage.setItem('guicheTrabalho', this.selectedGuiche);
+
+          this.$router.push('/atendente');
+        } else if (response.status === 200 && !response.data.guiche) {
+            // Caso o Java tenha aceitado NULL mas o front exige guichê
+            alert("O guichê selecionado não foi processado corretamente.");
+        }
+
       } catch (e) {
-          const msg = e.response?.data?.mensagem || "Guichê ocupado por outro atendente!";
-          alert("⚠️ ATENÇÃO: " + msg);
-          
-          // RESET TOTAL EM CASO DE ERRO
-          this.selectedGuiche = null; 
-          localStorage.removeItem('guicheTrabalho');
+        console.error('Erro na operação:', e);
+        
+        // Captura a mensagem do throw new RuntimeException do Java
+        const msgServidor = e.response?.data?.mensagem || e.response?.data?.message || 'Erro ao salvar configurações';
+
+        // Exibe o alerta para o usuário
+        alert("⚠️ BLOQUEADO: " + msgServidor);
+
+        // Limpa apenas o guichê para forçar nova escolha, mas mantém Secretaria/Setor
+        this.selectedGuiche = null;
+        localStorage.removeItem('guicheTrabalho');
+        
       } finally {
-          this.carregando = false;
+        this.carregando = false;
       }
     },
 
