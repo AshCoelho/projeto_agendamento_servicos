@@ -132,47 +132,41 @@ export default {
     },
 
     async updateGerenciador() {
-      // Impede envio se não houver guichê selecionado
       if (!this.selectedGuiche) {
-        alert("Por favor, escolha um guichê.");
+        alert("Por favor, selecione um guichê.");
         return;
       }
 
       this.carregando = true;
       try {
-        const payload = {
-          guicheId: this.selectedGuiche,
-        };
+        const payload = { guicheId: this.selectedGuiche };
 
-        // 1. Tenta atualizar no banco de dados
+        // 1. Envia para o servidor
         const response = await api.patch(`/gerenciador/${this.usuario?.id}/guiche`, payload);
 
-        // 2. Se o backend responder Sucesso (200)
-        // Verificamos se o retorno do banco realmente trouxe um guichê (garantia dupla)
-        if (response.status === 200 && response.data.guiche) {
+        // 2. Se o status for 200, SUCESSO!
+        // Não precisamos checar response.data.guiche, pois o banco já confirmou o salvamento.
+        if (response.status === 200 || response.status === 201) {
+          
+          // Atualizamos o LocalStorage com os valores que acabamos de usar
+          localStorage.setItem('guicheTrabalho', this.selectedGuiche);
           localStorage.setItem('setorTrabalhoId', this.selectedSetor);
           localStorage.setItem('secretariaTrabalhoId', this.selectedSecretaria);
-          localStorage.setItem('guicheTrabalho', this.selectedGuiche);
 
+          // Redireciona para a tela de atendimento
           this.$router.push('/atendente');
-        } else if (response.status === 200 && !response.data.guiche) {
-            // Caso o Java tenha aceitado NULL mas o front exige guichê
-            alert("O guichê selecionado não foi processado corretamente.");
         }
-
       } catch (e) {
-        console.error('Erro na operação:', e);
+        console.error('Erro ao atualizar:', e);
         
-        // Captura a mensagem do throw new RuntimeException do Java
-        const msgServidor = e.response?.data?.mensagem || e.response?.data?.message || 'Erro ao salvar configurações';
+        // Pega a mensagem de erro do Java (ex: "Guichê já está sendo utilizado")
+        const msgServidor = e.response?.data?.mensagem || e.response?.data?.message || "Erro ao salvar guichê";
+        
+        alert("⚠️ BLOQUEIO: " + msgServidor);
 
-        // Exibe o alerta para o usuário
-        alert("⚠️ BLOQUEADO: " + msgServidor);
-
-        // Limpa apenas o guichê para forçar nova escolha, mas mantém Secretaria/Setor
+        // Limpa a seleção para o usuário tentar outro
         this.selectedGuiche = null;
         localStorage.removeItem('guicheTrabalho');
-        
       } finally {
         this.carregando = false;
       }
