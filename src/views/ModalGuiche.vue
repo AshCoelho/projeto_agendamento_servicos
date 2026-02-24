@@ -118,6 +118,7 @@ export default {
     setores: [],
     guiches: [],
     carregandoGuiches: false,
+    carregando: false,
   }),
 
   methods: {
@@ -131,42 +132,33 @@ export default {
     },
 
     async updateGerenciador() {
-      this.carregando = true; // Ativa o loading
-      try {
-        if (!this.selectedSetor || !this.selectedSecretaria || !this.selectedGuiche) {
-          alert('Por favor, selecione a secretaria, o setor e o guichê.');
+      if (!this.selectedGuiche) {
+          alert("Selecione um guichê válido.");
           return;
-        }
+      }
 
-        const payload = {
-          guicheId: this.selectedGuiche,
-        };
+      this.carregando = true;
+      try {
+          const payload = { guicheId: this.selectedGuiche };
+          const response = await api.patch(`/gerenciador/${this.usuario?.id}/guiche`, payload);
 
-        // 1. Tenta atualizar no banco de dados primeiro
-        const response = await api.patch(`/gerenciador/${this.usuario?.id}/guiche`, payload);
-
-        // 2. Se o backend responder Sucesso (200), então salvamos no navegador e redirecionamos
-        if (response.status === 200) {
-          localStorage.setItem('setorTrabalhoId', this.selectedSetor);
-          localStorage.setItem('secretariaTrabalhoId', this.selectedSecretaria);
-          localStorage.setItem('guicheTrabalho', this.selectedGuiche);
-
-          this.$router.push('/atendente');
-        }
+          // CHECAGEM DE SEGURANÇA: Só redireciona se o status for 200
+          if (response.status === 200) {
+              localStorage.setItem('guicheTrabalho', this.selectedGuiche);
+              localStorage.setItem('setorTrabalhoId', this.selectedSetor);
+              localStorage.setItem('secretariaTrabalhoId', this.selectedSecretaria);
+              
+              this.$router.push('/atendente');
+          }
       } catch (e) {
-        console.error('Erro ao atualizar guichê:', e);
-
-        // 3. Captura a mensagem de erro vinda do Java
-        // O Spring Boot geralmente coloca o erro em e.response.data.mensagem
-        const msgServidor = e.response?.data?.mensagem || e.response?.data?.message || 'Erro ao salvar configurações';
-
-        // 4. Exibe o alerta nativo do navegador
-        alert("⚠️ ATENÇÃO: " + msgServidor);
-
-        // Opcional: Reseta o guichê para o usuário escolher outro
-        this.selectedGuiche = null;
+          const msg = e.response?.data?.mensagem || "Guichê ocupado por outro atendente!";
+          alert("⚠️ ATENÇÃO: " + msg);
+          
+          // RESET TOTAL EM CASO DE ERRO
+          this.selectedGuiche = null; 
+          localStorage.removeItem('guicheTrabalho');
       } finally {
-        this.carregando = false;
+          this.carregando = false;
       }
     },
 
