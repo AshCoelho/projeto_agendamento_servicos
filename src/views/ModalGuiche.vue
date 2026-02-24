@@ -118,7 +118,6 @@ export default {
     setores: [],
     guiches: [],
     carregandoGuiches: false,
-    carregando: false,
   }),
 
   methods: {
@@ -132,37 +131,28 @@ export default {
     },
 
     async updateGerenciador() {
-
-      console.log("Valor de selectedGuiche:", this.selectedGuiche);
-  console.log("Tipo do valor:", typeof this.selectedGuiche);
-      if (!this.selectedGuiche) {
-        alert("Por favor, selecione um guichê.");
-        return;
-      }
-
-      this.carregando = true;
       try {
-        const payload = { guicheId: this.selectedGuiche };
-        const response = await api.patch(`/gerenciador/${this.usuario?.id}/guiche`, payload);
+        if (!this.selectedSetor || !this.selectedSecretaria || !this.selectedGuiche) {
+          alert('Por favor, selecione a secretaria, o setor e o guichê.')
+          return
+        }
 
-        // ✅ Se o status for 200, a trava do Java passou e o banco está atualizado.
+        localStorage.setItem('setorTrabalhoId', this.selectedSetor)
+        localStorage.setItem('secretariaTrabalhoId', this.selectedSecretaria)
+        localStorage.setItem('guicheTrabalho', this.selectedGuiche)
+
+        const payload = {
+          guicheId: this.selectedGuiche,
+        }
+
+        const response = await api.patch(`/gerenciador/${this.usuario?.id}/guiche`, payload)
+
         if (response.status === 200) {
-          localStorage.setItem('guicheTrabalho', this.selectedGuiche);
-          localStorage.setItem('setorTrabalhoId', this.selectedSetor);
-          localStorage.setItem('secretariaTrabalhoId', this.selectedSecretaria);
-
-          this.$router.push('/atendente');
+          this.$router.push('/atendente')
         }
       } catch (e) {
-        // ❌ Se cair aqui, o Java barrou (guichê ocupado ou erro de permissão)
-        console.error('Erro:', e);
-        const msg = e.response?.data?.mensagem || e.response?.data?.message || "Guichê já ocupado!";
-        alert("⚠️ BLOQUEIO: " + msg);
-        
-        this.selectedGuiche = null;
-        localStorage.removeItem('guicheTrabalho');
-      } finally {
-        this.carregando = false;
+        console.error('Erro ao atualizar guichê:', e)
+        alert(e.response?.data?.mensagem || 'Erro ao salvar configurações')
       }
     },
 
