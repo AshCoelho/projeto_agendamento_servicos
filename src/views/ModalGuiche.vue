@@ -142,24 +142,20 @@ export default {
         const payload = { guicheId: this.selectedGuiche };
         const response = await api.patch(`/gerenciador/${this.usuario?.id}/guiche`, payload);
 
-        // SÓ REDIRECIONA SE: Status for 200 E o objeto retornado tiver o guichê (validação dupla)
-        if (response.status === 200 && response.data.guiche) {
+        // ✅ Se o status for 200, a trava do Java passou e o banco está atualizado.
+        if (response.status === 200) {
           localStorage.setItem('guicheTrabalho', this.selectedGuiche);
           localStorage.setItem('setorTrabalhoId', this.selectedSetor);
           localStorage.setItem('secretariaTrabalhoId', this.selectedSecretaria);
 
           this.$router.push('/atendente');
-        } else {
-          // Se por um erro bizarro o Java retornou 200 mas guiche null
-          alert("⚠️ Erro de sincronização: O guichê não foi atribuído corretamente.");
         }
-
       } catch (e) {
+        // ❌ Se cair aqui, o Java barrou (guichê ocupado ou erro de permissão)
         console.error('Erro:', e);
-        const msgServidor = e.response?.data?.mensagem || "Guichê já ocupado por outro colega.";
-        alert("⚠️ BLOQUEIO: " + msgServidor);
+        const msg = e.response?.data?.mensagem || e.response?.data?.message || "Guichê já ocupado!";
+        alert("⚠️ BLOQUEIO: " + msg);
         
-        // Limpa para não deixar lixo
         this.selectedGuiche = null;
         localStorage.removeItem('guicheTrabalho');
       } finally {
