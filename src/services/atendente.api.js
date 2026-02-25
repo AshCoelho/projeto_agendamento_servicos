@@ -48,5 +48,11 @@ export const AtendenteApi = {
 
   async carregarServicos(secretariaId) {
     return await api.get(`/secretarias/${secretariaId}/servicos`)
+  },
+
+  async deslogarGuiche(gerenciadorId) {
+    // Adicionamos um log aqui para você ver se o método é chamado
+    console.log("API: Chamando logout-guiche para ID", gerenciadorId);
+    return await api.post(`/gerenciador/${gerenciadorId}/logout-guiche`);
   }
 }
