@@ -107,7 +107,7 @@
         </div>
       </header>
 
-      <div class="px-8 grid grid-cols-3 gap-6 mb-5">
+      <div class="px-8 grid grid-cols-4 gap-6 mb-5">
         <div
           class="bg-white p-6 rounded-[15px] shadow-sm flex justify-between items-start border-b-4 border-transparent"
         >
@@ -163,6 +163,21 @@
             <i class="pi pi-verified"></i>
           </div>
         </div>
+
+        <div
+          class="bg-white p-6 rounded-[15px] shadow-sm flex justify-between items-start border-b-4 border-transparent"
+        >
+          <div>
+            <p class="text-[12px] font-bold text-gray-400 uppercase mb-1">Cancelados</p>
+            <h3 class="text-3xl font-black text-gray-800">{{ agendamentosCancelados }}</h3>
+            <span class="inline-block w-8 h-1 bg-red-600 rounded-full"></span>
+          </div>
+          <div
+            class="w-10 h-10 bg-gray-100 rounded-[10px] flex items-center justify-center text-gray"
+          >
+            <i class="pi pi-times-circle"></i>
+          </div>
+        </div> 
       </div>
 
       <div class="px-8">
@@ -701,6 +716,9 @@ export default {
     },
     agendamentosAguardando() { return this.agendamentosPorSetor.filter(a => a.situacao === 'AGENDADO').length },
     agendamentosFinalizados() { return this.agendamentosPorSetor.filter(a => a.situacao === 'ATENDIDO').length },
+    agendamentosCancelados() {
+  return this.agendamentosPorSetor.filter((a) => a.situacao === 'FALTOU').length
+},
     totalNormal() { return this.agendamentosPorSetor.filter(a => a.tipoAtendimento === 'NORMAL').length },
     totalPrioridade() { return this.agendamentosPorSetor.filter(a => a.tipoAtendimento !== 'NORMAL').length }
   },
