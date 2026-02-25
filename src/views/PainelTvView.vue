@@ -149,7 +149,7 @@ const route = useRoute()
 const setorId = computed(() => Number(route.params.setorId || 0))
 
 const apiPublico = axios.create({
-  baseURL: 'http://192.168.100.21:8080',
+  baseURL: 'http://10.0.0.243:8080',
   timeout: 8000,
 })
 
