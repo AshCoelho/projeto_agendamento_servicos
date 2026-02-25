@@ -149,7 +149,7 @@ const route = useRoute()
 const setorId = computed(() => Number(route.params.setorId || 0))
 
 const apiPublico = axios.create({
-  baseURL: 'http://192.168.200.191:8080',
+  baseURL: 'http://192.168.100.21:8080',
   timeout: 8000,
 })
 
@@ -168,7 +168,7 @@ const fetching = ref(false)
 
 const qrSrc = computed(() => {
   // 1. Defina a base da sua URL pública
-  const urlPublica = `http://192.168.200.191:5173/tv/${setorId.value}`
+  const urlPublica = `http://192.168.100.21:5173/tv/${setorId.value}`
 
   // 2. Codifique a URL para que caracteres como '/' e ':' não quebrem o link
   const data = encodeURIComponent(urlPublica)

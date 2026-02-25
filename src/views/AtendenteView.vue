@@ -109,7 +109,7 @@
 
       <div class="px-8 grid grid-cols-3 gap-6 mb-5">
         <div
-          class="bg-white p-6 rounded-[15px] shadow-sm flex justify-between items-start border-b-4 border-transparent hover:border-[#9E9E9E] transition-all"
+          class="bg-white p-6 rounded-[15px] shadow-sm flex justify-between items-start border-b-4 border-transparent"
         >
           <div>
             <p class="text-[12px] font-bold text-gray-400 uppercase mb-1">Atendimentos Hoje</p>
@@ -132,7 +132,7 @@
         </div>
 
         <div
-          class="bg-white p-6 rounded-[15px] shadow-sm flex justify-between items-start border-b-4 border-transparent hover:border-[#FFD54F] transition-all"
+          class="bg-white p-6 rounded-[15px] shadow-sm flex justify-between items-start border-b-4 border-transparent"
         >
           <div>
             <p class="text-[12px] font-bold text-gray-400 uppercase mb-1">Pessoas na Fila</p>
@@ -150,7 +150,7 @@
         </div>
 
         <div
-          class="bg-white p-6 rounded-[15px] shadow-sm flex justify-between items-start border-b-4 border-transparent hover:border-[#4CAF50] transition-all"
+          class="bg-white p-6 rounded-[15px] shadow-sm flex justify-between items-start border-b-4 border-transparent"
         >
           <div>
             <p class="text-[12px] font-bold text-gray-400 uppercase mb-1">Finalizados</p>
