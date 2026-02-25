@@ -168,7 +168,7 @@ const fetching = ref(false)
 
 const qrSrc = computed(() => {
   // 1. Defina a base da sua URL pública
-  const urlPublica = `http://192.168.100.21:5173/tv/${setorId.value}`
+  const urlPublica = `http://10.0.0.243:5173/tv/${setorId.value}`
 
   // 2. Codifique a URL para que caracteres como '/' e ':' não quebrem o link
   const data = encodeURIComponent(urlPublica)

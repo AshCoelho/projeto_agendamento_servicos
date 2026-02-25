@@ -137,22 +137,25 @@ export default {
           return
         }
 
-        localStorage.setItem('setorTrabalhoId', this.selectedSetor)
-        localStorage.setItem('secretariaTrabalhoId', this.selectedSecretaria)
-        localStorage.setItem('guicheTrabalho', this.selectedGuiche)
-
-        const payload = {
-          guicheId: this.selectedGuiche,
-        }
+        const payload = { guicheId: this.selectedGuiche }
 
         const response = await api.patch(`/gerenciador/${this.usuario?.id}/guiche`, payload)
 
-        if (response.status === 200) {
-          this.$router.push('/atendente')
-        }
+        // Se chegou aqui, deu certo
+        localStorage.setItem('setorTrabalhoId', this.selectedSetor)
+        localStorage.setItem('secretariaTrabalhoId', this.selectedSecretaria)
+        localStorage.setItem('guicheTrabalho', this.selectedGuiche)
+        
+        this.$router.push('/atendente')
+
       } catch (e) {
         console.error('Erro ao atualizar guichê:', e)
-        alert(e.response?.data?.mensagem || 'Erro ao salvar configurações')
+        
+        // Captura a mensagem vinda do throw new RuntimeException do Java
+        // O caminho exato depende de como está seu ExceptionHandler no Spring
+        const mensagemErro = e.response?.data?.mensagem || e.response?.data || 'Erro ao salvar configurações'
+        
+        alert(mensagemErro) 
       }
     },
 
