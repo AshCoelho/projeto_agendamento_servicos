@@ -134,6 +134,7 @@ export default {
 
         localStorage.setItem('token', data.token)
         localStorage.setItem('usuario', JSON.stringify(data))
+        localStorage.setItem('usuarioId', data.id)
 
         const perfil = (data.perfil || '').toUpperCase()
 

@@ -719,20 +719,54 @@ export default {
       return new Date(data).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     },
 
-    // --- Chamadas de API ---
+    async handleLogout() {
+      // 1. Pegamos os dados ANTES de qualquer tentativa de limpeza
+      const token = localStorage.getItem('token');
+      const usuarioId = this.usuario?.id || localStorage.getItem('usuarioId');
+
+      console.log("Iniciando processo de saída para o usuário:", usuarioId);
+
+      try {
+        if (usuarioId && token) {
+          // 2. FORÇAMOS o await. O código vai PARAR aqui até o Java responder 200 OK.
+          // Se não tiver await, o router.push muda a página e mata a requisição no meio.
+          await AtendenteApi.deslogarGuiche(usuarioId);
+          console.log("Banco de dados atualizado: Guichê liberado.");
+        } else {
+          console.warn("Aviso: usuarioId ou token não encontrados para limpar guichê.");
+        }
+      } catch (error) {
+        // Se der erro (ex: token expirado), logamos mas não travamos o usuário na tela
+        console.error("Erro técnico ao deslogar guichê:", error.response?.data || error.message);
+      } finally {
+        // 3. AGORA SIM, com o banco resolvido, limpamos o resto
+        console.log("Limpando dados locais e redirecionando...");
+        localStorage.clear();
+        this.usuario = null;
+        this.$router.push({ name: 'login' });
+      }
+    },
+
     async getUsuarioLogado() {
       try {
-        const token = localStorage.getItem('token')
-        //Recupera a seleção feita no Login/Seleção
-        this.setorTrabalhoId = localStorage.getItem('setorTrabalhoId')
-        this.secretariaTrabalhoId = localStorage.getItem('secretariaTrabalhoId')
+        const token = localStorage.getItem('token');
+        this.setorTrabalhoId = localStorage.getItem('setorTrabalhoId');
+        this.secretariaTrabalhoId = localStorage.getItem('secretariaTrabalhoId');
 
-        if (!token || !this.setorTrabalhoId) return this.$router.push({ name: 'login' })
+        if (!token || !this.setorTrabalhoId) return this.$router.push({ name: 'login' });
 
-        const { data } = await AtendenteApi.getUsuarioLogado()
-        this.usuario = data
+        const { data } = await AtendenteApi.getUsuarioLogado();
+        this.usuario = data;
+        
+        // ✅ SALVE O ID NO STORAGE: Isso garante que o handleLogout tenha o ID 
+        // mesmo se o estado do Vue for resetado ou a página recarregada.
+        if (data.id) {
+            localStorage.setItem('usuarioId', data.id);
+        }
       } catch (error) {
-        this.handleLogout()
+        // Se falhar ao pegar o usuário, limpa tudo
+        localStorage.clear();
+        this.$router.push({ name: 'login' });
       }
     },
 
@@ -885,7 +919,7 @@ async atualizarEspontaneo() {
       } catch (e) { console.error(e) }
     },
 
-    handleLogout() { localStorage.clear(); this.$router.push({ name: 'login' }) }
+    //handleLogout() { localStorage.clear(); this.$router.push({ name: 'login' }) }
   },
 
   async mounted() {
