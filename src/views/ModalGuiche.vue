@@ -13,14 +13,9 @@
       class="z-10 w-full max-w-md bg-white p-10 rounded-[32px] shadow-2xl shadow-blue-100 border border-gray-50"
     >
       <div class="flex flex-col items-center mb-8">
-        <img src="@/assets/logo-prefeitura.png" alt="Prefeitura de São Luís" class="h-14 mb-4" />
         <div class="h-1 w-12 bg-blue-600 rounded-full mb-6"></div>
-
-        <h2 class="text-xl font-black text-[#1e3a8a] uppercase tracking-tighter">
-          Acesso ao <span class="text-blue-600">Sistema</span>
-        </h2>
-        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mt-1">
-          Agendamento de Serviços
+        <p class="text-center text-[12px] text-gray-700 font-bold uppercase tracking-[0.2em] mt-1">
+          INFORME A SECRETARIA, SETOR E GUICHÊ PARA CONTINUAR
         </p>
       </div>
 
@@ -91,7 +86,7 @@
           :disabled="!selectedSetor || !selectedGuiche || carregando"
           class="w-full bg-gradient-to-r from-[#1d4ed8] to-[#2563eb] text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-blue-200 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-70"
         >
-          <span v-if="!carregando">Entrar no Sistema</span>
+          <span v-if="!carregando">Entrar</span>
           <v-progress-circular v-else indeterminate size="20" width="2" color="white" />
         </button>
       </form>
@@ -145,17 +140,17 @@ export default {
         localStorage.setItem('setorTrabalhoId', this.selectedSetor)
         localStorage.setItem('secretariaTrabalhoId', this.selectedSecretaria)
         localStorage.setItem('guicheTrabalho', this.selectedGuiche)
-        
-        this.$router.push('/atendente')
 
+        this.$router.push('/atendente')
       } catch (e) {
         console.error('Erro ao atualizar guichê:', e)
-        
+
         // Captura a mensagem vinda do throw new RuntimeException do Java
         // O caminho exato depende de como está seu ExceptionHandler no Spring
-        const mensagemErro = e.response?.data?.mensagem || e.response?.data || 'Erro ao salvar configurações'
-        
-        alert(mensagemErro) 
+        const mensagemErro =
+          e.response?.data?.mensagem || e.response?.data || 'Erro ao salvar configurações'
+
+        alert(mensagemErro)
       }
     },
 

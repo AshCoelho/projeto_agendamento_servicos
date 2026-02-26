@@ -57,17 +57,37 @@
 
         <a
           href="#"
-          @click.prevent="menuAtivo = 'cadastro'"
-          :class="
-            menuAtivo === 'cadastro'
-              ? 'bg-[#2563eb] text-white shadow-xl shadow-blue-100'
-              : 'bg-transparent text-gray-500 hover:bg-gray-100'
-          "
-          class="flex items-center gap-3 px-4 py-3 rounded-[13px] transition-all"
+          @click.prevent="abrirCadastros = !abrirCadastros"
+          class="flex items-center justify-between px-4 py-3 rounded-[13px] transition-all hover:bg-gray-100"
         >
-          <i class="pi pi-plus-circle"></i>
-          <span class="text-sm font-bold">Cadastro de Serviços</span>
+          <div class="flex items-center gap-3">
+            <i class="pi pi-plus-circle"></i>
+            <span class="text-sm font-bold">Cadastros</span>
+          </div>
+
+          <!-- Ícone da seta -->
+          <i
+            class="pi pi-chevron-down transition-transform duration-300"
+            :class="{ 'rotate-180': abrirCadastros }"
+          ></i>
         </a>
+
+        <div v-if="abrirCadastros" class="ml-6 space-y-2 mt-2">
+          <a
+            v-for="item in cadastros"
+            :key="item.id"
+            href="#"
+            @click.prevent="menuAtivo = item.id"
+            :class="
+              menuAtivo === item.id
+                ? 'text-blue-600 font-bold'
+                : 'text-gray-600 hover:text-blue-600'
+            "
+            class="block text-sm transition-all"
+          >
+            {{ item.nome }}
+          </a>
+        </div>
       </nav>
 
       <div class="mt-auto w-full px-6 pb-4">
@@ -101,28 +121,6 @@
       >
         <div class="text-[13px] font-bold text-gray-400">
           Gestão / <span class="text-gray-900">Monitor Operacional</span>
-        </div>
-
-        <div class="relative w-1/3">
-          <i class="pi pi-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-300"></i>
-          <input
-            v-model="filtroTexto"
-            type="text"
-            placeholder="Localizar senha ou cidadão..."
-            class="w-full bg-[#f1f4f9] border-none rounded-full py-2.5 pl-12 text-xs placeholder-gray-400 focus:ring-1 outline-none"
-          />
-        </div>
-
-        <div class="flex items-center gap-8">
-          <div class="text-right">
-            <span class="text-[16px] text-sm font-bold">GUICHÊ: </span>
-            <span class="text-[16px] text-sm font-bold">
-              {{ usuario?.guiche || '--' }}
-            </span>
-          </div>
-          <div class="text-[#1e3a8a] text-[16px] text-sm font-bold">
-            {{ relogio }}
-          </div>
         </div>
       </header>
 
@@ -192,8 +190,6 @@
 import api from '@/services/api'
 import StatsCards from '@/components/atendente/StatsCards.vue'
 import PainelComandos from '@/components/atendente/PainelComandos.vue'
-
-
 import 'primeicons/primeicons.css'
 
 export default {
@@ -208,9 +204,18 @@ export default {
     abaAtiva: 'AGUARDANDO',
     relogio: '--:--:--',
     filtroTexto: '',
+    abrirCadastros: false,
     menuAtivo: 'painel',
+    cadastros: [
+      { id: 'cadastro-endereco', nome: 'Endereço' },
+      { id: 'cadastro-setor', nome: 'Setor' },
+      { id: 'cadastro-atendente', nome: 'Atendente' },
+    ],
   }),
   methods: {
+    async seleionarMenu(id) {
+      this.menuAtivo = id
+    },
     async buscarAgendamentos() {
       try {
         const resposta = await api.get('/agendamentos/secretaria/1')

@@ -177,7 +177,7 @@
           >
             <i class="pi pi-times-circle"></i>
           </div>
-        </div> 
+        </div>
       </div>
 
       <div class="px-8">
@@ -328,7 +328,10 @@
                         >Secretaria</label
                       >
                       <v-text-field
-                        :model-value="usuario?.secretarias?.find(s => s.id == secretariaTrabalhoId)?.nome || 'Não identificada'"
+                        :model-value="
+                          usuario?.secretarias?.find((s) => s.id == secretariaTrabalhoId)?.nome ||
+                          'Não identificada'
+                        "
                         density="compact"
                         rounded="12px"
                         variant="solo"
@@ -385,7 +388,6 @@
                         :items="servicos"
                         item-title="nome"
                         item-value="id"
-                        
                         density="compact"
                         rounded-2xl
                         variant="solo"
@@ -672,18 +674,18 @@ export default {
     mostrarModalEdicao: false,
     mostrarModalEspontaneo: false,
     sidebarAberta: false,
-    
+
     // Dados
     filtroTexto: '',
     usuario: null,
-    setorTrabalhoId: null,      // ID do setor selecionado no login
-    secretariaTrabalhoId: null, // ID da secretaria selecionada no login
+    setorTrabalhoId: null,
+    secretariaTrabalhoId: null,
     enderecoEstatico: null,
     agendamentosPorSetor: [],
     selectedItem: null,
     idsChamadosManualmente: [],
     servicos: [],
-    
+
     // Formulários
     novoAgendamento: { nomeCidadao: '', servico: null, tipoAtendimento: 'NORMAL' },
     tiposAtendimento: [
@@ -701,11 +703,24 @@ export default {
 
   computed: {
     agendamentosFiltrados() {
-      return AgendamentoService.filtrarAgendamentos(
-        this.agendamentosPorSetor, 
-        this.abaAtiva, 
-        this.idsChamadosManualmente
+      let lista = AgendamentoService.filtrarAgendamentos(
+        this.agendamentosPorSetor,
+        this.abaAtiva,
+        this.idsChamadosManualmente,
       )
+      if (this.filtroTexto && this.filtroTexto.trim() !== '') {
+        const termo = this.filtroTexto.toLowerCase()
+
+        lista = lista.filter((item) => {
+          // Verifica se o termo está na Senha ou no Nome do Usuário
+          const senha = item.senha ? item.senha.toLowerCase() : ''
+          const nome = item.usuarioNome ? item.usuarioNome.toLowerCase() : ''
+
+          return senha.includes(termo) || nome.includes(termo)
+        })
+      }
+
+      return lista
     },
     agendamentosPaginados() {
       const inicio = (this.paginaAtual - 1) * this.itensPorPagina
@@ -714,138 +729,170 @@ export default {
     totalPaginas() {
       return Math.ceil(this.agendamentosFiltrados.length / this.itensPorPagina) || 1
     },
-    agendamentosAguardando() { return this.agendamentosPorSetor.filter(a => a.situacao === 'AGENDADO').length },
-    agendamentosFinalizados() { return this.agendamentosPorSetor.filter(a => a.situacao === 'ATENDIDO').length },
+    agendamentosAguardando() {
+      return this.agendamentosPorSetor.filter((a) => a.situacao === 'AGENDADO').length
+    },
+    agendamentosFinalizados() {
+      return this.agendamentosPorSetor.filter((a) => a.situacao === 'ATENDIDO').length
+    },
     agendamentosCancelados() {
-  return this.agendamentosPorSetor.filter((a) => a.situacao === 'FALTOU').length
-},
-    totalNormal() { return this.agendamentosPorSetor.filter(a => a.tipoAtendimento === 'NORMAL').length },
-    totalPrioridade() { return this.agendamentosPorSetor.filter(a => a.tipoAtendimento !== 'NORMAL').length }
+      return this.agendamentosPorSetor.filter((a) => a.situacao === 'FALTOU').length
+    },
+    totalNormal() {
+      return this.agendamentosPorSetor.filter((a) => a.tipoAtendimento === 'NORMAL').length
+    },
+    totalPrioridade() {
+      return this.agendamentosPorSetor.filter((a) => a.tipoAtendimento !== 'NORMAL').length
+    },
   },
 
   methods: {
-    mudarAba(novaAba) { this.abaAtiva = novaAba; this.paginaAtual = 1 },
-    handleEsc(e) { if (e.key === 'Escape') this.mostrarModalEspontaneo = false },
-    agendamentoSelecionado(item) { this.selectedItem = item; this.mostrarModalEdicao = true },
-    
+    mudarAba(novaAba) {
+      this.abaAtiva = novaAba
+      this.paginaAtual = 1
+    },
+    handleEsc(e) {
+      if (e.key === 'Escape') this.mostrarModalEspontaneo = false
+    },
+    agendamentoSelecionado(item) {
+      this.selectedItem = item
+      this.mostrarModalEdicao = true
+    },
+
     atualizarRelogioLocal() {
-      this.relogio = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      this.relogio = new Date().toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      })
     },
 
     formatarDataHora(data) {
       if (!data) return ''
-      return new Date(data).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+      return new Date(data).toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
     },
 
     async handleLogout() {
       // 1. Pegamos os dados ANTES de qualquer tentativa de limpeza
-      const token = localStorage.getItem('token');
-      const usuarioId = this.usuario?.id || localStorage.getItem('usuarioId');
+      const token = localStorage.getItem('token')
+      const usuarioId = this.usuario?.id || localStorage.getItem('usuarioId')
 
-      console.log("Iniciando processo de saída para o usuário:", usuarioId);
+      console.log('Iniciando processo de saída para o usuário:', usuarioId)
 
       try {
         if (usuarioId && token) {
           // 2. FORÇAMOS o await. O código vai PARAR aqui até o Java responder 200 OK.
           // Se não tiver await, o router.push muda a página e mata a requisição no meio.
-          await AtendenteApi.deslogarGuiche(usuarioId);
-          console.log("Banco de dados atualizado: Guichê liberado.");
+          await AtendenteApi.deslogarGuiche(usuarioId)
+          console.log('Banco de dados atualizado: Guichê liberado.')
         } else {
-          console.warn("Aviso: usuarioId ou token não encontrados para limpar guichê.");
+          console.warn('Aviso: usuarioId ou token não encontrados para limpar guichê.')
         }
       } catch (error) {
         // Se der erro (ex: token expirado), logamos mas não travamos o usuário na tela
-        console.error("Erro técnico ao deslogar guichê:", error.response?.data || error.message);
+        console.error('Erro técnico ao deslogar guichê:', error.response?.data || error.message)
       } finally {
         // 3. AGORA SIM, com o banco resolvido, limpamos o resto
-        console.log("Limpando dados locais e redirecionando...");
-        localStorage.clear();
-        this.usuario = null;
-        this.$router.push({ name: 'login' });
+        console.log('Limpando dados locais e redirecionando...')
+        localStorage.clear()
+        this.usuario = null
+        this.$router.push({ name: 'login' })
       }
     },
 
     async getUsuarioLogado() {
       try {
-        const token = localStorage.getItem('token');
-        this.setorTrabalhoId = localStorage.getItem('setorTrabalhoId');
-        this.secretariaTrabalhoId = localStorage.getItem('secretariaTrabalhoId');
+        const token = localStorage.getItem('token')
+        this.setorTrabalhoId = localStorage.getItem('setorTrabalhoId')
+        this.secretariaTrabalhoId = localStorage.getItem('secretariaTrabalhoId')
 
-        if (!token || !this.setorTrabalhoId) return this.$router.push({ name: 'login' });
+        if (!token || !this.setorTrabalhoId) return this.$router.push({ name: 'login' })
 
-        const { data } = await AtendenteApi.getUsuarioLogado();
-        this.usuario = data;
-        
-        // ✅ SALVE O ID NO STORAGE: Isso garante que o handleLogout tenha o ID 
+        const { data } = await AtendenteApi.getUsuarioLogado()
+        this.usuario = data
+
+        // ✅ SALVE O ID NO STORAGE: Isso garante que o handleLogout tenha o ID
         // mesmo se o estado do Vue for resetado ou a página recarregada.
         if (data.id) {
-            localStorage.setItem('usuarioId', data.id);
+          localStorage.setItem('usuarioId', data.id)
         }
       } catch (error) {
         // Se falhar ao pegar o usuário, limpa tudo
-        localStorage.clear();
-        this.$router.push({ name: 'login' });
+        localStorage.clear()
+        this.$router.push({ name: 'login' })
       }
     },
 
     async buscarAgendamentos() {
-    try {
-      if (!this.usuario?.id) await this.getUsuarioLogado()
-      
-      if (this.setorTrabalhoId) {
-        const data = await AtendenteApi.buscarAgendamentosPorSetor(this.setorTrabalhoId)
-        
-        //O segredo: [...data] cria um NOVO array. 
-        // Isso obriga o Vue a re-executar o "agendamentosFiltrados"
-        this.agendamentosPorSetor = [...data]
-        
-        console.log("Lista sincronizada com o banco")
+      try {
+        if (!this.usuario?.id) await this.getUsuarioLogado()
+
+        if (this.setorTrabalhoId) {
+          const data = await AtendenteApi.buscarAgendamentosPorSetor(this.setorTrabalhoId)
+
+          //O segredo: [...data] cria um NOVO array.
+          // Isso obriga o Vue a re-executar o "agendamentosFiltrados"
+          this.agendamentosPorSetor = [...data]
+
+          console.log('Lista sincronizada com o banco')
+        }
+      } catch (e) {
+        console.error('Erro ao buscar agendamentos:', e)
       }
-    } catch (e) { 
-      console.error("Erro ao buscar agendamentos:", e) 
-    }
-  },
+    },
 
     async handleChamar(senha) {
       try {
         // ✅ Passa senha, atendenteId e setorTrabalhoId (3 parâmetros do backend)
         const res = await AtendenteApi.chamarPorSenha(senha, this.usuario.id, this.setorTrabalhoId)
         if (res.status === 200) {
-          const item = this.agendamentosPorSetor.find(a => a.senha === senha)
+          const item = this.agendamentosPorSetor.find((a) => a.senha === senha)
           if (item) this.idsChamadosManualmente.push(item.agendamentoId || item.id)
           this.abaAtiva = 'ATENDIMENTO'
           await this.buscarAgendamentos()
         }
-      } catch (e) { alert(e?.response?.data?.mensagem || 'Falha na chamada.') }
+      } catch (e) {
+        alert(e?.response?.data?.mensagem || 'Falha na chamada.')
+      }
     },
 
     async handleChamarNormal() {
       try {
         //Usa setorTrabalhoId
         await AtendenteApi.chamarNormal(this.setorTrabalhoId, this.usuario.id)
-      } finally { this.buscarAgendamentos() }
+      } finally {
+        this.buscarAgendamentos()
+      }
     },
 
     async handleChamarPrioridade() {
       try {
         //Usa setorTrabalhoId
         await AtendenteApi.chamarPrioridade(this.setorTrabalhoId, this.usuario.id)
-      } finally { this.buscarAgendamentos() }
+      } finally {
+        this.buscarAgendamentos()
+      }
     },
 
     async handleCancelar(id) {
       if (!confirm('Deseja realmente cancelar?')) return
       try {
         const token = localStorage.getItem('token')
-        
+
         // 1. Aguarda a conclusão da API
         await AtendenteApi.cancelarAtendimento(id, token)
 
         // 2. ✅ REMOVE o ID da lista de chamados (importante para o filtro computed)
-        this.idsChamadosManualmente = this.idsChamadosManualmente.filter(itemId => itemId !== id)
+        this.idsChamadosManualmente = this.idsChamadosManualmente.filter((itemId) => itemId !== id)
 
         // 3. Aguarda um fôlego para o banco e recarrega
-        await new Promise(resolve => setTimeout(resolve, 300))
+        await new Promise((resolve) => setTimeout(resolve, 300))
         await this.buscarAgendamentos()
 
         this.mostrarModalEdicao = false
@@ -859,66 +906,65 @@ export default {
       try {
         // 1. Envia a finalização para o servidor
         await AtendenteApi.finalizarAtendimento(id)
-        
+
         // 🟢 O SEGREDO: Remove o ID da lista de chamados manuais.
         // Se não remover, o "computed" do Vue acha que ele ainda está sendo chamado.
-        this.idsChamadosManualmente = this.idsChamadosManualmente.filter(itemId => itemId !== id)
+        this.idsChamadosManualmente = this.idsChamadosManualmente.filter((itemId) => itemId !== id)
 
         // 2. Delay levemente maior (400ms) para o banco de dados processar o commit
-        await new Promise(resolve => setTimeout(resolve, 400))
-        
+        await new Promise((resolve) => setTimeout(resolve, 400))
+
         // 3. Fecha o modal primeiro para melhorar a experiência do usuário (UX)
         this.mostrarModalEdicao = false
 
         // 4. Força a busca dos novos dados
         await this.buscarAgendamentos()
-        
+
         // 5. Opcional: Se quiser que ele vá direto para a aba de finalizados após concluir
         // this.abaAtiva = 'FINALIZADO'
-
       } catch (e) {
-        console.error("Erro ao finalizar:", e)
+        console.error('Erro ao finalizar:', e)
         alert('Erro ao finalizar atendimento.')
       }
     },
 
     async salvarEspontaneo() {
-  try {
-    if (!this.novoAgendamento.nomeCidadao || !this.novoAgendamento.servico) {
-      alert("Preencha o nome e selecione o serviço.");
-      return;
-    }
+      try {
+        if (!this.novoAgendamento.nomeCidadao || !this.novoAgendamento.servico) {
+          alert('Preencha o nome e selecione o serviço.')
+          return
+        }
 
-    const payload = { 
-      nomeCidadao: this.novoAgendamento.nomeCidadao,
-      tipoAtendimento: this.novoAgendamento.tipoAtendimento,
-      // Garante que o ID seja enviado como número
-      servicoId: Number(this.novoAgendamento.servico),
-      secretariaId: Number(this.secretariaTrabalhoId),
-      setorId: Number(this.setorTrabalhoId),
-      situacao: 'AGENDADO' 
-    }
+        const payload = {
+          nomeCidadao: this.novoAgendamento.nomeCidadao,
+          tipoAtendimento: this.novoAgendamento.tipoAtendimento,
+          // Garante que o ID seja enviado como número
+          servicoId: Number(this.novoAgendamento.servico),
+          secretariaId: Number(this.secretariaTrabalhoId),
+          setorId: Number(this.setorTrabalhoId),
+          situacao: 'AGENDADO',
+        }
 
-    console.log("Payload que será enviado:", payload);
+        console.log('Payload que será enviado:', payload)
 
-    // Passamos o secretariaTrabalhoId na URL e o payload no corpo
-    const res = await AtendenteApi.salvarEspontaneo(this.secretariaTrabalhoId, payload);
-    
-    if (res.status === 200 || res.status === 201) {
-      this.mostrarModalEspontaneo = false;
-      this.novoAgendamento = { nomeCidadao: '', servico: null, tipoAtendimento: 'NORMAL' };
-      
-      // Atualiza a lista local
-      await this.buscarAgendamentos();
-      alert("Atendimento registrado com sucesso!");
-    }
-  } catch (e) { 
-    console.error("Erro detalhado:", e.response?.data);
-    alert(e.response?.data?.mensagem || "Erro ao salvar novo registro.");
-  }
-},
+        // Passamos o secretariaTrabalhoId na URL e o payload no corpo
+        const res = await AtendenteApi.salvarEspontaneo(this.secretariaTrabalhoId, payload)
 
-async atualizarEspontaneo() {
+        if (res.status === 200 || res.status === 201) {
+          this.mostrarModalEspontaneo = false
+          this.novoAgendamento = { nomeCidadao: '', servico: null, tipoAtendimento: 'NORMAL' }
+
+          // Atualiza a lista local
+          await this.buscarAgendamentos()
+          alert('Atendimento registrado com sucesso!')
+        }
+      } catch (e) {
+        console.error('Erro detalhado:', e.response?.data)
+        alert(e.response?.data?.mensagem || 'Erro ao salvar novo registro.')
+      }
+    },
+
+    async atualizarEspontaneo() {
       try {
         const idServico = this.selectedItem.servicoId || this.selectedItem.servico?.id
         const payload = { nomeCidadao: this.selectedItem.usuarioNome, servicoId: Number(idServico) }
@@ -926,7 +972,9 @@ async atualizarEspontaneo() {
         await AtendenteApi.atualizarEspontaneo(this.selectedItem.agendamentoId, payload, token)
         this.mostrarModalEdicao = false
         await this.buscarAgendamentos()
-      } catch (e) { alert('Erro ao atualizar.') }
+      } catch (e) {
+        alert('Erro ao atualizar.')
+      }
     },
 
     async carregarServicos() {
@@ -934,7 +982,9 @@ async atualizarEspontaneo() {
         // ✅ Carrega serviços da secretaria selecionada
         const res = await AtendenteApi.carregarServicos(this.secretariaTrabalhoId)
         this.servicos = res.data
-      } catch (e) { console.error(e) }
+      } catch (e) {
+        console.error(e)
+      }
     },
 
     //handleLogout() { localStorage.clear(); this.$router.push({ name: 'login' }) }
@@ -949,10 +999,10 @@ async atualizarEspontaneo() {
 
     // ✅ Define o texto do endereço/unidade com base no setor atual
     if (this.usuario?.setores) {
-        const setorAtual = this.usuario.setores.find(s => s.id == this.setorTrabalhoId)
-        this.enderecoEstatico = setorAtual ? `Unidade: ${setorAtual.nome}` : 'Unidade de Atendimento'
+      const setorAtual = this.usuario.setores.find((s) => s.id == this.setorTrabalhoId)
+      this.enderecoEstatico = setorAtual ? `Unidade: ${setorAtual.nome}` : 'Unidade de Atendimento'
     }
-  }
+  },
 }
 </script>
 
