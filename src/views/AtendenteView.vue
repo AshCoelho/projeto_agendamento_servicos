@@ -595,7 +595,7 @@
                 </td>
                 <td class="px-6 text-right pr-6 mt-6 flex gap-2 justify-end">
                   <v-btn
-                    v-if="['AGENDADO', 'EM_ATENDIMENTO'].includes(item.situacao)"
+                    v-if="['AGENDADO', 'EM_ATENDIMENTO','FALTOU'].includes(item.situacao)"
                     color="#2563eb"
                     size="small"
                     class="text-white text-[10px] font-black"
