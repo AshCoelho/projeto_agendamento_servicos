@@ -10,6 +10,11 @@
           class="h-8 md:h-12 object-contain"
         />
       </div>
+      <div class="flex items-center">
+        <h1 class="text-xl md:text-2xl font-bold text-[#003B73] uppercase">
+          {{ nomeSecretaria }}
+        </h1>
+      </div>
       <div class="text-right leading-none">
         <div class="text-lg md:text-2xl font-bold text-gray-700">{{ relogio }}</div>
         <div

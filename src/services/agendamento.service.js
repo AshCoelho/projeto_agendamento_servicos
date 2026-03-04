@@ -4,23 +4,30 @@ export const AgendamentoService = {
     let listaNormalizada = lista.map((item) => {
       const status = item.situacao ? item.situacao.toUpperCase() : 'AGENDADO'
       const tipoAg = item.tipoAgendamento ? item.tipoAgendamento.toUpperCase() : 'NORMAL'
+      
+      const tipoAt = item.tipoAtendimento ? item.tipoAtendimento.toUpperCase() : 'NORMAL'
       const id = item.agendamentoId || item.id
 
       if (idsChamadosManualmente && idsChamadosManualmente.includes(id)) {
-        return { ...item, situacao: 'EM_ATENDIMENTO', tipoAgendamento: tipoAg }
+        return { ...item, situacao: 'EM_ATENDIMENTO', tipoAgendamento: tipoAg, tipoAtendimento: tipoAt }
       }
-      return { ...item, situacao: status, tipoAgendamento: tipoAg }
+      return { ...item, situacao: status, tipoAgendamento: tipoAg, tipoAtendimento: tipoAt }
     })
 
-    // 2. Aplica os filtros por aba
     const regras = {
-      'AGUARDANDO': (a) => a.situacao === 'AGENDADO' && a.tipoAgendamento === 'AGENDADO',
-      'ESPONTANEO': (a) => a.situacao === 'AGENDADO' && a.tipoAgendamento === 'ESPONTANEO',
+   
+      'AGUARDANDO': (a) => 
+        a.situacao === 'AGENDADO' && 
+        ['AGENDADO', 'ESPONTANEO'].includes(a.tipoAgendamento),
+
+      'PRIORIDADES': (a) => 
+        a.situacao === 'AGENDADO' && 
+        a.tipoAtendimento === 'PRIORIDADE',
+
       'ATENDIMENTO': (a) => ['EM_ATENDIMENTO', 'CHAMADO'].includes(a.situacao),
       'CANCELADOS': (a) => ['FALTOU'].includes(a.situacao),
       'FINALIZADOS': (a) => ['ATENDIDO'].includes(a.situacao)
     }
-
     return regras[abaAtiva] ? listaNormalizada.filter(regras[abaAtiva]) : listaNormalizada
   }
 }

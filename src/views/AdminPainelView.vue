@@ -16,77 +16,64 @@
       </div>
 
       <nav class="w-full px-4 space-y-2">
-        <a
-          href="#"
-          @click.prevent="menuAtivo = 'painel'"
-          :class="
-            menuAtivo === 'painel'
-              ? 'bg-[#2563eb] text-white shadow-xl shadow-blue-100'
-              : 'bg-transparent text-gray-500 hover:bg-gray-100'
-          "
-          class="flex items-center gap-3 px-4 py-3 rounded-[13px] transition-all"
+        <!-- Painel -->
+        <router-link
+          to="/admin"
+          class="flex items-center gap-3 px-4 py-3 rounded-[13px] transition-all text-gray-500 hover:bg-gray-100"
+          active-class="bg-[#2563eb] text-white shadow-xl shadow-blue-100"
         >
-          <i class="pi pi-objects-column"></i> <span class="text-sm font-bold">Painel</span>
-        </a>
+          <i class="pi pi-objects-column"></i>
+          <span class="text-sm font-bold">Painel</span>
+        </router-link>
 
-        <a
-          href="#"
-          @click.prevent="menuAtivo = 'config'"
-          :class="
-            menuAtivo === 'config'
-              ? 'bg-[#2563eb] text-white shadow-xl shadow-blue-100'
-              : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
-          "
-          class="flex items-center gap-3 px-4 py-3 rounded-[13px] transition-all"
+        <!-- Configuração -->
+        <router-link
+          to="/admin/config"
+          class="flex items-center gap-3 px-4 py-3 rounded-[13px] transition-all text-gray-500 hover:bg-gray-100"
+          active-class="bg-[#2563eb] text-white shadow-xl shadow-blue-100"
         >
-          <i class="pi pi-cog"></i> <span class="text-sm font-bold">Configuração</span>
-        </a>
+          <i class="pi pi-cog"></i>
+          <span class="text-sm font-bold">Configuração</span>
+        </router-link>
 
-        <a
-          href="#"
-          @click.prevent="menuAtivo = 'relatorios'"
-          :class="
-            menuAtivo === 'relatorios'
-              ? 'bg-[#2563eb] text-white shadow-xl shadow-blue-100'
-              : 'bg-transparent text-gray-500 hover:bg-gray-100'
-          "
-          class="flex items-center gap-3 px-4 py-3 rounded-[13px] transition-all"
+        <!-- Relatórios -->
+        <router-link
+          to="/admin/relatorios"
+          class="flex items-center gap-3 px-4 py-3 rounded-[13px] transition-all text-gray-500 hover:bg-gray-100"
+          active-class="bg-[#2563eb] text-white shadow-xl shadow-blue-100"
         >
-          <i class="pi pi-file"></i> <span class="text-sm font-bold">Relatórios</span>
-        </a>
+          <i class="pi pi-file"></i>
+          <span class="text-sm font-bold">Relatórios</span>
+        </router-link>
 
-        <a
-          href="#"
-          @click.prevent="abrirCadastros = !abrirCadastros"
-          class="flex items-center justify-between px-4 py-3 rounded-[13px] transition-all hover:bg-gray-100"
+        <!-- Cadastros Toggle -->
+        <div
+          @click="abrirCadastros = !abrirCadastros"
+          class="flex items-center justify-between px-4 py-3 rounded-[13px] cursor-pointer transition-all hover:bg-gray-100"
         >
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-3 text-gray-600">
             <i class="pi pi-plus-circle"></i>
             <span class="text-sm font-bold">Cadastros</span>
           </div>
 
-          <!-- Ícone da seta -->
           <i
             class="pi pi-chevron-down transition-transform duration-300"
             :class="{ 'rotate-180': abrirCadastros }"
           ></i>
-        </a>
+        </div>
 
-        <div v-if="abrirCadastros" class="ml-6 space-y-2 mt-2">
-          <a
+        <!-- Submenu Cadastros -->
+        <div v-if="abrirCadastros" class="ml-2 space-y-2 mt-2">
+          <router-link
             v-for="item in cadastros"
             :key="item.id"
-            href="#"
-            @click.prevent="menuAtivo = item.id"
-            :class="
-              menuAtivo === item.id
-                ? 'text-blue-600 font-bold'
-                : 'text-gray-600 hover:text-blue-600'
-            "
-            class="block text-sm transition-all"
+            :to="item.rota"
+            class="flex items-center gap-3 px-4 py-3 rounded-[13px] transition-all text-gray-500 hover:bg-gray-100"
+            active-class="bg-[#2563eb] text-white shadow-xl shadow-blue-100"
           >
-            {{ item.nome }}
-          </a>
+            <i :class="['pi', item.icon]"></i>
+            <span class="text-sm font-bold">{{ item.nome }}</span>
+          </router-link>
         </div>
       </nav>
 
@@ -207,14 +194,35 @@ export default {
     abrirCadastros: false,
     menuAtivo: 'painel',
     cadastros: [
-      { id: 'cadastro-endereco', nome: 'Endereço' },
-      { id: 'cadastro-setor', nome: 'Setor' },
-      { id: 'cadastro-atendente', nome: 'Atendente' },
+      {
+        id: 'cadastro-endereco',
+        nome: 'Endereço',
+        icon: 'pi-map-marker',
+        rota: 'cadastro/endereco',
+      },
+      {
+        id: 'cadastro-setor',
+        nome: 'Setor',
+        icon: 'pi-sitemap',
+        rota: 'cadastro/setor',
+      },
+      {
+        id: 'cadastro-atendente',
+        nome: 'Atendente',
+        icon: 'pi-user',
+        rota: 'cadastro/atendente',
+      },
     ],
   }),
   methods: {
-    async seleionarMenu(id) {
+    selecionarMenu(id) {
       this.menuAtivo = id
+
+      if (!id.startsWith('cadastro')) {
+        this.abrirCadastros = false
+      } else {
+        this.abrirCadastros = true
+      }
     },
     async buscarAgendamentos() {
       try {

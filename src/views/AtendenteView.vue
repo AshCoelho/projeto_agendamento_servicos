@@ -113,14 +113,14 @@
         >
           <div>
             <p class="text-[12px] font-bold text-gray-400 uppercase mb-1">Atendimentos Hoje</p>
-            <h3 class="text-3xl font-black text-gray-800">{{ agendamentosPorSetor.length }}</h3>
+            <h3 class="text-3xl font-black text-gray-800">{{ totalRegistradosHoje }}</h3>
             <span class="inline-block w-8 h-1 bg-blue-grey-darken-4 rounded-full"></span>
             <div class="flex gap-2 mt-2">
               <span class="text-[11px] font-bold text-blue-500 uppercase">
-                {{ totalNormal }} Normal
+                {{ totalNormalGeral }} Normal
               </span>
               <span class="text-[11px] font-bold text-orange-500 uppercase">
-                {{ totalPrioridade }} Prioridade
+                {{ totalPrioridadeGeral }} Prioridade
               </span>
             </div>
           </div>
@@ -136,10 +136,16 @@
         >
           <div>
             <p class="text-[12px] font-bold text-gray-400 uppercase mb-1">Pessoas na Fila</p>
-            <h3 class="text-3xl font-black text-gray-800">
-              {{ agendamentosAguardando }}
-            </h3>
+            <h3 class="text-3xl font-black text-gray-800">{{ agendamentosAguardando }}</h3>
             <span class="inline-block w-8 h-1 bg-amber-lighten-2 rounded-full"></span>
+            <div class="flex gap-2 mt-2">
+              <span class="text-[11px] font-bold text-blue-500 uppercase">
+                {{ totalNormalFila }} Normal
+              </span>
+              <span class="text-[11px] font-bold text-orange-500 uppercase">
+                {{ totalPrioridadeFila }} Prioridade
+              </span>
+            </div>
           </div>
 
           <div
@@ -231,23 +237,23 @@
                 :class="
                   abaAtiva === 'AGUARDANDO'
                     ? 'bg-[#2563eb] text-white rounded-[7px] p-1 shadow-blue-100'
-                    : 'bg-transparent text-gray-400 hover:bg-gray-20 hover:text-gray-100'
+                    : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
                 "
                 class="text-xs font-black border-b-2 pb-1 uppercase tracking-widest"
               >
-                Aguardando
+                Atendimentos (Geral)
               </button>
 
               <button
-                @click="mudarAba('ESPONTANEO')"
+                @click="mudarAba('PRIORIDADES')"
                 :class="
-                  abaAtiva === 'ESPONTANEO'
+                  abaAtiva === 'PRIORIDADES'
                     ? 'bg-[#2563eb] text-white rounded-[7px] p-1 shadow-blue-100'
                     : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
                 "
                 class="text-xs font-black border-b-2 pb-1 uppercase tracking-widest"
               >
-                Atendimento Avulso
+                Prioridades
               </button>
 
               <button
@@ -545,7 +551,7 @@
               <tr>
                 <th class="px-6 py-4 text-left">Editar</th>
                 <th class="px-6 py-4 text-left">Senha</th>
-                <th class="px-6 py-4 text-left">Usuário</th>
+                <th class="px-6 py-4 text-left">Cidadão</th>
                 <th class="px-6 py-4 text-left">Serviço</th>
                 <th class="px-6 py-4 text-left">Situação</th>
                 <th class="px-6 py-4 text-left">Tipo</th>
@@ -595,7 +601,7 @@
                 </td>
                 <td class="px-6 text-right pr-6 mt-6 flex gap-2 justify-end">
                   <v-btn
-                    v-if="['AGENDADO', 'EM_ATENDIMENTO','FALTOU'].includes(item.situacao)"
+                    v-if="['AGENDADO', 'FALTOU', 'CANCELADO'].includes(item.situacao)"
                     color="#2563eb"
                     size="small"
                     class="text-white text-[10px] font-black"
@@ -702,6 +708,16 @@ export default {
   },
 
   computed: {
+    totalRegistradosHoje() {
+      return this.agendamentosPorSetor.length
+    },
+    totalNormalGeral() {
+      return this.agendamentosPorSetor.filter((a) => a.tipoAtendimento === 'NORMAL').length
+    },
+    totalPrioridadeGeral() {
+      return this.agendamentosPorSetor.filter((a) => a.tipoAtendimento === 'PRIORIDADE').length
+    },
+
     agendamentosFiltrados() {
       let lista = AgendamentoService.filtrarAgendamentos(
         this.agendamentosPorSetor,
@@ -730,19 +746,26 @@ export default {
       return Math.ceil(this.agendamentosFiltrados.length / this.itensPorPagina) || 1
     },
     agendamentosAguardando() {
-      return this.agendamentosPorSetor.filter((a) => a.situacao === 'AGENDADO').length
+      return this.agendamentosPorSetor.filter(
+        (a) => a.situacao === 'AGENDADO' && ['AGENDADO', 'ESPONTANEO'].includes(a.tipoAgendamento),
+      ).length
     },
+
     agendamentosFinalizados() {
       return this.agendamentosPorSetor.filter((a) => a.situacao === 'ATENDIDO').length
     },
     agendamentosCancelados() {
       return this.agendamentosPorSetor.filter((a) => a.situacao === 'FALTOU').length
     },
-    totalNormal() {
-      return this.agendamentosPorSetor.filter((a) => a.tipoAtendimento === 'NORMAL').length
+    totalNormalFila() {
+      return this.agendamentosPorSetor.filter(
+        (a) => a.situacao === 'AGENDADO' && a.tipoAtendimento === 'NORMAL',
+      ).length
     },
-    totalPrioridade() {
-      return this.agendamentosPorSetor.filter((a) => a.tipoAtendimento !== 'NORMAL').length
+    totalPrioridadeFila() {
+      return this.agendamentosPorSetor.filter(
+        (a) => a.situacao === 'AGENDADO' && a.tipoAtendimento === 'PRIORIDADE',
+      ).length
     },
   },
 
@@ -817,8 +840,6 @@ export default {
         const { data } = await AtendenteApi.getUsuarioLogado()
         this.usuario = data
 
-        // ✅ SALVE O ID NO STORAGE: Isso garante que o handleLogout tenha o ID
-        // mesmo se o estado do Vue for resetado ou a página recarregada.
         if (data.id) {
           localStorage.setItem('usuarioId', data.id)
         }
@@ -884,18 +905,16 @@ export default {
       if (!confirm('Deseja realmente cancelar?')) return
       try {
         const token = localStorage.getItem('token')
-
-        // 1. Aguarda a conclusão da API
         await AtendenteApi.cancelarAtendimento(id, token)
 
-        // 2. ✅ REMOVE o ID da lista de chamados (importante para o filtro computed)
+        // Limpa o estado local imediatamente
         this.idsChamadosManualmente = this.idsChamadosManualmente.filter((itemId) => itemId !== id)
 
-        // 3. Aguarda um fôlego para o banco e recarrega
-        await new Promise((resolve) => setTimeout(resolve, 300))
-        await this.buscarAgendamentos()
+        // Força uma limpeza na lista local para evitar que o usuário clique de novo antes do refresh
+        const index = this.agendamentosPorSetor.findIndex((a) => (a.agendamentoId || a.id) === id)
+        if (index !== -1) this.agendamentosPorSetor[index].situacao = 'FALTOU'
 
-        this.mostrarModalEdicao = false
+        await this.buscarAgendamentos()
       } catch (e) {
         alert('Erro ao cancelar.')
       }
@@ -945,8 +964,6 @@ export default {
           situacao: 'AGENDADO',
         }
 
-        console.log('Payload que será enviado:', payload)
-
         // Passamos o secretariaTrabalhoId na URL e o payload no corpo
         const res = await AtendenteApi.salvarEspontaneo(this.secretariaTrabalhoId, payload)
 
@@ -979,7 +996,6 @@ export default {
 
     async carregarServicos() {
       try {
-        // ✅ Carrega serviços da secretaria selecionada
         const res = await AtendenteApi.carregarServicos(this.secretariaTrabalhoId)
         this.servicos = res.data
       } catch (e) {

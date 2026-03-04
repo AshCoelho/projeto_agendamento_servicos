@@ -1,9 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import AtendenteView from '../views/AtendenteView.vue'
 import LoginView from '../views/LoginView.vue'
-import AdministradorView from '@/views/AdministradorView.vue'
+import AdministradorView from '@/views/AdminPainelView.vue'
 import ConfiguracaoView from '@/views/ConfiguracaoView.vue'
+import CadastroEndereco from '@/views/CadastroEnderecoView.vue'
+import CadastroSetor from '@/views/CadastroSetorView.vue'
+import CadastroAtendente from '@/views/CadastroAtendenteView.vue'
 import ModalGuiche from '@/views/ModalGuiche.vue'
+import AgendamentoExternoView from '@/views/AgendamentoExternoView.vue'; 
 
 const routes = [
   // 🔓 Rotas públicas
@@ -15,6 +19,13 @@ const routes = [
     name: 'atendente',
     component: AtendenteView,
     meta: { requiresAuth: true }
+  },
+
+  {
+    path: '/agendamento',
+    name: 'agendamento',
+    component: AgendamentoExternoView,
+    meta: {requiresAuth: true }
   },
 
   {
@@ -32,14 +43,41 @@ const routes = [
   },
 
   {
-    path: '/administrador',
-    name: 'administrador',
-    component: AdministradorView,
-    meta: {
-      requiresAuth: true,
-      requiredPerfil: 'ADMINISTRADOR'
+  path: '/administrador',
+  component: AdministradorView,
+  meta: {
+    requiresAuth: true,
+    requiredPerfil: 'ADMINISTRADOR'
+  },
+  children: [
+    {
+      path: '',
+      name: 'admin-painel',
+      component: () => import('@/views/AdminPainelView.vue')
+    },
+    {
+      path: 'configuracao',
+      name: 'admin-config',
+      component: ConfiguracaoView
+    },
+    {
+      path: 'cadastro/endereco',
+      name: 'cadastro-endereco',
+      component: CadastroEndereco
+    },
+    {
+      path: 'cadastro/setor',
+      name: 'cadastro-setor',
+      component: CadastroSetor
+    },
+    {
+      path: 'cadastro/atendente',
+      name: 'cadastro-atendente',
+      component: CadastroAtendente
     }
-  }
+  ]
+}
+
 ]
 
 const router = createRouter({
