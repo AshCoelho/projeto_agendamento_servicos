@@ -371,10 +371,10 @@
                         >Tipo de Atendimento</label
                       >
                       <v-select
-                        v-model="novoAgendamento.tipoAtendimento"
+                        v-model="novoAgendamento.tipoAtendimentoId"
                         :items="tiposAtendimento"
-                        item-title="title"
-                        item-value="value"
+                        item-title="nome"  
+                        item-value="id"
                         density="compact"
                         rounded-2xl
                         variant="solo"
@@ -492,18 +492,15 @@
                         >Tipo de Atendimento</label
                       >
                       <v-select
-                        v-model="selectedItem.tipoAtendimento"
+                        v-model="novoAgendamento.tipoAtendimentoId"
                         :items="tiposAtendimento"
-                        item-title="title"
-                        item-value="value"
+                        item-title="nome"  
+                        item-value="id"
+                        label="Tipo de Atendimento"
                         density="compact"
-                        rounded-2xl
                         variant="solo"
-                        bg-color="transparent"
-                        class=""
                         required
-                      >
-                      </v-select>
+                      ></v-select>
                     </div>
 
                     <div>
@@ -705,13 +702,10 @@ export default {
     selectedItem: null,
     idsChamadosManualmente: [],
     servicos: [],
+    tiposAtendimento: [],
 
     // Formulários
-    novoAgendamento: { nomeCidadao: '', servico: null, tipoAtendimento: 'NORMAL' },
-    tiposAtendimento: [
-      { title: 'Normal', value: 'NORMAL', class: 'pi pi-calendar text-[10px] color-red' },
-      { title: 'Prioridade', value: 'PRIORIDADE' },
-    ],
+    novoAgendamento: { nomeCidadao: '', servico: null, tipoAtendimentoId: null },
   }),
 
   watch: {
@@ -722,6 +716,25 @@ export default {
   },
 
   computed: {
+
+    temAtendimentoAtivo() {
+    const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'));
+    
+    if (!this.agendamentosPorSetor.length) return false;
+
+    return this.agendamentosPorSetor.some(a => {
+      const status = a.situacao?.toUpperCase();
+      // 🟢 O campo que seu SQL preenche é o gerenciadorId
+      const idNoBanco = Number(a.gerenciadorId);
+      console.log(idNoBanco);
+      
+      const ocupado = (status === 'CHAMADO' || status === 'EM_ATENDIMENTO');
+      const ehMeu = idNoBanco === meuId;
+
+      return ocupado && ehMeu;
+    });
+  },
+
     totalRegistradosHoje() {
       return this.agendamentosPorSetor.length
     },
@@ -865,22 +878,24 @@ export default {
     },
 
     async buscarAgendamentos() {
-      try {
-        if (!this.usuario?.id) await this.getUsuarioLogado()
+  try {
+    if (!this.usuario?.id) await this.getUsuarioLogado()
+    if (this.setorTrabalhoId) {
+      const data = await AtendenteApi.buscarAgendamentosPorSetor(this.setorTrabalhoId)
+      this.agendamentosPorSetor = [...data]
 
-        if (this.setorTrabalhoId) {
-          const data = await AtendenteApi.buscarAgendamentosPorSetor(this.setorTrabalhoId)
-
-          //O segredo: [...data] cria um NOVO array.
-          // Isso obriga o Vue a re-executar o "agendamentosFiltrados"
-          this.agendamentosPorSetor = [...data]
-
-          console.log('Lista sincronizada com o banco')
-        }
-      } catch (e) {
-        console.error('Erro ao buscar agendamentos:', e)
-      }
-    },
+      // 🔍 LINHA PARA DEBUG SEGURO
+      console.log("MEU ID:", this.usuario.id);
+      console.log("LISTA DO BANCO:", this.agendamentosPorSetor.map(a => ({
+        senha: a.senha,
+        status: a.situacao,
+        idAtendenteNoObjeto: this.usuario.id || a.atendenteId || (a.usuario ? a.usuario.id : 'NULO')
+      })));
+    }
+  } catch (e) {
+    console.error('Erro ao buscar agendamentos:', e)
+  }
+},
 
     async handleChamar(senha) {
       try {
@@ -900,22 +915,56 @@ export default {
     },
 
     async handleChamarNormal() {
-      try {
-        //Usa setorTrabalhoId
-        await AtendenteApi.chamarNormal(this.setorTrabalhoId, this.usuario.id)
-      } finally {
-        this.buscarAgendamentos()
-      }
-    },
+  // 1ª VALIDAÇÃO: Você está ocupado?
+  if (this.temAtendimentoAtivo) {
+    alert("Você já possui um atendimento em aberto. Finalize-o antes de chamar o próximo.");
+    return;
+  }
 
-    async handleChamarPrioridade() {
-      try {
-        //Usa setorTrabalhoId
-        await AtendenteApi.chamarPrioridade(this.setorTrabalhoId, this.usuario.id)
-      } finally {
-        this.buscarAgendamentos()
-      }
-    },
+  // 2ª VALIDAÇÃO: Tem alguém na fila? (Verifica se o total da fila normal é zero)
+  if (this.totalNormalFila === 0) {
+    alert("Não há pacientes aguardando na fila de atendimento NORMAL.");
+    return;
+  }
+
+  try {
+    const { data } = await AtendenteApi.chamarNormal(this.setorTrabalhoId, this.usuario.id);
+    if (data && data.sucesso === false) {
+      alert(data.mensagem); 
+    }
+  } catch (error) {
+    console.error("Erro técnico:", error);
+    alert("Falha ao chamar: Ocorreu um erro na comunicação com o servidor.");
+  } finally {
+    this.buscarAgendamentos();
+  }
+},
+
+async handleChamarPrioridade() {
+  // 1ª VALIDAÇÃO: Você está ocupado?
+  if (this.temAtendimentoAtivo) {
+    alert("Você já possui um atendimento em aberto. Finalize-o antes de chamar o próximo.");
+    return;
+  }
+
+  // 2ª VALIDAÇÃO: Tem alguém na fila?
+  if (this.totalPrioridadeFila === 0) {
+    alert("Não há pacientes aguardando na fila de atendimento PRIORITÁRIO.");
+    return;
+  }
+
+  try {
+    const { data } = await AtendenteApi.chamarPrioridade(this.setorTrabalhoId, this.usuario.id);
+    if (data && data.sucesso === false) {
+      alert(data.mensagem);
+    }
+  } catch (error) {
+    console.error("Erro técnico:", error);
+    alert("Falha ao chamar: Ocorreu um erro na comunicação com o servidor.");
+  } finally {
+    this.buscarAgendamentos();
+  }
+},
 
     async handleCancelar(id) {
       if (!confirm('Deseja realmente cancelar?')) return
@@ -972,28 +1021,40 @@ export default {
 
         const payload = {
           nomeCidadao: this.novoAgendamento.nomeCidadao,
-          tipoAtendimento: this.novoAgendamento.tipoAtendimento,
-          // Garante que o ID seja enviado como número
+          tipoAtendimentoId: Number(this.novoAgendamento.tipoAtendimentoId),
           servicoId: Number(this.novoAgendamento.servico),
-          secretariaId: Number(this.secretariaTrabalhoId),
           setorId: Number(this.setorTrabalhoId),
           situacao: 'AGENDADO',
         }
 
-        // Passamos o secretariaTrabalhoId na URL e o payload no corpo
+        // 1. Chamada para a API
         const res = await AtendenteApi.salvarEspontaneo(this.secretariaTrabalhoId, payload)
 
+        // 2. Verificação robusta: 200 ou 201 são sucessos
         if (res.status === 200 || res.status === 201) {
-          this.mostrarModalEspontaneo = false
-          this.novoAgendamento = { nomeCidadao: '', servico: null, tipoAtendimento: 'NORMAL' }
+          
+          // Opcional: Pegar a senha gerada que vem no DTO de resposta
+          const senhaGerada = res.data?.senha || '';
 
-          // Atualiza a lista local
+          this.mostrarModalEspontaneo = false
+          
+          // Reseta o formulário
+          this.novoAgendamento = { nomeCidadao: '', servico: null, tipoAtendimentoId: null }
+          
+          // 3. Atualiza as listas
           await this.buscarAgendamentos()
-          alert('Atendimento registrado com sucesso!')
+          await this.carregarTiposAtendimento() 
+
+          alert(`Atendimento registrado! Senha: ${senhaGerada}`)
         }
       } catch (e) {
-        console.error('Erro detalhado:', e.response?.data)
-        alert(e.response?.data?.mensagem || 'Erro ao salvar novo registro.')
+        // Se caiu aqui e o registro salvou, pode ser que o res.status veio diferente 
+        // ou a AtendenteApi lançou um erro ao tentar ler a resposta.
+        console.error('Erro ao salvar:', e);
+        
+        // Verifique se o erro não é apenas um "undefined" na mensagem
+        const msgErro = e.response?.data?.mensagem || e.message || 'Erro de comunicação';
+        alert('Erro: ' + msgErro);
       }
     },
 
@@ -1019,6 +1080,23 @@ export default {
       }
     },
 
+    async carregarTiposAtendimento() {
+      try {
+        const { data } = await AtendenteApi.carregarTiposAtendimento(this.secretariaTrabalhoId);
+        
+        // 🟢 Substitui a lista antiga pelos dados reais do banco
+        this.tiposAtendimento = data;
+        
+        // Seleciona o 'NORMAL' automaticamente se disponível
+        if (data.length > 0 && !this.novoAgendamento.tipoAtendimentoId) {
+          const padrao = data.find(t => t.nome.toUpperCase() === 'NORMAL');
+          if (padrao) this.novoAgendamento.tipoAtendimentoId = padrao.id;
+        }
+      } catch (error) {
+        console.error("Erro ao carregar tipos:", error);
+      }
+    },
+
     //handleLogout() { localStorage.clear(); this.$router.push({ name: 'login' }) }
   },
 
@@ -1026,6 +1104,7 @@ export default {
     await this.getUsuarioLogado()
     this.buscarAgendamentos()
     this.carregarServicos()
+    this.carregarTiposAtendimento()
     this.atualizarRelogioLocal()
     setInterval(this.atualizarRelogioLocal, 1000)
 

@@ -39,6 +39,10 @@ export const AtendenteApi = {
     return await api.post(`/agendamentos/espontaneo/${secretariaId}`, payload)
   },
 
+  async carregarTiposAtendimento(secretariaId) {
+    return await api.get(`/api/tipos-atendimento/secretaria/${secretariaId}/ativos`);
+  },
+
   async atualizarEspontaneo(id, payload, token) {
     return await api.put(`/agendamentos/atualizar-espontaneo/${id}`, payload, {
       headers: { Authorization: `Bearer ${token}` }

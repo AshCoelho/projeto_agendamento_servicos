@@ -4,7 +4,6 @@ export const AgendamentoService = {
     let listaNormalizada = lista.map((item) => {
       const status = item.situacao ? item.situacao.toUpperCase() : 'AGENDADO'
       const tipoAg = item.tipoAgendamento ? item.tipoAgendamento.toUpperCase() : 'NORMAL'
-      
       const tipoAt = item.tipoAtendimento ? item.tipoAtendimento.toUpperCase() : 'NORMAL'
       const id = item.agendamentoId || item.id
 
@@ -15,19 +14,21 @@ export const AgendamentoService = {
     })
 
     const regras = {
-   
+      // 🔵 AGUARDANDO: Mostra TUDO que está agendado (Normal + Todas as Prioridades)
       'AGUARDANDO': (a) => 
         a.situacao === 'AGENDADO' && 
         ['AGENDADO', 'ESPONTANEO'].includes(a.tipoAgendamento),
 
+      // 🟡 PRIORIDADES: Mostra APENAS quem tem "PRIORIDADE" no nome
       'PRIORIDADES': (a) => 
         a.situacao === 'AGENDADO' && 
-        a.tipoAtendimento === 'PRIORIDADE',
+        a.tipoAtendimento.includes('PRIORIDADE'),
 
       'ATENDIMENTO': (a) => ['EM_ATENDIMENTO', 'CHAMADO'].includes(a.situacao),
       'CANCELADOS': (a) => ['FALTOU'].includes(a.situacao),
       'FINALIZADOS': (a) => ['ATENDIDO'].includes(a.situacao)
     }
+
     return regras[abaAtiva] ? listaNormalizada.filter(regras[abaAtiva]) : listaNormalizada
   }
 }
