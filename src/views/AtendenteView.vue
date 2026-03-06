@@ -241,7 +241,7 @@
                 "
                 class="text-xs font-black border-b-2 pb-1 uppercase tracking-widest"
               >
-                Atendimentos (Geral)
+                Agendado
               </button>
 
               <button
@@ -534,12 +534,13 @@
                 </div>
               </div>
             </div>
-            <div v-if="abaAtiva === 'ESPONTANEO'" class="flex justify-end mr-6">
+            <div v-if="abaAtiva === 'AGUARDANDO'" class="flex justify-end mb-4 mr-4">
               <button
                 @click="mostrarModalEspontaneo = true"
-                class="bg-green-600 text-white px-2 my-1.5 rounded-[6px] text-[10px] font-medium uppercase shadow-lg hover:bg-green-700 transition-all"
+                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all shadow-sm flex items-center gap-2"
               >
-                + Novo Registro
+                <i class="pi pi-plus"></i>
+                Nova Senha
               </button>
             </div>
           </div>
@@ -593,15 +594,28 @@
                     <i class="pi pi-calendar text-[10px]"></i> {{ item.situacao }}
                   </span>
                 </td>
-                <td class="px-6 text-[11px] font-black text-gray-400 uppercase">
-                  {{ item.tipoAtendimento }}
+                <td class="px-6">
+                  <span
+                    :class="[
+                      item.tipoAtendimento === 'PRIORIDADE'
+                        ? 'bg-orange-50 text-orange-600'
+                        : 'bg-gray-100 text-gray-500',
+                    ]"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black rounded-lg uppercase tracking-tight"
+                  >
+                    <i
+                      :class="item.tipoAtendimento === 'PRIORIDADE' ? 'pi pi-bolt' : 'pi pi-user'"
+                      class="text-[10px]"
+                    ></i>
+                    {{ item.tipoAtendimento }}
+                  </span>
                 </td>
                 <td class="px-6 text-xs font-bold text-gray-400">
                   {{ formatarDataHora(item.horaAgendamento) }}
                 </td>
                 <td class="px-6 text-right pr-6 mt-6 flex gap-2 justify-end">
                   <v-btn
-                    v-if="['AGENDADO', 'FALTOU', 'CANCELADO'].includes(item.situacao)"
+                    v-if="['AGENDADO', 'EM_ATENDIMENTO', 'FALTOU'].includes(item.situacao)"
                     color="#2563eb"
                     size="small"
                     class="text-white text-[10px] font-black"
@@ -695,7 +709,7 @@ export default {
     // Formulários
     novoAgendamento: { nomeCidadao: '', servico: null, tipoAtendimento: 'NORMAL' },
     tiposAtendimento: [
-      { title: 'Normal', value: 'NORMAL' },
+      { title: 'Normal', value: 'NORMAL', class: 'pi pi-calendar text-[10px] color-red' },
       { title: 'Prioridade', value: 'PRIORIDADE' },
     ],
   }),
@@ -870,11 +884,13 @@ export default {
 
     async handleChamar(senha) {
       try {
-        // ✅ Passa senha, atendenteId e setorTrabalhoId (3 parâmetros do backend)
         const res = await AtendenteApi.chamarPorSenha(senha, this.usuario.id, this.setorTrabalhoId)
+
         if (res.status === 200) {
           const item = this.agendamentosPorSetor.find((a) => a.senha === senha)
+
           if (item) this.idsChamadosManualmente.push(item.agendamentoId || item.id)
+
           this.abaAtiva = 'ATENDIMENTO'
           await this.buscarAgendamentos()
         }

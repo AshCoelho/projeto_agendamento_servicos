@@ -1,4 +1,7 @@
 <template>
+  <div
+    class="absolute top-0 left-0 w-full h-[4px] bg-gradient-to-r from-[#FFC107] via-[#f0d924] to-[#3da1d5] z-50"
+  ></div>
   <div class="min-h-screen bg-slate-50 font-sans p-6 md:p-12 flex flex-col items-center">
     <header class="text-center mb-10">
       <h1 class="text-4xl font-bold text-slate-900 mb-2">Agendamento Online</h1>
@@ -13,7 +16,7 @@
         :class="etapa === 1 ? 'text-blue-600' : 'text-slate-300'"
       >
         <div
-          class="w-12 h-12 rounded-full border-2 flex items-center justify-center text-xl transition-colors"
+          class="w-10 h-10 rounded-full border-2 flex items-center justify-center text-xl transition-colors"
           :class="etapa === 1 ? 'bg-blue-600 border-blue-600 text-white' : 'border-current'"
         >
           <i class="pi pi-briefcase"></i>
@@ -28,7 +31,7 @@
         :class="etapa === 2 ? 'text-blue-600' : 'text-slate-300'"
       >
         <div
-          class="w-12 h-12 rounded-full border-2 flex items-center justify-center text-xl transition-colors"
+          class="w-10 h-10 rounded-full border-2 flex items-center justify-center text-xl transition-colors"
           :class="etapa === 2 ? 'bg-blue-600 border-blue-600 text-white' : 'border-current'"
         >
           <i class="pi pi-user"></i>
@@ -38,66 +41,89 @@
     </div>
 
     <main
-      class="w-full max-w-4xl bg-white rounded-3xl shadow-sm border border-slate-100 p-8 md:p-12"
+      class="w-full max-w-4xl bg-white rounded-[12px] shadow-2xl border border-slate-100 p-8 md:p-12"
     >
-      <div v-if="etapa === 1" class="space-y-6">
+      <div v-if="etapa === 1" class="space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="flex flex-col space-y-2">
-            <label class="text-sm font-semibold text-slate-700 flex items-center gap-2">
-              <i class="pi pi-map-marker text-blue-600"></i> Secretaria
+          <div>
+            <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1">
+              <i class="pi pi-map-marker text-blue-600 mr-1"></i> Secretaria
             </label>
-            <select v-model="form.secretariaId" @change="buscarSetores" class="input-field">
-              <option value="">Selecione a Secretaria</option>
-              <option v-for="s in secretarias" :key="s.id" :value="s.id">{{ s.nome }}</option>
-            </select>
+            <v-select
+              v-model="form.secretariaId"
+              :items="secretarias"
+              item-title="nome"
+              item-value="id"
+              placeholder="Selecione a Secretaria"
+              density="compact"
+              rounded="12px"
+              variant="solo"
+              class="w-full text-xs font-bold"
+              @update:model-value="buscarSetores"
+              required
+            ></v-select>
           </div>
 
-          <div class="flex flex-col space-y-2">
-            <label class="text-sm font-semibold text-slate-700 flex items-center gap-2">
-              <i class="pi pi-building text-blue-600"></i> Setor
+          <div>
+            <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1">
+              <i class="pi pi-building text-blue-600 mr-1"></i> Setor
             </label>
-            <select
+            <v-select
               v-model="form.setorId"
+              :items="setores"
+              item-title="nome"
+              item-value="id"
               :disabled="!form.secretariaId"
-              @change="buscarServicos"
-              class="input-field"
-            >
-              <option value="">Selecione o Setor</option>
-              <option v-for="s in setores" :key="s.id" :value="s.id">{{ s.nome }}</option>
-            </select>
+              placeholder="Selecione o Setor"
+              density="compact"
+              rounded="12px"
+              variant="solo"
+              class="w-full text-xs font-bold"
+              @update:model-value="buscarServicos"
+              required
+            ></v-select>
           </div>
 
-          <div class="flex flex-col space-y-2">
-            <label class="text-sm font-semibold text-slate-700 flex items-center gap-2">
-              <i class="pi pi-clock text-blue-600"></i> Serviço
+          <div>
+            <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1">
+              <i class="pi pi-clock text-blue-600 mr-1"></i> Serviço
             </label>
-            <select
+            <v-select
               v-model="form.servicoId"
+              :items="servicos"
+              item-title="nome"
+              item-value="id"
               :disabled="!form.setorId"
-              @change="limparHorarios"
-              class="input-field"
-            >
-              <option value="">Selecione o Serviço</option>
-              <option v-for="s in servicos" :key="s.id" :value="s.id">{{ s.nome }}</option>
-            </select>
+              placeholder="Selecione o Serviço"
+              density="compact"
+              rounded="12px"
+              variant="solo"
+              class="w-full text-xs font-bold"
+              @update:model-value="limparHorarios"
+              required
+            ></v-select>
           </div>
 
-          <div class="flex flex-col space-y-2">
-            <label class="text-sm font-semibold text-slate-700 flex items-center gap-2">
-              <i class="pi pi-calendar text-blue-600"></i> Data do Agendamento
+          <div>
+            <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1">
+              <i class="pi pi-calendar text-blue-600 mr-1"></i> Data do Agendamento
             </label>
-            <input
-              type="date"
+            <v-text-field
               v-model="form.data"
+              type="date"
               :disabled="!form.servicoId"
+              density="compact"
+              rounded="12px"
+              variant="solo"
+              class="w-full text-xs font-bold"
               @change="buscarHorarios"
-              class="input-field"
-            />
+              required
+            ></v-text-field>
           </div>
         </div>
 
         <div v-if="slots.length > 0" class="mt-8">
-          <label class="text-sm font-semibold text-slate-700 block mb-4"
+          <label class="block text-[10px] font-black text-gray-400 uppercase mb-4 ml-1"
             >Horários Disponíveis</label
           >
           <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
@@ -108,84 +134,130 @@
               @click="form.hora = slot.hora"
               :class="
                 form.hora === slot.hora
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300'
+                  ? 'bg-[#1e3a8a] text-white'
+                  : 'bg-gray-100 text-slate-600 hover:bg-gray-200'
               "
-              class="py-3 border rounded-xl text-sm font-medium transition-all"
+              class="py-3 rounded-[12px] text-xs font-black uppercase transition-all shadow-sm"
             >
               {{ slot.hora }}
             </button>
           </div>
         </div>
 
-        <button @click="etapa = 2" :disabled="!form.hora" class="btn-submit mt-8">
-          Continuar para Dados Pessoais <i class="pi pi-angle-right"></i>
-        </button>
+        <v-btn
+          color="primary"
+          :disabled="!form.hora"
+          @click="etapa = 2"
+          class="text-capitalize w-100 mt-6"
+          height="48"
+        >
+          Continuar para Dados Pessoais
+          <v-icon end>mdi-chevron-right</v-icon>
+        </v-btn>
       </div>
 
-      <div v-else class="space-y-6">
+      <div v-else class="space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="flex flex-col space-y-2 md:col-span-2">
-            <label class="text-sm font-semibold text-slate-700">Nome Completo</label>
-            <input
-              type="text"
+          <div class="md:col-span-2">
+            <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1"
+              >Nome Completo</label
+            >
+            <v-text-field
               v-model="form.nome"
               placeholder="Digite seu nome"
-              class="input-field"
-            />
+              density="compact"
+              rounded="12px"
+              variant="solo"
+              class="text-xs font-bold"
+            ></v-text-field>
           </div>
-          <div class="flex flex-col space-y-2">
-            <label class="text-sm font-semibold text-slate-700">CPF</label>
-            <input
-              type="text"
+
+          <div>
+            <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1"
+              >CPF</label
+            >
+            <v-text-field
               v-model="form.cpf"
               placeholder="000.000.000-00"
-              class="input-field"
-            />
+              density="compact"
+              rounded="12px"
+              variant="solo"
+              class="text-xs font-bold"
+            ></v-text-field>
           </div>
-          <div class="flex flex-col space-y-2">
-            <label class="text-sm font-semibold text-slate-700">Data de Nascimento</label>
-            <input type="date" v-model="form.dataNascimento" class="input-field" />
+
+          <div>
+            <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1"
+              >Data de Nascimento</label
+            >
+            <v-text-field
+              v-model="form.dataNascimento"
+              type="date"
+              density="compact"
+              rounded="12px"
+              variant="solo"
+              class="text-xs font-bold"
+            ></v-text-field>
           </div>
-          <div class="flex flex-col space-y-2">
-            <label class="text-sm font-semibold text-slate-700">Celular</label>
-            <input
-              type="text"
+
+          <div>
+            <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1"
+              >Celular</label
+            >
+            <v-text-field
               v-model="form.celular"
               placeholder="(00) 00000-0000"
-              class="input-field"
-            />
+              density="compact"
+              rounded="12px"
+              variant="solo"
+              class="text-xs font-bold"
+            ></v-text-field>
           </div>
-          <div class="flex flex-col space-y-2">
-            <label class="text-sm font-semibold text-slate-700">Email</label>
-            <input
-              type="email"
+
+          <div>
+            <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1"
+              >Email</label
+            >
+            <v-text-field
               v-model="form.email"
+              type="email"
               placeholder="seu@email.com"
-              class="input-field"
-            />
+              density="compact"
+              rounded="12px"
+              variant="solo"
+              class="text-xs font-bold"
+            ></v-text-field>
           </div>
         </div>
 
         <div class="flex gap-4 mt-8">
-          <button
+          <v-btn
+            variant="outlined"
             @click="etapa = 1"
-            class="flex-1 py-4 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50 transition-colors"
+            class="text-capitalize flex-1"
+            height="48"
+            style="border-radius: 12px"
           >
             Voltar
-          </button>
-          <button @click="agendar" :disabled="loading" class="btn-submit flex-[2] mt-0">
-            {{ loading ? 'Processando...' : 'Finalizar Agendamento' }}
-          </button>
+          </v-btn>
+          <v-btn
+            color="primary"
+            :loading="loading"
+            @click="agendar"
+            class="text-capitalize flex-[2]"
+            height="48"
+            style="border-radius: 15px"
+          >
+            Finalizar Agendamento
+          </v-btn>
         </div>
       </div>
 
       <div class="mt-10 pt-6 border-t border-slate-100 flex gap-3">
-        <i class="pi pi-info-circle text-blue-500 mt-1"></i>
-        <p class="text-xs text-slate-400 leading-relaxed">
-          Ao clicar em finalizar, você concorda com nossos termos de uso e política de privacidade.
-          Seus dados serão utilizados exclusivamente para a gestão do agendamento público
-          solicitado.
+        <v-icon color="blue" size="small">mdi-information-outline</v-icon>
+        <p class="text-[10px] text-slate-400 font-bold uppercase leading-relaxed">
+          Ao clicar em finalizar, você concorda com nossos termos de uso. Seus dados serão
+          utilizados exclusivamente para a gestão do agendamento solicitado.
         </p>
       </div>
     </main>
@@ -200,15 +272,18 @@
 </template>
 
 <script setup>
-/* Lógica do Script permanece a mesma da versão anterior, garantindo funcionalidade */
 import { ref, onMounted } from 'vue'
 import 'primeicons/primeicons.css'
 
 const etapa = ref(1)
+const loading = ref(false)
+const API_BASE = 'http://localhost:8080'
+
+// Estado do Formulário
 const form = ref({
-  secretariaId: '',
-  setorId: '',
-  servicoId: '',
+  secretariaId: null,
+  setorId: null,
+  servicoId: null,
   data: '',
   hora: '',
   nome: '',
@@ -219,48 +294,79 @@ const form = ref({
   tipoAtendimento: 'NORMAL',
 })
 
+// Listas de Dados
 const secretarias = ref([])
 const setores = ref([])
 const servicos = ref([])
 const slots = ref([])
-const loading = ref(false)
-const API_BASE = 'http://localhost:8080'
 
-// Métodos (Mantendo integração com seu backend)
+// 1. Carrega as Secretarias (Executa no onMounted)
 async function carregarSecretarias() {
-  const res = await fetch(`${API_BASE}/secretarias`)
-  secretarias.value = await res.json()
+  try {
+    const res = await fetch(`${API_BASE}/secretarias`)
+    secretarias.value = await res.json()
+  } catch (err) {
+    console.error('Erro ao carregar secretarias:', err)
+  }
 }
+
+// 2. Busca Setores baseado na Secretaria (Chamado no @update:model-value da Secretaria)
 async function buscarSetores() {
-  form.value.setorId = ''
-  form.value.servicoId = ''
-  form.value.data = ''
-  limparHorarios()
   if (!form.value.secretariaId) return
-  const res = await fetch(`${API_BASE}/setores/por-secretaria/${form.value.secretariaId}`)
-  setores.value = await res.json()
+
+  try {
+    const res = await fetch(`${API_BASE}/setores/por-secretaria/${form.value.secretariaId}`)
+    if (!res.ok) throw new Error('Falha ao buscar setores')
+    setores.value = await res.json()
+
+    // Limpa campos filhos para manter integridade
+    form.value.setorId = null
+    form.value.servicoId = null
+  } catch (err) {
+    console.error('Erro ao buscar setores:', err)
+  }
 }
+
+// 3. Busca Serviços baseado no Setor (Chamado no @update:model-value do Setor)
 async function buscarServicos() {
-  form.value.servicoId = ''
-  form.value.data = ''
-  limparHorarios()
   if (!form.value.setorId) return
-  const res = await fetch(`${API_BASE}/agendamento/api/servico/setor/${form.value.setorId}`)
-  servicos.value = await res.json()
+
+  try {
+    // Note que usamos o mesmo padrão de rota da sua API
+    const res = await fetch(`${API_BASE}/agendamento/api/servico/setor/${form.value.setorId}`)
+    if (!res.ok) throw new Error('Falha ao buscar serviços')
+    servicos.value = await res.json()
+
+    form.value.servicoId = null
+    limparHorarios()
+  } catch (err) {
+    console.error('Erro ao buscar serviços:', err)
+  }
 }
+
+// 4. Busca Horários Disponíveis
+async function buscarHorarios() {
+  limparHorarios()
+  if (!form.value.data || !form.value.setorId) return
+
+  try {
+    const res = await fetch(
+      `${API_BASE}/api/slots/horarios-disponiveis?setorId=${form.value.setorId}&data=${form.value.data}`,
+    )
+    const data = await res.json()
+    // Filtra apenas slots com vagas > 0
+    slots.value = data.filter((s) => s.vagasDisponiveis > 0)
+  } catch (err) {
+    console.error('Erro ao buscar horários:', err)
+  }
+}
+
 function limparHorarios() {
   slots.value = []
   form.value.hora = ''
 }
-async function buscarHorarios() {
-  limparHorarios()
-  if (!form.value.data || !form.value.setorId) return
-  const res = await fetch(
-    `${API_BASE}/api/slots/horarios-disponiveis?setorId=${form.value.setorId}&data=${form.value.data}`,
-  )
-  const data = await res.json()
-  slots.value = data.filter((s) => s.vagasDisponiveis > 0)
-}
+
+// 5. Finaliza o Agendamento
 async function agendar() {
   loading.value = true
   try {
@@ -269,15 +375,20 @@ async function agendar() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form.value),
     })
+
     if (!response.ok) throw new Error(await response.text())
+
     const result = await response.json()
     alert('✅ Agendamento realizado! Senha: ' + result.senha)
+
+    // Opcional: Resetar o formulário ou redirecionar
   } catch (err) {
     alert('❌ Erro: ' + err.message)
   } finally {
     loading.value = false
   }
 }
+
 onMounted(carregarSecretarias)
 </script>
 

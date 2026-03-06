@@ -4,11 +4,7 @@
       class="bg-white px-4 md:px-10 py-3 flex justify-between items-center border-b border-gray-100 shrink-0"
     >
       <div class="flex items-center">
-        <img
-          src="../assets/logo-prefeitura.png"
-          alt="Prefeitura"
-          class="h-8 md:h-12 object-contain"
-        />
+        <img src="../assets/brasao.png" alt="Prefeitura" class="h-8 md:h-12 object-contain" />
       </div>
       <div class="flex items-center">
         <h1 class="text-xl md:text-2xl font-bold text-[#003B73] uppercase">
@@ -163,9 +159,27 @@ const apiPublico = axios.create({
   timeout: 8000,
 })
 
+const buscarInfoSetor = async () => {
+  try {
+    const res = await apiPublico.get(`/setores/${setorId.value}`)
+    if (res.data && res.data.nome) {
+      nomeSecretaria.value = res.data.nome
+    }
+  } catch (e) {
+    console.warn('Não foi possível buscar o nome do setor pelo endpoint direto.')
+  }
+}
+
+onMounted(() => {
+  if (route.params.setorId) {
+    buscarInfoSetor()
+    start()
+  }
+})
 const relogio = ref('')
 const audioPlayer = ref(null)
 const somAtivado = ref(false)
+const nomeSecretaria = ref('Secretaria')
 
 const senhaAtual = ref({ numero: '---', guiche: null, cidadao: 'Aguardando...' })
 const historico = ref([])
@@ -177,13 +191,8 @@ const lastKey = ref(null)
 const fetching = ref(false)
 
 const qrSrc = computed(() => {
-  // 1. Defina a base da sua URL pública
   const urlPublica = `http://localhost/tv/${setorId.value}`
-
-  // 2. Codifique a URL para que caracteres como '/' e ':' não quebrem o link
   const data = encodeURIComponent(urlPublica)
-
-  // 3. Retorne o link da API do QR Code
   return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${data}`
 })
 
@@ -218,11 +227,7 @@ function pegarCampo(item, chaves) {
 }
 
 const buscarChamadas = async () => {
-  console.log('Buscando chamadas para o setor:', setorId.value)
-  if (!setorId.value || setorId.value === 0) {
-    console.warn('setorId inválido na rota.')
-    return
-  }
+  if (!setorId.value || setorId.value === 0) return
   if (fetching.value) return
   fetching.value = true
 
@@ -231,8 +236,29 @@ const buscarChamadas = async () => {
       `/agendamentos/ultimas-chamadas/${setorId.value}?t=${Date.now()}`,
       { headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' } },
     )
-
+    console.log('Dados recebidos da API:', res.data)
     const lista = extrairLista(res.data)
+
+    if (lista.length > 0) {
+      const item = lista[0]
+      if (item.servicoNome) {
+        nomeSecretaria.value = item.servicoNome
+      } else {
+        const nomeEncontrado = pegarCampo(item, [
+          'secretariaNome',
+          'nomeSecretaria',
+          'setorNome',
+          'nomeSetor',
+          'setor',
+          'secretaria',
+          'nome',
+        ])
+
+        if (nomeEncontrado) {
+          nomeSecretaria.value = nomeEncontrado
+        }
+      }
+    }
     if (!lista.length) return
 
     const ultima = lista[0]
@@ -284,7 +310,7 @@ const buscarChamadas = async () => {
       falarChamada(senhaAtual.value.cidadao, senhaAtual.value.numero, guicheFormatado.value)
     }
   } catch (error) {
-    console.error('Erro ao buscar chamadas:', error?.response?.data || error?.message || error)
+    console.error('Erro ao buscar chamadas:', error)
   } finally {
     fetching.value = false
   }
@@ -292,28 +318,20 @@ const buscarChamadas = async () => {
 
 const falarChamada = (nome, senha, guiche) => {
   if (!somAtivado.value) return
-
   const texto = `Senha ${senha}, ${nome}, comparecer ao guichê ${guiche}`
-
   const falar = (vezesRestantes) => {
     const msg = new SpeechSynthesisUtterance()
     msg.text = texto
     msg.lang = 'pt-BR'
     msg.rate = 1.0
-
     msg.onend = () => {
-      if (vezesRestantes > 1) {
-        falar(vezesRestantes - 1)
-      }
+      if (vezesRestantes > 1) falar(vezesRestantes - 1)
     }
-
     window.speechSynthesis.speak(msg)
   }
-
   if (audioPlayer.value) {
     audioPlayer.value.currentTime = 0
     audioPlayer.value.play().catch(() => {})
-
     setTimeout(() => {
       falar(2)
     }, 1000)
@@ -331,7 +349,6 @@ function start() {
   stop()
   atualizarRelogio()
   intervalRelogio = setInterval(atualizarRelogio, 1000)
-
   buscarChamadas()
   intervalChamada = setInterval(buscarChamadas, 1500)
 }
@@ -343,15 +360,14 @@ function stop() {
   intervalRelogio = null
 }
 
-onMounted(start)
-onUnmounted(stop)
-
 onMounted(() => {
+  // Inicialização focada no setorId vindo da rota
   if (route.params.setorId) {
-    setorId.value = Number(route.params.setorId)
     start()
   } else {
     console.error('Nenhum setorId encontrado na URL')
   }
 })
+
+onUnmounted(stop)
 </script>
