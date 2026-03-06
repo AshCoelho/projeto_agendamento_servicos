@@ -790,10 +790,10 @@ export default {
       ).length
     },
     totalPrioridadeFila() {
-      return this.agendamentosPorSetor.filter(
-        (a) => a.situacao === 'AGENDADO' && a.tipoAtendimento === 'PRIORIDADE',
-      ).length
-    },
+    return this.agendamentosPorSetor.filter(
+      (a) => a.situacao === 'AGENDADO' && a.tipoAtendimento.includes('PRIORIDADE')
+    ).length
+  },
   },
 
   methods: {
@@ -878,41 +878,48 @@ export default {
     },
 
     async buscarAgendamentos() {
-  try {
-    if (!this.usuario?.id) await this.getUsuarioLogado()
-    if (this.setorTrabalhoId) {
-      const data = await AtendenteApi.buscarAgendamentosPorSetor(this.setorTrabalhoId)
-      this.agendamentosPorSetor = [...data]
+    try {
+      if (!this.usuario?.id) await this.getUsuarioLogado()
+      if (this.setorTrabalhoId) {
+        const data = await AtendenteApi.buscarAgendamentosPorSetor(this.setorTrabalhoId)
+        this.agendamentosPorSetor = [...data]
 
-      // 🔍 LINHA PARA DEBUG SEGURO
-      console.log("MEU ID:", this.usuario.id);
-      console.log("LISTA DO BANCO:", this.agendamentosPorSetor.map(a => ({
-        senha: a.senha,
-        status: a.situacao,
-        idAtendenteNoObjeto: this.usuario.id || a.atendenteId || (a.usuario ? a.usuario.id : 'NULO')
-      })));
+        // 🔍 LINHA PARA DEBUG SEGURO
+        console.log("MEU ID:", this.usuario.id);
+        console.log("LISTA DO BANCO:", this.agendamentosPorSetor.map(a => ({
+          senha: a.senha,
+          status: a.situacao,
+          idAtendenteNoObjeto: this.usuario.id || a.atendenteId || (a.usuario ? a.usuario.id : 'NULO')
+        })));
+      }
+    } catch (e) {
+      console.error('Erro ao buscar agendamentos:', e)
     }
-  } catch (e) {
-    console.error('Erro ao buscar agendamentos:', e)
-  }
-},
+  },
 
     async handleChamar(senha) {
-      try {
-        const res = await AtendenteApi.chamarPorSenha(senha, this.usuario.id, this.setorTrabalhoId)
+    // 🟢 TRAVA: Impede chamar manualmente se já houver um atendimento aberto
+    if (this.temAtendimentoAtivo) {
+      alert("Você já possui um atendimento em aberto. Finalize-o antes de chamar outra senha.");
+      return;
+    }
 
-        if (res.status === 200) {
-          const item = this.agendamentosPorSetor.find((a) => a.senha === senha)
+    try {
+      const res = await AtendenteApi.chamarPorSenha(senha, this.usuario.id, this.setorTrabalhoId)
 
-          if (item) this.idsChamadosManualmente.push(item.agendamentoId || item.id)
+      if (res.status === 200) {
+        const item = this.agendamentosPorSetor.find((a) => a.senha === senha)
 
-          this.abaAtiva = 'ATENDIMENTO'
-          await this.buscarAgendamentos()
-        }
-      } catch (e) {
-        alert(e?.response?.data?.mensagem || 'Falha na chamada.')
+        if (item) this.idsChamadosManualmente.push(item.agendamentoId || item.id)
+
+        this.abaAtiva = 'ATENDIMENTO'
+        await this.buscarAgendamentos()
       }
-    },
+    } catch (e) {
+      // Aqui o Java também pode retornar mensagens de erro específicas (ex: senha já chamada por outro)
+      alert(e?.response?.data?.mensagem || 'Falha na chamada.')
+    }
+  },
 
     async handleChamarNormal() {
   // 1ª VALIDAÇÃO: Você está ocupado?
@@ -940,31 +947,26 @@ export default {
   }
 },
 
-async handleChamarPrioridade() {
-  // 1ª VALIDAÇÃO: Você está ocupado?
-  if (this.temAtendimentoAtivo) {
-    alert("Você já possui um atendimento em aberto. Finalize-o antes de chamar o próximo.");
-    return;
-  }
-
-  // 2ª VALIDAÇÃO: Tem alguém na fila?
-  if (this.totalPrioridadeFila === 0) {
-    alert("Não há pacientes aguardando na fila de atendimento PRIORITÁRIO.");
-    return;
-  }
-
-  try {
-    const { data } = await AtendenteApi.chamarPrioridade(this.setorTrabalhoId, this.usuario.id);
-    if (data && data.sucesso === false) {
-      alert(data.mensagem);
+  async handleChamarPrioridade() {
+    // 1. Trava de Atendimento Ativo
+    if (this.temAtendimentoAtivo) {
+      alert("Você já possui um atendimento em aberto. Finalize-o antes de chamar o próximo.");
+      return;
     }
-  } catch (error) {
-    console.error("Erro técnico:", error);
-    alert("Falha ao chamar: Ocorreu um erro na comunicação com o servidor.");
-  } finally {
-    this.buscarAgendamentos();
-  }
-},
+
+    try {
+      const { data } = await AtendenteApi.chamarPrioridade(this.setorTrabalhoId, this.usuario.id);
+      
+      // 2. Aqui o Java retornará a mensagem: "Não há prioridades na fila para hoje."
+      if (data && data.sucesso === false) {
+        alert(data.mensagem);
+      }
+    } catch (error) {
+      console.error("Erro técnico:", error);
+    } finally {
+      this.buscarAgendamentos();
+    }
+  },
 
     async handleCancelar(id) {
       if (!confirm('Deseja realmente cancelar?')) return
