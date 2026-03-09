@@ -159,7 +159,7 @@
           class="bg-white p-6 rounded-[15px] shadow-sm flex justify-between items-start border-b-4 border-transparent"
         >
           <div>
-            <p class="text-[12px] font-bold text-gray-400 uppercase mb-1">Finalizados</p>
+            <p class="text-[12px] font-bold text-gray-400 uppercase mb-1">Atendidos</p>
             <h3 class="text-3xl font-black text-gray-800">{{ agendamentosFinalizados }}</h3>
             <span class="inline-block w-8 h-1 bg-green-600 rounded-full"></span>
           </div>
@@ -174,7 +174,7 @@
           class="bg-white p-6 rounded-[15px] shadow-sm flex justify-between items-start border-b-4 border-transparent"
         >
           <div>
-            <p class="text-[12px] font-bold text-gray-400 uppercase mb-1">Cancelados</p>
+            <p class="text-[12px] font-bold text-gray-400 uppercase mb-1">Ausentes</p>
             <h3 class="text-3xl font-black text-gray-800">{{ agendamentosCancelados }}</h3>
             <span class="inline-block w-8 h-1 bg-red-600 rounded-full"></span>
           </div>
@@ -241,7 +241,7 @@
                 "
                 class="text-xs font-black border-b-2 pb-1 uppercase tracking-widest"
               >
-                Agendado
+                Fila Geral
               </button>
 
               <button
@@ -277,7 +277,7 @@
                 "
                 class="text-xs font-black border-b-2 pb-1 uppercase tracking-widest"
               >
-                CANCELADOS
+                Ausentes
               </button>
 
               <button
@@ -289,7 +289,7 @@
                 "
                 class="text-xs font-black border-b-2 pb-1 uppercase tracking-widest"
               >
-                FINALIZADOS
+                Atendidos
               </button>
 
               <div
@@ -351,7 +351,7 @@
 
                     <div>
                       <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1"
-                        >Endereço</label
+                        >Setor</label
                       >
                       <v-text-field
                         v-model="enderecoEstatico"
@@ -472,7 +472,7 @@
 
                     <div>
                       <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1"
-                        >Endereço</label
+                        >Setor</label
                       >
                       <v-text-field
                         v-model="enderecoEstatico"
@@ -626,7 +626,7 @@
                     size="small"
                     class="text-white text-[10px] font-black"
                     @click="handleFinalizar(item.agendamentoId)"
-                    >Finalizar</v-btn
+                    >Atendido</v-btn
                   >
                   <v-btn
                     v-if="abaAtiva === 'ATENDIMENTO'"
@@ -634,7 +634,7 @@
                     size="small"
                     class="text-white text-[10px] font-black"
                     @click="handleCancelar(item.agendamentoId)"
-                    >Cancelar</v-btn
+                    >Ausente</v-btn
                   >
                 </td>
               </tr>
@@ -703,6 +703,7 @@ export default {
     idsChamadosManualmente: [],
     servicos: [],
     tiposAtendimento: [],
+    horaAtual: new Date(),
 
     // Formulários
     novoAgendamento: { nomeCidadao: '', servico: null, tipoAtendimentoId: null },
@@ -746,25 +747,28 @@ export default {
     },
 
     agendamentosFiltrados() {
+      // 🟢 Pegamos o seu ID aqui
+      const meuId = this.usuario?.id || localStorage.getItem('usuarioId');
+
       let lista = AgendamentoService.filtrarAgendamentos(
         this.agendamentosPorSetor,
         this.abaAtiva,
         this.idsChamadosManualmente,
+        meuId // 🟢 Enviamos o seu ID como 4º parâmetro
       )
+
       if (this.filtroTexto && this.filtroTexto.trim() !== '') {
         const termo = this.filtroTexto.toLowerCase()
-
         lista = lista.filter((item) => {
-          // Verifica se o termo está na Senha ou no Nome do Usuário
           const senha = item.senha ? item.senha.toLowerCase() : ''
           const nome = item.usuarioNome ? item.usuarioNome.toLowerCase() : ''
-
           return senha.includes(termo) || nome.includes(termo)
         })
       }
 
       return lista
     },
+
     agendamentosPaginados() {
       const inicio = (this.paginaAtual - 1) * this.itensPorPagina
       return this.agendamentosFiltrados.slice(inicio, inicio + this.itensPorPagina)
@@ -810,12 +814,11 @@ export default {
     },
 
     atualizarRelogioLocal() {
-      this.relogio = new Date().toLocaleTimeString('pt-BR', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-      })
-    },
+    this.horaAtual = new Date(); // 🟢 Mantemos um objeto Date fresco
+    this.relogio = this.horaAtual.toLocaleTimeString('pt-BR', {
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+    })
+  },
 
     formatarDataHora(data) {
       if (!data) return ''
@@ -878,48 +881,56 @@ export default {
     },
 
     async buscarAgendamentos() {
-    try {
-      if (!this.usuario?.id) await this.getUsuarioLogado()
-      if (this.setorTrabalhoId) {
-        const data = await AtendenteApi.buscarAgendamentosPorSetor(this.setorTrabalhoId)
-        this.agendamentosPorSetor = [...data]
+      try {
+        if (!this.usuario?.id) await this.getUsuarioLogado()
+        if (this.setorTrabalhoId) {
+          const data = await AtendenteApi.buscarAgendamentosPorSetor(this.setorTrabalhoId)
+          this.agendamentosPorSetor = [...data]
 
-        // 🔍 LINHA PARA DEBUG SEGURO
-        console.log("MEU ID:", this.usuario.id);
-        console.log("LISTA DO BANCO:", this.agendamentosPorSetor.map(a => ({
-          senha: a.senha,
-          status: a.situacao,
-          idAtendenteNoObjeto: this.usuario.id || a.atendenteId || (a.usuario ? a.usuario.id : 'NULO')
-        })));
+          // 🔍 LINHA PARA DEBUG SEGURO
+          console.log("MEU ID:", this.usuario.id);
+          console.log("LISTA DO BANCO:", this.agendamentosPorSetor.map(a => ({
+            senha: a.senha,
+            status: a.situacao,
+            idAtendenteNoObjeto: this.usuario.id || a.atendenteId || (a.usuario ? a.usuario.id : 'NULO')
+          })));
+        }
+      } catch (e) {
+        console.error('Erro ao buscar agendamentos:', e)
       }
-    } catch (e) {
-      console.error('Erro ao buscar agendamentos:', e)
-    }
-  },
+    },
 
     async handleChamar(senha) {
-    // 🟢 TRAVA: Impede chamar manualmente se já houver um atendimento aberto
-    if (this.temAtendimentoAtivo) {
-      alert("Você já possui um atendimento em aberto. Finalize-o antes de chamar outra senha.");
-      return;
-    }
+      const itemClicado = this.agendamentosPorSetor.find((a) => a.senha === senha)
+      if (!itemClicado) return
 
-    try {
-      const res = await AtendenteApi.chamarPorSenha(senha, this.usuario.id, this.setorTrabalhoId)
+      const statusClicado = itemClicado.situacao?.toUpperCase()
+      const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'))
+      const donoDoItemClicado = Number(itemClicado.gerenciadorId || itemClicado.usuarioId)
 
-      if (res.status === 200) {
-        const item = this.agendamentosPorSetor.find((a) => a.senha === senha)
+      // 🟢 O SEGREDO: Verifica se o botão clicado é da senha que você já está atendendo
+      const ehMinhaSenhaAtual = (statusClicado === 'EM_ATENDIMENTO' || statusClicado === 'CHAMADO') && donoDoItemClicado === meuId
 
-        if (item) this.idsChamadosManualmente.push(item.agendamentoId || item.id)
-
-        this.abaAtiva = 'ATENDIMENTO'
-        await this.buscarAgendamentos()
+      // 🛑 TRAVA: Se você está ocupado E tentou chamar uma senha DIFERENTE da atual, bloqueia.
+      if (this.temAtendimentoAtivo && !ehMinhaSenhaAtual) {
+        alert("Você já possui um atendimento em aberto. Finalize-o antes de chamar outra senha.")
+        return
       }
-    } catch (e) {
-      // Aqui o Java também pode retornar mensagens de erro específicas (ex: senha já chamada por outro)
-      alert(e?.response?.data?.mensagem || 'Falha na chamada.')
-    }
-  },
+
+      try {
+        // Se passou pela trava (porque está livre OU porque está rechamando a própria senha), dispara para a API
+        const res = await AtendenteApi.chamarPorSenha(senha, this.usuario.id, this.setorTrabalhoId)
+
+        if (res.status === 200) {
+          if (itemClicado) this.idsChamadosManualmente.push(itemClicado.agendamentoId || itemClicado.id)
+          
+          this.abaAtiva = 'ATENDIMENTO'
+          await this.buscarAgendamentos()
+        }
+      } catch (e) {
+        alert(e?.response?.data?.mensagem || 'Falha na chamada.')
+      }
+    },
 
     async handleChamarNormal() {
   // 1ª VALIDAÇÃO: Você está ocupado?
@@ -948,21 +959,36 @@ export default {
 },
 
   async handleChamarPrioridade() {
-    // 1. Trava de Atendimento Ativo
     if (this.temAtendimentoAtivo) {
       alert("Você já possui um atendimento em aberto. Finalize-o antes de chamar o próximo.");
       return;
     }
 
     try {
-      const { data } = await AtendenteApi.chamarPrioridade(this.setorTrabalhoId, this.usuario.id);
-      
-      // 2. Aqui o Java retornará a mensagem: "Não há prioridades na fila para hoje."
-      if (data && data.sucesso === false) {
-        alert(data.mensagem);
+      const response = await AtendenteApi.chamarPrioridade(this.setorTrabalhoId, this.usuario.id);
+      const dados = response.data || response;
+
+      // Cenário A: Fila Vazia
+      if (dados && dados.sucesso === false) {
+        alert(dados.mensagem);
+      } 
+      // 🟢 Cenário B: SUCESSO! A tela precisa reagir e mudar de aba
+      else if (dados && dados.sucesso === true) {
+        if (dados.id) {
+          this.idsChamadosManualmente.push(dados.id);
+        }
+        this.abaAtiva = 'ATENDIMENTO'; // Pula para a aba do paciente atual
       }
+      
     } catch (error) {
       console.error("Erro técnico:", error);
+      const msgErro = error.response?.data?.mensagem || error.response?.data || "Ocorreu um erro ao tentar chamar.";
+      
+      if (typeof msgErro === 'string') {
+        alert(msgErro);
+      } else {
+        alert("Erro na comunicação com o servidor.");
+      }
     } finally {
       this.buscarAgendamentos();
     }
@@ -1104,7 +1130,13 @@ export default {
 
   async mounted() {
     await this.getUsuarioLogado()
-    this.buscarAgendamentos()
+    // 🟢 1. CHAMA IMEDIATAMENTE: A tela carrega na hora!
+    await this.buscarAgendamentos()
+    
+    // 🟢 2. LIGA O LOOP: Agora ele só atualiza o que mudou a cada 3 segundos
+    setInterval(() => {
+      this.buscarAgendamentos()
+    }, 3000)
     this.carregarServicos()
     this.carregarTiposAtendimento()
     this.atualizarRelogioLocal()
