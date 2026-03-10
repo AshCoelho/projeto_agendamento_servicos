@@ -122,7 +122,7 @@ export default {
     async handleLogin() {
       this.carregando = true
       try {
-        const { data } = await api.post('/gerenciador/login', this.login)
+        const { data } = await api.post('/auth/login', this.login)
 
         if (!data?.token) {
           throw new Error('Token não retornado no login')
