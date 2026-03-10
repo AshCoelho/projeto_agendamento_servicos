@@ -107,7 +107,7 @@
         </div>
       </header>
 
-      <ChamarSenhas @senha-chamada="mudarAba('ATENDIMENTO')"></ChamarSenhas>
+      <ChamarSenhas @senha-chamada="onSenhaChamadaPelosBotoes"></ChamarSenhas>
       
       <div class="px-8 pb-8">
         <div class="bg-white rounded-[15px] shadow-sm border-b-4 border-transparent p-4">
@@ -559,7 +559,6 @@ export default {
     // UI/Controle
     abaAtiva: 'AGUARDANDO',
     relogio: '--:--:--',
-    // Removidas variáveis de paginação
     mostrarModalEdicao: false,
     mostrarModalEspontaneo: false,
     sidebarAberta: false,
@@ -666,6 +665,24 @@ export default {
   },
 
   methods: {
+    // 🟢 MÉTODO NOVO QUE FALTAVA (Reage ao clique dos botões gigantes)
+    onSenhaChamadaPelosBotoes(idChamado) {
+      // Pula para a aba Em Atendimento na mesma hora
+      this.abaAtiva = 'ATENDIMENTO'
+
+      // Altera o status na tabela visualmente sem esperar a internet
+      if (idChamado) {
+        const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'))
+        const index = this.agendamentosPorSetor.findIndex((a) => (a.agendamentoId || a.id) === idChamado)
+
+        if (index !== -1) {
+          this.agendamentosPorSetor[index].situacao = 'CHAMADO'
+          this.agendamentosPorSetor[index].gerenciadorId = meuId
+          this.idsChamadosManualmente.push(idChamado)
+        }
+      }
+    },
+
     mudarAba(novaAba) {
       this.abaAtiva = novaAba
     },
@@ -790,11 +807,16 @@ export default {
         const res = await AtendenteApi.chamarPorSenha(senha, this.usuario.id, this.setorTrabalhoId)
 
         if (res.status === 200) {
-          if (itemClicado)
+          if (itemClicado) {
+             // 🟢 Atualização Otimista Direta
             this.idsChamadosManualmente.push(itemClicado.agendamentoId || itemClicado.id)
+            itemClicado.situacao = 'CHAMADO'
+            itemClicado.gerenciadorId = meuId 
+          }
 
+          // Muda a aba instantaneamente
           this.abaAtiva = 'ATENDIMENTO'
-          await this.buscarAgendamentos()
+          
         }
       } catch (e) {
         alert(e?.response?.data?.mensagem || 'Falha na chamada.')
@@ -810,11 +832,12 @@ export default {
         this.idsChamadosManualmente = this.idsChamadosManualmente.filter((itemId) => itemId !== id)
 
         const index = this.agendamentosPorSetor.findIndex((a) => (a.agendamentoId || a.id) === id)
-        if (index !== -1) this.agendamentosPorSetor[index].situacao = 'FALTOU'
+        if (index !== -1) {
+          this.agendamentosPorSetor[index].situacao = 'FALTOU'
+        }
 
+        // Volta pra Fila Geral na hora
         this.abaAtiva = 'AGUARDANDO'
-
-        await this.buscarAgendamentos()
       } catch (e) {
         alert('Erro ao cancelar.')
       }
@@ -823,22 +846,19 @@ export default {
     async handleFinalizar(id) {
       if (!confirm('Deseja finalizar?')) return
       try {
-        // 1. Envia o comando para a API
         await AtendenteApi.finalizarAtendimento(id)
 
-        // 2. Limpa o estado local
         this.idsChamadosManualmente = this.idsChamadosManualmente.filter((itemId) => itemId !== id)
         
-        // 🟢 3. ATUALIZAÇÃO OTIMISTA: Altera o status na tela instantaneamente (igual ao cancelar)
         const index = this.agendamentosPorSetor.findIndex((a) => (a.agendamentoId || a.id) === id)
-        if (index !== -1) this.agendamentosPorSetor[index].situacao = 'ATENDIDO'
+        if (index !== -1) {
+          this.agendamentosPorSetor[index].situacao = 'ATENDIDO'
+        }
 
-        // 4. Fecha o modal (caso esteja aberto) e muda a aba IMEDIATAMENTE
         this.mostrarModalEdicao = false
+        
+        // Volta pra Fila Geral na hora
         this.abaAtiva = 'AGUARDANDO'
-
-        // 5. Vai no banco de dados só para garantir que as listas fiquem atualizadas no fundo
-        await this.buscarAgendamentos()
       } catch (e) {
         console.error('Erro ao finalizar:', e)
         alert('Erro ao finalizar atendimento.')
@@ -847,13 +867,11 @@ export default {
 
     async salvarEspontaneo() {
       try {
-        // 1. Valida especificamente o NOME (e impede que mandem só espaços em branco)
         if (!this.novoAgendamento.nomeCidadao || this.novoAgendamento.nomeCidadao.trim() === '') {
           alert('Por favor, informe o nome do cidadão.')
           return
         }
 
-        // 2. Valida especificamente o SERVIÇO
         if (!this.novoAgendamento.servico) {
           alert('Por favor, selecione um serviço para o atendimento.')
           return
@@ -928,9 +946,11 @@ export default {
     await this.getUsuarioLogado()
     await this.buscarAgendamentos()
 
+    // Eu subi o intervalo para 2 segundos, pois 1 segundo afoga o servidor se houverem muitos atendentes
     setInterval(() => {
       this.buscarAgendamentos()
-    }, 1000)
+    }, 2000)
+    
     this.carregarServicos()
     this.carregarTiposAtendimento()
     this.atualizarRelogioLocal()

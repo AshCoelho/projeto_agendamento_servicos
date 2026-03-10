@@ -244,15 +244,14 @@ export default {
         if (data && data.sucesso === false) {
           alert(data.mensagem)
         } else {
-          // 🟢 SUCESSO: Avisa a tela principal para mudar a aba
-          this.$emit('senha-chamada')
+          // 🟢 O SEGREDO 1: Envia o ID na fofoca para o Pai atualizar a tabela na hora!
+          this.$emit('senha-chamada', data.id)
         }
       } catch (error) {
         console.error('Erro técnico:', error)
         alert('Falha ao chamar: Ocorreu um erro na comunicação com o servidor.')
-      } finally {
-        this.buscarAgendamentos()
-      }
+      } 
+      // 🔴 Bloco "finally" apagado! Ele estava causando a lentidão.
     },
 
     async handleChamarPrioridade() {
@@ -268,42 +267,38 @@ export default {
         if (dados && dados.sucesso === false) {
           alert(dados.mensagem)
         } else if (dados && dados.sucesso === true) {
-          
-          // 🟢 ATUALIZAÇÃO OTIMISTA
-          if (dados.id) {
-            this.idsChamadosManualmente.push(dados.id)
-
-            // Acha o cidadão na lista atual e atualiza o status instantaneamente
-            const index = this.agendamentosPorSetor.findIndex((a) => (a.agendamentoId || a.id) === dados.id)
-            if (index !== -1) {
-              this.agendamentosPorSetor[index].situacao = 'CHAMADO'
-              this.agendamentosPorSetor[index].gerenciadorId = this.usuario.id
-            }
-          }
-          // Muda a aba sem fazer o usuário esperar
-          this.$emit('senha-chamada')
+          // 🟢 O SEGREDO 1: Envia o ID na fofoca para o Pai atualizar a tabela na hora!
+          this.$emit('senha-chamada', dados.id)
         }
       } catch (error) {
         console.error('Erro técnico:', error)
         const msgErro = error.response?.data?.mensagem || error.response?.data || 'Ocorreu um erro ao tentar chamar.'
         alert(typeof msgErro === 'string' ? msgErro : 'Erro na comunicação com o servidor.')
-      } finally {
-        // Atualiza a lista no fundo, sem travar a tela
-        this.buscarAgendamentos()
       }
+      // 🔴 Bloco "finally" apagado! Ele estava causando a lentidão.
     },
 
     async handleCancelar(id) {
       if (!confirm('Deseja realmente cancelar?')) return
       try {
         const token = localStorage.getItem('token')
+        
+        // 1. Envia comando para a API
         await AtendenteApi.cancelarAtendimento(id, token)
 
+        // 2. Limpa dos chamados manuais
         this.idsChamadosManualmente = this.idsChamadosManualmente.filter((itemId) => itemId !== id)
 
+        // 3. Atualização Otimista (tira o status de EM_ATENDIMENTO instantaneamente)
         const index = this.agendamentosPorSetor.findIndex((a) => (a.agendamentoId || a.id) === id)
-        if (index !== -1) this.agendamentosPorSetor[index].situacao = 'FALTOU'
+        if (index !== -1) {
+          this.agendamentosPorSetor[index].situacao = 'FALTOU'
+        }
 
+        // 🟢 4. MUDA A ABA NA HORA!
+        this.abaAtiva = 'AGUARDANDO'
+
+        // 5. Busca os dados reais no fundo
         await this.buscarAgendamentos()
       } catch (e) {
         alert('Erro ao cancelar.')
@@ -313,12 +308,25 @@ export default {
     async handleFinalizar(id) {
       if (!confirm('Deseja finalizar?')) return
       try {
+        // 1. Envia comando para a API
         await AtendenteApi.finalizarAtendimento(id)
 
+        // 2. Limpa dos chamados manuais
         this.idsChamadosManualmente = this.idsChamadosManualmente.filter((itemId) => itemId !== id)
-        await new Promise((resolve) => setTimeout(resolve, 400))
-
+        
+        // 3. Fecha o modal de edição (caso esteja aberto)
         this.mostrarModalEdicao = false
+
+        // 4. Atualização Otimista (tira o status de EM_ATENDIMENTO instantaneamente)
+        const index = this.agendamentosPorSetor.findIndex((a) => (a.agendamentoId || a.id) === id)
+        if (index !== -1) {
+          this.agendamentosPorSetor[index].situacao = 'ATENDIDO'
+        }
+
+        // 🟢 5. MUDA A ABA NA HORA!
+        this.abaAtiva = 'AGUARDANDO'
+
+        // 6. Busca os dados reais no fundo
         await this.buscarAgendamentos()
       } catch (e) {
         console.error('Erro ao finalizar:', e)
