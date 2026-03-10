@@ -91,7 +91,7 @@
 </template>
 
 <script>
-import api from '@/services/api'
+import api from '@/services/api' // Garanta que seu arquivo api.js está mandando o token certinho!
 
 export default {
   data: () => ({
@@ -103,8 +103,8 @@ export default {
     setores: [],
     guiches: [],
     carregandoGuiches: false,
-    carregandoSetores: false, // 🟢 Variável adicionada
-    salvando: false // 🟢 Substituí o 'carregando' (que não existia) por 'salvando'
+    carregandoSetores: false, 
+    salvando: false 
   }),
 
   methods: {
@@ -124,13 +124,14 @@ export default {
           return
         }
 
-        this.salvando = true // 🟢 Inicia o loading no botão
+        this.salvando = true 
 
         const payload = { guicheId: this.selectedGuiche }
 
-        const response = await api.patch(`/gerenciador/${this.usuario?.id}/guiche`, payload)
+        // Faz a requisição enviando o PATCH para o servidor
+        await api.patch(`/gerenciador/${this.usuario.id}/guiche`, payload)
 
-        // Se chegou aqui, deu certo
+        // Se chegou aqui, o Spring retornou sucesso (200 OK)
         localStorage.setItem('setorTrabalhoId', this.selectedSetor)
         localStorage.setItem('secretariaTrabalhoId', this.selectedSecretaria)
         localStorage.setItem('guicheTrabalho', this.selectedGuiche)
@@ -138,11 +139,19 @@ export default {
         this.$router.push('/atendente')
       } catch (e) {
         console.error('Erro ao atualizar guichê:', e)
+        
+        // Impede que o sistema redirecione o usuário se ele tomou erro do banco (ex: "Guichê ocupado")
+        if (e.response && e.response.status === 401) {
+            alert("Sua sessão expirou. Faça login novamente.")
+            this.$router.push('/login')
+            return;
+        }
+
         const mensagemErro =
-          e.response?.data?.mensagem || e.response?.data || 'Erro ao salvar configurações'
+          e.response?.data?.mensagem || e.response?.data || 'Erro ao salvar configurações de guichê'
         alert(mensagemErro)
       } finally {
-        this.salvando = false // 🟢 Para o loading no botão, mesmo se der erro
+        this.salvando = false
       }
     },
 
@@ -159,10 +168,10 @@ export default {
         this.setores = []
         return
       }
-      this.carregandoSetores = true // Efeito visual rápido
+      this.carregandoSetores = true
       setTimeout(() => {
         this.setores = this.usuario.setores
-          .filter((s) => s.secretariaId === secretariaId) // 🔴 Verifica se é secretariaId no DTO!
+          .filter((s) => s.secretariaId === secretariaId) 
           .map((s) => ({ title: s.nome, value: s.id }))
           .sort((a, b) => a.title.localeCompare(b.title))
         this.carregandoSetores = false
@@ -173,13 +182,17 @@ export default {
       this.carregandoGuiches = true
       try {
         const response = await api.get(`/guiches/setor/${setorId}`)
-        this.guiches = response.data.map((g) => ({
-          title: `Guichê ${String(g.numero).padStart(2, '0')}`,
-          value: g.id,
-        }))
+        if (response.data && response.data.length > 0) {
+            this.guiches = response.data.map((g) => ({
+            title: `Guichê ${String(g.numero).padStart(2, '0')}`,
+            value: g.id,
+            }))
+        } else {
+            this.guiches = [] // Deixa vazio em vez de estourar erro
+        }
       } catch (e) {
         console.error('Erro ao carregar guichês:', e)
-        this.guiches = []
+        this.guiches = [] // Blindagem: Se der erro na API, apenas limpa a lista, não desloga!
       } finally {
         this.carregandoGuiches = false
       }
