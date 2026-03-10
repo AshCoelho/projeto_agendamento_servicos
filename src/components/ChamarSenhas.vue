@@ -477,7 +477,7 @@ export default {
         await this.buscarAgendamentos()
 
         // 5. Opcional: Se quiser que ele vá direto para a aba de finalizados após concluir
-        // this.abaAtiva = 'FINALIZADO'
+        this.abaAtiva = 'FINALIZADO'
       } catch (e) {
         console.error('Erro ao finalizar:', e)
         alert('Erro ao finalizar atendimento.')
