@@ -228,30 +228,29 @@ export default {
     },
 
     async handleChamarNormal() {
+      // Mantemos apenas a validação se VOCÊ está ocupado
       if (this.temAtendimentoAtivo) {
         alert('Você já possui um atendimento em aberto. Finalize-o antes de chamar o próximo.')
         return
       }
 
-      if (this.totalNormalFila === 0) {
-        alert('Não há pacientes aguardando na fila de atendimento NORMAL.')
-        return
-      }
+      // 🔴 APAGAMOS A VALIDAÇÃO DE "FILA VAZIA" DO FRONT-END. O BACKEND DECIDE AGORA!
 
       try {
-        const { data } = await AtendenteApi.chamarNormal(this.setorTrabalhoId, this.usuario.id)
+        const response = await AtendenteApi.chamarNormal(this.setorTrabalhoId, this.usuario.id)
+        const dados = response.data || response // Pega os dados com segurança
         
-        if (data && data.sucesso === false) {
-          alert(data.mensagem)
-        } else {
-          // 🟢 O SEGREDO 1: Envia o ID na fofoca para o Pai atualizar a tabela na hora!
-          this.$emit('senha-chamada', data.id)
+        if (dados && dados.sucesso === false) {
+          // 🟢 A API barrou (Fila vazia ou erro) e manda a mensagem!
+          alert(dados.mensagem)
+        } else if (dados && (dados.sucesso === true || dados.id)) {
+          // 🟢 SUCESSO: Avisa a tela principal para mudar a aba e tabela na hora!
+          this.$emit('senha-chamada', dados.id)
         }
       } catch (error) {
         console.error('Erro técnico:', error)
         alert('Falha ao chamar: Ocorreu um erro na comunicação com o servidor.')
       } 
-      // 🔴 Bloco "finally" apagado! Ele estava causando a lentidão.
     },
 
     async handleChamarPrioridade() {
@@ -265,9 +264,10 @@ export default {
         const dados = response.data || response
 
         if (dados && dados.sucesso === false) {
+          // 🟢 A API barrou (Fila vazia ou erro)
           alert(dados.mensagem)
-        } else if (dados && dados.sucesso === true) {
-          // 🟢 O SEGREDO 1: Envia o ID na fofoca para o Pai atualizar a tabela na hora!
+        } else if (dados && (dados.sucesso === true || dados.id)) {
+          // 🟢 SUCESSO: Avisa a tela principal para mudar a aba e tabela na hora!
           this.$emit('senha-chamada', dados.id)
         }
       } catch (error) {
@@ -275,7 +275,6 @@ export default {
         const msgErro = error.response?.data?.mensagem || error.response?.data || 'Ocorreu um erro ao tentar chamar.'
         alert(typeof msgErro === 'string' ? msgErro : 'Erro na comunicação com o servidor.')
       }
-      // 🔴 Bloco "finally" apagado! Ele estava causando a lentidão.
     },
 
     async handleCancelar(id) {
