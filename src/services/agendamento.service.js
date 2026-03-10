@@ -1,6 +1,5 @@
 export const AgendamentoService = {
-  filtrarAgendamentos(lista, abaAtiva, idsChamadosManualmente) {
-    // 1. Normaliza a lista
+  filtrarAgendamentos(lista, abaAtiva, idsChamadosManualmente, meuUsuarioId) {
     let listaNormalizada = lista.map((item) => {
       const status = item.situacao ? item.situacao.toUpperCase() : 'AGENDADO'
       const tipoAg = item.tipoAgendamento ? item.tipoAgendamento.toUpperCase() : 'NORMAL'
@@ -14,17 +13,24 @@ export const AgendamentoService = {
     })
 
     const regras = {
-      // 🔵 AGUARDANDO: Mostra TUDO que está agendado (Normal + Todas as Prioridades)
+      // Volta a mostrar TODOS os aguardando, para o atendente ver o dia inteiro
       'AGUARDANDO': (a) => 
         a.situacao === 'AGENDADO' && 
         ['AGENDADO', 'ESPONTANEO'].includes(a.tipoAgendamento),
 
-      // 🟡 PRIORIDADES: Mostra APENAS quem tem "PRIORIDADE" no nome
       'PRIORIDADES': (a) => 
         a.situacao === 'AGENDADO' && 
         a.tipoAtendimento.includes('PRIORIDADE'),
 
-      'ATENDIMENTO': (a) => ['EM_ATENDIMENTO', 'CHAMADO'].includes(a.situacao),
+      // A regra que importa: Aba 'EM_ATENDIMENTO' mostra apenas o SEU paciente
+      'ATENDIMENTO': (a) => {
+        const idNoBanco = Number(a.gerenciadorId || a.usuarioId);
+        const ocupado = ['EM_ATENDIMENTO', 'CHAMADO'].includes(a.situacao);
+        const ehMeu = idNoBanco === Number(meuUsuarioId);
+        
+        return ocupado && ehMeu;
+      },
+
       'CANCELADOS': (a) => ['FALTOU'].includes(a.situacao),
       'FINALIZADOS': (a) => ['ATENDIDO'].includes(a.situacao)
     }
