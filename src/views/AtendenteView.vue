@@ -755,7 +755,7 @@ export default {
         // this.$router.push({ name: 'login' })
 
         // 🟢 USE ISSO: Faz o papel de um "F5" e manda pro login com a memória limpa!
-        window.location.href = '/login'
+        window.location.href = '/'
       }
     },
 
