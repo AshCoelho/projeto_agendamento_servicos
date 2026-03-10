@@ -4,25 +4,19 @@
   ></div>
 
   <div
-    class="flex min-h-screen items-center justify-center bg-[#f1f5f9] font-sans relative overflow-hidden "
+    class="flex min-h-screen items-center justify-center bg-[#f1f5f9] font-sans relative overflow-hidden"
   >
-    <div class="absolute -top-24 -left-24 w-96 h-96 bg-blue-50 rounded-full opacity-50 " ></div>
-    <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-blue-50 rounded-full opacity-50 "></div>
+    <div class="absolute -top-24 -left-24 w-96 h-96 bg-blue-50 rounded-full opacity-50"></div>
+    <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-blue-50 rounded-full opacity-50"></div>
 
     <div
-      class="z-10 w-full max-w-md bg-white p-10 rounded-[32px] shadow-2xl shadow-blue-100 border border-gray-50 "
+      class="z-10 w-full max-w-md bg-white p-10 rounded-[32px] shadow-2xl shadow-blue-100 border border-gray-50"
     >
-      <div class="flex flex-col items-center mb-8 ">
-        <img
-          src="@/assets/logo-prefeitura.png"
-          alt="Prefeitura de São Luís"
-          class="h-14 mb-4"
-        />
+      <div class="flex flex-col items-center mb-8">
+        <img src="@/assets/logo-prefeitura.png" alt="Prefeitura de São Luís" class="h-14 mb-4" />
         <div class="h-1 w-12 bg-blue-600 rounded-full mb-6"></div>
 
-        <h2
-          class="text-xl font-black text-[#1e3a8a] uppercase tracking-tighter"
-        >
+        <h2 class="text-xl font-black text-[#1e3a8a] uppercase tracking-tighter">
           Acesso ao <span class="text-blue-600">Sistema</span>
         </h2>
         <p class="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mt-1">
@@ -39,7 +33,9 @@
             E-mail ou CPF
           </label>
           <div class="relative">
-            <i class="pi pi-user absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 text-sm"></i>
+            <i
+              class="pi pi-user absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 text-sm"
+            ></i>
             <input
               v-model="login.login"
               type="text"
@@ -58,7 +54,9 @@
             Senha
           </label>
           <div class="relative">
-            <i class="pi pi-lock absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 text-sm"></i>
+            <i
+              class="pi pi-lock absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 text-sm"
+            ></i>
 
             <input
               v-model="login.senha"
@@ -95,9 +93,7 @@
       </form>
 
       <div class="mt-10 text-center">
-        <p class="text-[9px] font-bold text-gray-400 uppercase">
-          © 2026 Prefeitura de São Luís
-        </p>
+        <p class="text-[9px] font-bold text-gray-400 uppercase">© 2026 Prefeitura de São Luís</p>
         <p class="text-[9px] font-black text-blue-700 uppercase mt-1">
           Secretaria Municipal de Tecnologia da Informação
         </p>
@@ -139,7 +135,7 @@ export default {
         const perfil = (data.perfil || '').toUpperCase()
 
         switch (perfil) {
-          case 'ADMINISTRADOR':
+          case 'ADMIN':
             this.$router.push('/administrador')
             break
           case 'ATENDENTE':
@@ -154,9 +150,7 @@ export default {
         }
       } catch (error) {
         const msg =
-          error?.response?.data?.mensagem ||
-          error?.response?.data ||
-          'Login ou senha inválidos'
+          error?.response?.data?.mensagem || error?.response?.data || 'Login ou senha inválidos'
 
         alert(msg)
         localStorage.removeItem('token')
@@ -166,7 +160,6 @@ export default {
       }
     },
   },
-  
 }
 </script>
 
