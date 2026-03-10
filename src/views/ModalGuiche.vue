@@ -91,7 +91,7 @@
 </template>
 
 <script>
-import api from '@/services/api' // Garanta que seu arquivo api.js está mandando o token certinho!
+import api from '@/services/api'
 
 export default {
   data: () => ({
@@ -110,9 +110,26 @@ export default {
   methods: {
     getUsuarioLogado() {
       const userData = localStorage.getItem('usuario')
+      
       if (userData) {
-        this.usuario = JSON.parse(userData)
+        try {
+          this.usuario = JSON.parse(userData)
+          
+          // 🟢 Força a re-renderização inicial (garante que os selects estão limpos ao abrir a tela)
+          this.selectedGuiche = null
+          this.selectedSetor = null
+          this.selectedSecretaria = null
+          
+          // Preenche a primeira lista
+          this.preencherSecretarias()
+        } catch (e) {
+          // Se o JSON do usuário estiver corrompido, limpa tudo e desloga
+          console.error("Dados do usuário corrompidos no storage", e)
+          localStorage.clear()
+          this.$router.push('/login')
+        }
       } else {
+        // Se não tem dados, chuta pro login
         this.$router.push('/login')
       }
     },
@@ -141,15 +158,16 @@ export default {
         console.error('Erro ao atualizar guichê:', e)
         
         // Impede que o sistema redirecione o usuário se ele tomou erro do banco (ex: "Guichê ocupado")
-        if (e.response && e.response.status === 401) {
+        if (e.response && (e.response.status === 401 || e.response.status === 403)) {
             alert("Sua sessão expirou. Faça login novamente.")
+            localStorage.clear()
             this.$router.push('/login')
             return;
         }
 
         const mensagemErro =
           e.response?.data?.mensagem || e.response?.data || 'Erro ao salvar configurações de guichê'
-        alert(mensagemErro)
+        alert(typeof mensagemErro === 'string' ? mensagemErro : 'Erro ao selecionar o guichê.')
       } finally {
         this.salvando = false
       }
@@ -184,15 +202,15 @@ export default {
         const response = await api.get(`/guiches/setor/${setorId}`)
         if (response.data && response.data.length > 0) {
             this.guiches = response.data.map((g) => ({
-            title: `Guichê ${String(g.numero).padStart(2, '0')}`,
-            value: g.id,
+              title: `Guichê ${String(g.numero).padStart(2, '0')}`,
+              value: g.id,
             }))
         } else {
-            this.guiches = [] // Deixa vazio em vez de estourar erro
+            this.guiches = [] 
         }
       } catch (e) {
         console.error('Erro ao carregar guichês:', e)
-        this.guiches = [] // Blindagem: Se der erro na API, apenas limpa a lista, não desloga!
+        this.guiches = [] 
       } finally {
         this.carregandoGuiches = false
       }
@@ -200,8 +218,8 @@ export default {
   },
 
   mounted() {
+    // 🟢 Garantimos que a função roda ao montar a tela
     this.getUsuarioLogado()
-    this.preencherSecretarias()
   },
 
   watch: {
