@@ -1,17 +1,11 @@
 <template>
-  <div
-    class="absolute top-0 left-0 w-full h-[4px] bg-gradient-to-r from-[#FFC107] via-[#f0d924] to-[#3da1d5] z-50"
-  ></div>
+  <div class="absolute top-0 left-0 w-full h-[4px] bg-gradient-to-r from-[#FFC107] via-[#f0d924] to-[#3da1d5] z-50"></div>
 
-  <div
-    class="flex min-h-screen items-center justify-center bg-[#f1f5f9] font-sans relative overflow-hidden"
-  >
+  <div class="flex min-h-screen items-center justify-center bg-[#f1f5f9] font-sans relative overflow-hidden">
     <div class="absolute -top-24 -left-24 w-96 h-96 bg-blue-50 rounded-full opacity-50"></div>
     <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-blue-50 rounded-full opacity-50"></div>
 
-    <div
-      class="z-10 w-full max-w-md bg-white p-10 rounded-[32px] shadow-2xl shadow-blue-100 border border-gray-50"
-    >
+    <div class="z-10 w-full max-w-md bg-white p-10 rounded-[32px] shadow-2xl shadow-blue-100 border border-gray-50">
       <div class="flex flex-col items-center mb-8">
         <div class="h-1 w-12 bg-blue-600 rounded-full mb-6"></div>
         <p class="text-center text-[12px] text-gray-700 font-bold uppercase tracking-[0.2em] mt-1">
@@ -19,11 +13,9 @@
         </p>
       </div>
 
-      <form @submit.prevent="updateGerenciador()" class="space-y-5">
+      <form @submit.prevent="updateGerenciador" class="space-y-5">
         <div>
-          <label
-            class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1 tracking-widest"
-          >
+          <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1 tracking-widest">
             Escolha a secretaria
           </label>
           <div class="relative d-flex">
@@ -41,9 +33,7 @@
         </div>
 
         <div v-if="selectedSecretaria">
-          <label
-            class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1 tracking-widest"
-          >
+          <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1 tracking-widest">
             Escolha o Setor / Unidade
           </label>
           <div class="relative d-flex">
@@ -62,9 +52,7 @@
         </div>
 
         <div>
-          <label
-            class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1 tracking-widest"
-          >
+          <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1 tracking-widest">
             Escolha seu Guichê
           </label>
           <div class="relative d-flex">
@@ -77,16 +65,17 @@
               variant="outlined"
               density="compact"
               placeholder="Número do guichê"
+              :loading="carregandoGuiches"
             />
           </div>
         </div>
 
         <button
           type="submit"
-          :disabled="!selectedSetor || !selectedGuiche || carregando"
-          class="w-full bg-gradient-to-r from-[#1d4ed8] to-[#2563eb] text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-blue-200 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-70"
+          :disabled="!selectedSetor || !selectedGuiche || salvando"
+          class="w-full bg-gradient-to-r from-[#1d4ed8] to-[#2563eb] text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-blue-200 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-70 mt-6"
         >
-          <span v-if="!carregando">Entrar</span>
+          <span v-if="!salvando">Entrar</span>
           <v-progress-circular v-else indeterminate size="20" width="2" color="white" />
         </button>
       </form>
@@ -100,6 +89,7 @@
     </div>
   </div>
 </template>
+
 <script>
 import api from '@/services/api'
 
@@ -113,6 +103,8 @@ export default {
     setores: [],
     guiches: [],
     carregandoGuiches: false,
+    carregandoSetores: false, // 🟢 Variável adicionada
+    salvando: false // 🟢 Substituí o 'carregando' (que não existia) por 'salvando'
   }),
 
   methods: {
@@ -132,6 +124,8 @@ export default {
           return
         }
 
+        this.salvando = true // 🟢 Inicia o loading no botão
+
         const payload = { guicheId: this.selectedGuiche }
 
         const response = await api.patch(`/gerenciador/${this.usuario?.id}/guiche`, payload)
@@ -144,13 +138,11 @@ export default {
         this.$router.push('/atendente')
       } catch (e) {
         console.error('Erro ao atualizar guichê:', e)
-
-        // Captura a mensagem vinda do throw new RuntimeException do Java
-        // O caminho exato depende de como está seu ExceptionHandler no Spring
         const mensagemErro =
           e.response?.data?.mensagem || e.response?.data || 'Erro ao salvar configurações'
-
         alert(mensagemErro)
+      } finally {
+        this.salvando = false // 🟢 Para o loading no botão, mesmo se der erro
       }
     },
 
@@ -167,10 +159,14 @@ export default {
         this.setores = []
         return
       }
-      this.setores = this.usuario.setores
-        .filter((s) => s.secretariaId === secretariaId)
-        .map((s) => ({ title: s.nome, value: s.id }))
-        .sort((a, b) => a.title.localeCompare(b.title))
+      this.carregandoSetores = true // Efeito visual rápido
+      setTimeout(() => {
+        this.setores = this.usuario.setores
+          .filter((s) => s.secretariaId === secretariaId) // 🔴 Verifica se é secretariaId no DTO!
+          .map((s) => ({ title: s.nome, value: s.id }))
+          .sort((a, b) => a.title.localeCompare(b.title))
+        this.carregandoSetores = false
+      }, 300)
     },
 
     async buscarGuichesDoSetor(setorId) {
@@ -217,5 +213,4 @@ export default {
   },
 }
 </script>
-
 <style scoped></style>
