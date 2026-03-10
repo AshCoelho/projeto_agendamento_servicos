@@ -107,127 +107,7 @@
         </div>
       </header>
 
-      <div class="px-8 grid grid-cols-4 gap-6 mb-5">
-        <div
-          class="bg-white p-6 rounded-[15px] shadow-sm flex justify-between items-start border-b-4 border-transparent"
-        >
-          <div>
-            <p class="text-[12px] font-bold text-gray-400 uppercase mb-1">Atendimentos Hoje</p>
-            <h3 class="text-3xl font-black text-gray-800">{{ totalRegistradosHoje }}</h3>
-            <span class="inline-block w-8 h-1 bg-blue-grey-darken-4 rounded-full"></span>
-            <div class="flex gap-2 mt-2">
-              <span class="text-[11px] font-bold text-blue-500 uppercase">
-                {{ totalNormalGeral }} Normal
-              </span>
-              <span class="text-[11px] font-bold text-orange-500 uppercase">
-                {{ totalPrioridadeGeral }} Prioridade
-              </span>
-            </div>
-          </div>
-          <div
-            class="w-10 h-10 bg-gray-100 rounded-[10px] flex items-center justify-center text-gray"
-          >
-            <i class="pi pi-calendar"></i>
-          </div>
-        </div>
-
-        <div
-          class="bg-white p-6 rounded-[15px] shadow-sm flex justify-between items-start border-b-4 border-transparent"
-        >
-          <div>
-            <p class="text-[12px] font-bold text-gray-400 uppercase mb-1">Pessoas na Fila</p>
-            <h3 class="text-3xl font-black text-gray-800">{{ agendamentosAguardando }}</h3>
-            <span class="inline-block w-8 h-1 bg-amber-lighten-2 rounded-full"></span>
-            <div class="flex gap-2 mt-2">
-              <span class="text-[11px] font-bold text-blue-500 uppercase">
-                {{ totalNormalFila }} Normal
-              </span>
-              <span class="text-[11px] font-bold text-orange-500 uppercase">
-                {{ totalPrioridadeFila }} Prioridade
-              </span>
-            </div>
-          </div>
-
-          <div
-            class="w-10 h-10 bg-gray-100 rounded-[10px] flex items-center justify-center text-gray"
-          >
-            <i class="pi pi-users text-lg"></i>
-          </div>
-        </div>
-
-        <div
-          class="bg-white p-6 rounded-[15px] shadow-sm flex justify-between items-start border-b-4 border-transparent"
-        >
-          <div>
-            <p class="text-[12px] font-bold text-gray-400 uppercase mb-1">Atendidos</p>
-            <h3 class="text-3xl font-black text-gray-800">{{ agendamentosFinalizados }}</h3>
-            <span class="inline-block w-8 h-1 bg-green-600 rounded-full"></span>
-          </div>
-          <div
-            class="w-10 h-10 bg-gray-100 rounded-[10px] flex items-center justify-center text-gray"
-          >
-            <i class="pi pi-verified"></i>
-          </div>
-        </div>
-
-        <div
-          class="bg-white p-6 rounded-[15px] shadow-sm flex justify-between items-start border-b-4 border-transparent"
-        >
-          <div>
-            <p class="text-[12px] font-bold text-gray-400 uppercase mb-1">Ausentes</p>
-            <h3 class="text-3xl font-black text-gray-800">{{ agendamentosCancelados }}</h3>
-            <span class="inline-block w-8 h-1 bg-red-600 rounded-full"></span>
-          </div>
-          <div
-            class="w-10 h-10 bg-gray-100 rounded-[10px] flex items-center justify-center text-gray"
-          >
-            <i class="pi pi-times-circle"></i>
-          </div>
-        </div>
-      </div>
-
-      <div class="px-8">
-        <div class="px-8 mb-6 bg-white p-6 rounded-[15px] shadow-sm border-b-4 border-transparent">
-          <h2 class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-6">
-            Painel de Comandos
-          </h2>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div
-              @click="handleChamarNormal"
-              class="cursor-pointer bg-[#2563eb] hover:bg-[#1d4ed8] p-6 rounded-[15px] shadow-md flex justify-between items-center transition-all active:scale-95"
-            >
-              <div>
-                <p class="text-[10px] font-bold text-white/70 uppercase mb-1 tracking-wider">
-                  Ação
-                </p>
-                <h3 class="text-2xl font-black text-white tracking-tighter">Chamar Normal</h3>
-              </div>
-              <div
-                class="w-12 h-12 bg-white/20 rounded-[12px] flex items-center justify-center text-white backdrop-blur-sm"
-              >
-                <i class="pi pi-volume-up text-xl"></i>
-              </div>
-            </div>
-
-            <div
-              class="cursor-pointer bg-[#FFA000] hover:bg-[#FF8F00] p-6 rounded-[15px] shadow-md flex justify-between items-center transition-all active:scale-95"
-            >
-              <div @click="handleChamarPrioridade">
-                <p class="text-[10px] font-bold text-white/70 uppercase mb-1 tracking-wider">
-                  Ação
-                </p>
-                <h3 class="text-2xl font-black text-white tracking-tighter">Chamar Prioridade</h3>
-              </div>
-              <div
-                class="w-12 h-12 bg-white/20 rounded-[12px] flex items-center justify-center text-white backdrop-blur-sm"
-              >
-                <i class="pi pi-bolt text-xl"></i>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <ChamarSenhas></ChamarSenhas>
       <div class="px-8">
         <div class="bg-white rounded-[15px] shadow-sm border-b-4 border-transparent p-4">
           <div class="flex justify-between">
@@ -373,7 +253,7 @@
                       <v-select
                         v-model="novoAgendamento.tipoAtendimentoId"
                         :items="tiposAtendimento"
-                        item-title="nome"  
+                        item-title="nome"
                         item-value="id"
                         density="compact"
                         rounded-2xl
@@ -494,7 +374,7 @@
                       <v-select
                         v-model="novoAgendamento.tipoAtendimentoId"
                         :items="tiposAtendimento"
-                        item-title="nome"  
+                        item-title="nome"
                         item-value="id"
                         label="Tipo de Atendimento"
                         density="compact"
@@ -554,6 +434,7 @@
                 <th class="px-6 py-4 text-left">Situação</th>
                 <th class="px-6 py-4 text-left">Tipo</th>
                 <th class="px-6 py-4 text-left">Data/Hora</th>
+                <th class="px-6 py-4 text-left">Tempo de Espera</th>
                 <th class="px-6 py-4 text-right pr-10">Ações</th>
               </tr>
             </thead>
@@ -591,6 +472,7 @@
                     <i class="pi pi-calendar text-[10px]"></i> {{ item.situacao }}
                   </span>
                 </td>
+
                 <td class="px-6">
                   <span
                     :class="[
@@ -609,6 +491,13 @@
                 </td>
                 <td class="px-6 text-xs font-bold text-gray-400">
                   {{ formatarDataHora(item.horaAgendamento) }}
+                </td>
+                <td class="px-6">
+                  <span
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-[#2563eb] text-[10px] font-black rounded-lg uppercase tracking-tight"
+                  >
+                    <i class="pi pi-calendar text-[10px]"></i> {{ item.situacao }}
+                  </span>
                 </td>
                 <td class="px-6 text-right pr-6 mt-6 flex gap-2 justify-end">
                   <v-btn
@@ -677,11 +566,16 @@
 </template>
 
 <script>
+import ChamarSenhas from '@/components/ChamarSenhas.vue'
 import { AgendamentoService } from '@/services/agendamento.service'
 import { AtendenteApi } from '@/services/atendente.api'
 import 'primeicons/primeicons.css'
 
 export default {
+  components: {
+    ChamarSenhas,
+  },
+
   data: () => ({
     // UI/Controle
     abaAtiva: 'AGUARDANDO',
@@ -717,44 +611,33 @@ export default {
   },
 
   computed: {
-
     temAtendimentoAtivo() {
-    const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'));
-    
-    if (!this.agendamentosPorSetor.length) return false;
+      const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'))
 
-    return this.agendamentosPorSetor.some(a => {
-      const status = a.situacao?.toUpperCase();
-      // 🟢 O campo que seu SQL preenche é o gerenciadorId
-      const idNoBanco = Number(a.gerenciadorId);
-      console.log(idNoBanco);
-      
-      const ocupado = (status === 'CHAMADO' || status === 'EM_ATENDIMENTO');
-      const ehMeu = idNoBanco === meuId;
+      if (!this.agendamentosPorSetor.length) return false
 
-      return ocupado && ehMeu;
-    });
-  },
+      return this.agendamentosPorSetor.some((a) => {
+        const status = a.situacao?.toUpperCase()
+        // 🟢 O campo que seu SQL preenche é o gerenciadorId
+        const idNoBanco = Number(a.gerenciadorId)
+        console.log(idNoBanco)
 
-    totalRegistradosHoje() {
-      return this.agendamentosPorSetor.length
-    },
-    totalNormalGeral() {
-      return this.agendamentosPorSetor.filter((a) => a.tipoAtendimento === 'NORMAL').length
-    },
-    totalPrioridadeGeral() {
-      return this.agendamentosPorSetor.filter((a) => a.tipoAtendimento === 'PRIORIDADE').length
+        const ocupado = status === 'CHAMADO' || status === 'EM_ATENDIMENTO'
+        const ehMeu = idNoBanco === meuId
+
+        return ocupado && ehMeu
+      })
     },
 
     agendamentosFiltrados() {
       // 🟢 Pegamos o seu ID aqui
-      const meuId = this.usuario?.id || localStorage.getItem('usuarioId');
+      const meuId = this.usuario?.id || localStorage.getItem('usuarioId')
 
       let lista = AgendamentoService.filtrarAgendamentos(
         this.agendamentosPorSetor,
         this.abaAtiva,
         this.idsChamadosManualmente,
-        meuId // 🟢 Enviamos o seu ID como 4º parâmetro
+        meuId, // 🟢 Enviamos o seu ID como 4º parâmetro
       )
 
       if (this.filtroTexto && this.filtroTexto.trim() !== '') {
@@ -794,10 +677,10 @@ export default {
       ).length
     },
     totalPrioridadeFila() {
-    return this.agendamentosPorSetor.filter(
-      (a) => a.situacao === 'AGENDADO' && a.tipoAtendimento.includes('PRIORIDADE')
-    ).length
-  },
+      return this.agendamentosPorSetor.filter(
+        (a) => a.situacao === 'AGENDADO' && a.tipoAtendimento.includes('PRIORIDADE'),
+      ).length
+    },
   },
 
   methods: {
@@ -814,11 +697,13 @@ export default {
     },
 
     atualizarRelogioLocal() {
-    this.horaAtual = new Date(); // 🟢 Mantemos um objeto Date fresco
-    this.relogio = this.horaAtual.toLocaleTimeString('pt-BR', {
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
-    })
-  },
+      this.horaAtual = new Date() // 🟢 Mantemos um objeto Date fresco
+      this.relogio = this.horaAtual.toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      })
+    },
 
     formatarDataHora(data) {
       if (!data) return ''
@@ -888,12 +773,16 @@ export default {
           this.agendamentosPorSetor = [...data]
 
           // 🔍 LINHA PARA DEBUG SEGURO
-          console.log("MEU ID:", this.usuario.id);
-          console.log("LISTA DO BANCO:", this.agendamentosPorSetor.map(a => ({
-            senha: a.senha,
-            status: a.situacao,
-            idAtendenteNoObjeto: this.usuario.id || a.atendenteId || (a.usuario ? a.usuario.id : 'NULO')
-          })));
+          console.log('MEU ID:', this.usuario.id)
+          console.log(
+            'LISTA DO BANCO:',
+            this.agendamentosPorSetor.map((a) => ({
+              senha: a.senha,
+              status: a.situacao,
+              idAtendenteNoObjeto:
+                this.usuario.id || a.atendenteId || (a.usuario ? a.usuario.id : 'NULO'),
+            })),
+          )
         }
       } catch (e) {
         console.error('Erro ao buscar agendamentos:', e)
@@ -909,11 +798,13 @@ export default {
       const donoDoItemClicado = Number(itemClicado.gerenciadorId || itemClicado.usuarioId)
 
       // 🟢 O SEGREDO: Verifica se o botão clicado é da senha que você já está atendendo
-      const ehMinhaSenhaAtual = (statusClicado === 'EM_ATENDIMENTO' || statusClicado === 'CHAMADO') && donoDoItemClicado === meuId
+      const ehMinhaSenhaAtual =
+        (statusClicado === 'EM_ATENDIMENTO' || statusClicado === 'CHAMADO') &&
+        donoDoItemClicado === meuId
 
       // 🛑 TRAVA: Se você está ocupado E tentou chamar uma senha DIFERENTE da atual, bloqueia.
       if (this.temAtendimentoAtivo && !ehMinhaSenhaAtual) {
-        alert("Você já possui um atendimento em aberto. Finalize-o antes de chamar outra senha.")
+        alert('Você já possui um atendimento em aberto. Finalize-o antes de chamar outra senha.')
         return
       }
 
@@ -922,8 +813,9 @@ export default {
         const res = await AtendenteApi.chamarPorSenha(senha, this.usuario.id, this.setorTrabalhoId)
 
         if (res.status === 200) {
-          if (itemClicado) this.idsChamadosManualmente.push(itemClicado.agendamentoId || itemClicado.id)
-          
+          if (itemClicado)
+            this.idsChamadosManualmente.push(itemClicado.agendamentoId || itemClicado.id)
+
           this.abaAtiva = 'ATENDIMENTO'
           await this.buscarAgendamentos()
         }
@@ -931,68 +823,6 @@ export default {
         alert(e?.response?.data?.mensagem || 'Falha na chamada.')
       }
     },
-
-    async handleChamarNormal() {
-  // 1ª VALIDAÇÃO: Você está ocupado?
-  if (this.temAtendimentoAtivo) {
-    alert("Você já possui um atendimento em aberto. Finalize-o antes de chamar o próximo.");
-    return;
-  }
-
-  // 2ª VALIDAÇÃO: Tem alguém na fila? (Verifica se o total da fila normal é zero)
-  if (this.totalNormalFila === 0) {
-    alert("Não há pacientes aguardando na fila de atendimento NORMAL.");
-    return;
-  }
-
-  try {
-    const { data } = await AtendenteApi.chamarNormal(this.setorTrabalhoId, this.usuario.id);
-    if (data && data.sucesso === false) {
-      alert(data.mensagem); 
-    }
-  } catch (error) {
-    console.error("Erro técnico:", error);
-    alert("Falha ao chamar: Ocorreu um erro na comunicação com o servidor.");
-  } finally {
-    this.buscarAgendamentos();
-  }
-},
-
-  async handleChamarPrioridade() {
-    if (this.temAtendimentoAtivo) {
-      alert("Você já possui um atendimento em aberto. Finalize-o antes de chamar o próximo.");
-      return;
-    }
-
-    try {
-      const response = await AtendenteApi.chamarPrioridade(this.setorTrabalhoId, this.usuario.id);
-      const dados = response.data || response;
-
-      // Cenário A: Fila Vazia
-      if (dados && dados.sucesso === false) {
-        alert(dados.mensagem);
-      } 
-      // 🟢 Cenário B: SUCESSO! A tela precisa reagir e mudar de aba
-      else if (dados && dados.sucesso === true) {
-        if (dados.id) {
-          this.idsChamadosManualmente.push(dados.id);
-        }
-        this.abaAtiva = 'ATENDIMENTO'; // Pula para a aba do paciente atual
-      }
-      
-    } catch (error) {
-      console.error("Erro técnico:", error);
-      const msgErro = error.response?.data?.mensagem || error.response?.data || "Ocorreu um erro ao tentar chamar.";
-      
-      if (typeof msgErro === 'string') {
-        alert(msgErro);
-      } else {
-        alert("Erro na comunicação com o servidor.");
-      }
-    } finally {
-      this.buscarAgendamentos();
-    }
-  },
 
     async handleCancelar(id) {
       if (!confirm('Deseja realmente cancelar?')) return
@@ -1060,29 +890,28 @@ export default {
 
         // 2. Verificação robusta: 200 ou 201 são sucessos
         if (res.status === 200 || res.status === 201) {
-          
           // Opcional: Pegar a senha gerada que vem no DTO de resposta
-          const senhaGerada = res.data?.senha || '';
+          const senhaGerada = res.data?.senha || ''
 
           this.mostrarModalEspontaneo = false
-          
+
           // Reseta o formulário
           this.novoAgendamento = { nomeCidadao: '', servico: null, tipoAtendimentoId: null }
-          
+
           // 3. Atualiza as listas
           await this.buscarAgendamentos()
-          await this.carregarTiposAtendimento() 
+          await this.carregarTiposAtendimento()
 
           alert(`Atendimento registrado! Senha: ${senhaGerada}`)
         }
       } catch (e) {
-        // Se caiu aqui e o registro salvou, pode ser que o res.status veio diferente 
+        // Se caiu aqui e o registro salvou, pode ser que o res.status veio diferente
         // ou a AtendenteApi lançou um erro ao tentar ler a resposta.
-        console.error('Erro ao salvar:', e);
-        
+        console.error('Erro ao salvar:', e)
+
         // Verifique se o erro não é apenas um "undefined" na mensagem
-        const msgErro = e.response?.data?.mensagem || e.message || 'Erro de comunicação';
-        alert('Erro: ' + msgErro);
+        const msgErro = e.response?.data?.mensagem || e.message || 'Erro de comunicação'
+        alert('Erro: ' + msgErro)
       }
     },
 
@@ -1110,18 +939,18 @@ export default {
 
     async carregarTiposAtendimento() {
       try {
-        const { data } = await AtendenteApi.carregarTiposAtendimento(this.secretariaTrabalhoId);
-        
+        const { data } = await AtendenteApi.carregarTiposAtendimento(this.secretariaTrabalhoId)
+
         // 🟢 Substitui a lista antiga pelos dados reais do banco
-        this.tiposAtendimento = data;
-        
+        this.tiposAtendimento = data
+
         // Seleciona o 'NORMAL' automaticamente se disponível
         if (data.length > 0 && !this.novoAgendamento.tipoAtendimentoId) {
-          const padrao = data.find(t => t.nome.toUpperCase() === 'NORMAL');
-          if (padrao) this.novoAgendamento.tipoAtendimentoId = padrao.id;
+          const padrao = data.find((t) => t.nome.toUpperCase() === 'NORMAL')
+          if (padrao) this.novoAgendamento.tipoAtendimentoId = padrao.id
         }
       } catch (error) {
-        console.error("Erro ao carregar tipos:", error);
+        console.error('Erro ao carregar tipos:', error)
       }
     },
 
@@ -1132,7 +961,7 @@ export default {
     await this.getUsuarioLogado()
     // 🟢 1. CHAMA IMEDIATAMENTE: A tela carrega na hora!
     await this.buscarAgendamentos()
-    
+
     // 🟢 2. LIGA O LOOP: Agora ele só atualiza o que mudou a cada 3 segundos
     setInterval(() => {
       this.buscarAgendamentos()
