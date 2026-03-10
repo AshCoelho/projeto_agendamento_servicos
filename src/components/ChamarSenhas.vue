@@ -228,52 +228,53 @@ export default {
     },
 
     async handleChamarNormal() {
-      // Mantemos apenas a validação se VOCÊ está ocupado
-      if (this.temAtendimentoAtivo) {
-        alert('Você já possui um atendimento em aberto. Finalize-o antes de chamar o próximo.')
-        return
-      }
-
-      // 🔴 APAGAMOS A VALIDAÇÃO DE "FILA VAZIA" DO FRONT-END. O BACKEND DECIDE AGORA!
-
       try {
         const response = await AtendenteApi.chamarNormal(this.setorTrabalhoId, this.usuario.id)
-        const dados = response.data || response // Pega os dados com segurança
+        const dados = response.data || response 
         
         if (dados && dados.sucesso === false) {
-          // 🟢 A API barrou (Fila vazia ou erro) e manda a mensagem!
-          alert(dados.mensagem)
+          // 🟢 Garante que SEMPRE haverá uma mensagem legível, mesmo se a API falhar em enviar
+          alert(dados.mensagem || 'Ação bloqueada: Verifique se você já possui um atendimento em aberto ou se a fila está vazia.')
         } else if (dados && (dados.sucesso === true || dados.id)) {
-          // 🟢 SUCESSO: Avisa a tela principal para mudar a aba e tabela na hora!
           this.$emit('senha-chamada', dados.id)
         }
       } catch (error) {
         console.error('Erro técnico:', error)
-        alert('Falha ao chamar: Ocorreu um erro na comunicação com o servidor.')
+
+        // 🟢 Se for erro de Token/Sessão expirada (401 ou 403), avisa o usuário!
+        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+          alert('Sua sessão expirou por inatividade. Atualize a página ou faça login novamente.')
+          return
+        }
+
+        // Tenta pegar a mensagem de erro do Spring, se não conseguir, dá uma mensagem genérica
+        const msgErro = error.response?.data?.mensagem || error.response?.data?.error || 'Não foi possível chamar a senha agora.'
+        alert(typeof msgErro === 'string' ? msgErro : 'Erro de comunicação com o servidor.')
       } 
     },
 
     async handleChamarPrioridade() {
-      if (this.temAtendimentoAtivo) {
-        alert('Você já possui um atendimento em aberto. Finalize-o antes de chamar o próximo.')
-        return
-      }
-
       try {
         const response = await AtendenteApi.chamarPrioridade(this.setorTrabalhoId, this.usuario.id)
         const dados = response.data || response
 
         if (dados && dados.sucesso === false) {
-          // 🟢 A API barrou (Fila vazia ou erro)
-          alert(dados.mensagem)
+           // 🟢 Garante a mensagem
+          alert(dados.mensagem || 'Ação bloqueada: Verifique se você já possui um atendimento em aberto ou se a fila de prioridades está vazia.')
         } else if (dados && (dados.sucesso === true || dados.id)) {
-          // 🟢 SUCESSO: Avisa a tela principal para mudar a aba e tabela na hora!
           this.$emit('senha-chamada', dados.id)
         }
       } catch (error) {
         console.error('Erro técnico:', error)
-        const msgErro = error.response?.data?.mensagem || error.response?.data || 'Ocorreu um erro ao tentar chamar.'
-        alert(typeof msgErro === 'string' ? msgErro : 'Erro na comunicação com o servidor.')
+
+        // 🟢 Blindagem contra expiração de inatividade
+        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+          alert('Sua sessão expirou por inatividade. Atualize a página ou faça login novamente.')
+          return
+        }
+
+        const msgErro = error.response?.data?.mensagem || error.response?.data?.error || 'Não foi possível chamar a senha agora.'
+        alert(typeof msgErro === 'string' ? msgErro : 'Erro de comunicação com o servidor.')
       }
     },
 
