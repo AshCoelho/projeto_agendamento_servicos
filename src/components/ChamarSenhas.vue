@@ -5,14 +5,41 @@
         Painel de Comandos
       </h2>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div
+          class="bg-[#f8f9fd] p-6 rounded-[15px] shadow-sm flex justify-between items-start border-b-4 border-transparent"
+        >
+          <div>
+            <p class="text-[10px] font-bold text-black/70 uppercase mb-1 tracking-wider">
+              Atendimentos Hoje
+            </p>
+            <h3 class="text-2xl font-black text-black tracking-tighter">
+              {{ totalRegistradosHoje }}
+            </h3>
+            <span class="inline-block w-8 h-1 bg-blue-darken-4 rounded-full"></span>
+            <div class="flex gap-2 mt-2">
+              <span class="text-[11px] font-bold text-blue-500 uppercase">
+                {{ totalNormalGeral }} Normal
+              </span>
+              <span class="text-[11px] font-bold text-orange-500 uppercase">
+                {{ totalPrioridadeGeral }} Prioridade
+              </span>
+            </div>
+          </div>
+          <div
+            class="w-12 h-12 bg-black/20 rounded-[12px] flex items-center justify-center text-white backdrop-blur-sm"
+          >
+            <i class="pi pi-calendar"></i>
+          </div>
+        </div>
+
         <div
           @click="handleChamarNormal"
           class="cursor-pointer bg-[#2563eb] hover:bg-[#1d4ed8] p-6 rounded-[15px] shadow-md flex justify-between items-center transition-all active:scale-95"
         >
           <div>
             <p class="text-[10px] font-bold text-white/70 uppercase mb-1 tracking-wider">Ação</p>
-            <h3 class="text-2xl font-black text-white tracking-tighter">Chamar Normal</h3>
+            <h3 class="text-2xl font-black text-white font-bold">Chamar Normal</h3>
           </div>
           <div
             class="w-12 h-12 bg-white/20 rounded-[12px] flex items-center justify-center text-white backdrop-blur-sm"
@@ -26,12 +53,39 @@
         >
           <div @click="handleChamarPrioridade">
             <p class="text-[10px] font-bold text-white/70 uppercase mb-1 tracking-wider">Ação</p>
-            <h3 class="text-2xl font-black text-white tracking-tighter">Chamar Prioridade</h3>
+            <h3 class="text-2xl font-black text-white font-bold">Chamar Prioridade</h3>
           </div>
           <div
             class="w-12 h-12 bg-white/20 rounded-[12px] flex items-center justify-center text-white backdrop-blur-sm"
           >
             <i class="pi pi-bolt text-xl"></i>
+          </div>
+        </div>
+
+        <div
+          class="bg-[#f8f9fd] p-6 rounded-[15px] shadow-sm flex justify-between items-start border-b-4 border-transparent"
+        >
+          <div>
+            <p class="text-[10px] font-bold text-black/70 uppercase mb-1 tracking-wider">
+              Pessoas na Fila
+            </p>
+            <h3 class="text-2xl font-black text-black tracking-tighter">
+              {{ agendamentosAguardando }}
+            </h3>
+            <span class="inline-block w-8 h-1 bg-blue-darken-4 rounded-full"></span>
+            <div class="flex gap-2 mt-2">
+              <span class="text-[11px] font-bold text-blue-500 uppercase">
+                {{ totalNormalFila }} Normal
+              </span>
+              <span class="text-[11px] font-bold text-orange-500 uppercase">
+                {{ totalPrioridadeFila }} Prioridade
+              </span>
+            </div>
+          </div>
+          <div
+            class="w-12 h-12 bg-black/20 rounded-[12px] flex items-center justify-center text-white backdrop-blur-sm"
+          >
+            <i class="pi pi-users text-lg"></i>
           </div>
         </div>
       </div>
@@ -40,7 +94,6 @@
 </template>
 
 <script>
-import { AgendamentoService } from '@/services/agendamento.service'
 import { AtendenteApi } from '@/services/atendente.api'
 import 'primeicons/primeicons.css'
 
@@ -96,10 +149,31 @@ export default {
       })
     },
 
-    // Deixei apenas as variáveis que são usadas por esse componente
     totalNormalFila() {
       return this.agendamentosPorSetor.filter(
         (a) => a.situacao === 'AGENDADO' && a.tipoAtendimento === 'NORMAL',
+      ).length
+    },
+    totalPrioridadeFila() {
+      return this.agendamentosPorSetor.filter(
+        (a) => a.situacao === 'AGENDADO' && a.tipoAtendimento.includes('PRIORIDADE'),
+      ).length
+    },
+
+    totalRegistradosHoje() {
+      return this.agendamentosPorSetor.length
+    },
+    totalNormalGeral() {
+      return this.agendamentosPorSetor.filter((a) => a.tipoAtendimento === 'NORMAL').length
+    },
+    totalPrioridadeGeral() {
+      return this.agendamentosPorSetor.filter((a) => a.tipoAtendimento.includes('PRIORIDADE'))
+        .length
+    },
+
+    agendamentosAguardando() {
+      return this.agendamentosPorSetor.filter(
+        (a) => a.situacao === 'AGENDADO' && ['AGENDADO', 'ESPONTANEO'].includes(a.tipoAgendamento),
       ).length
     },
   },
@@ -208,17 +282,17 @@ export default {
 
         if (res.status === 200) {
           if (itemClicado) {
-             // 🟢 Adiciona nos chamados manualmente para o "computed" enxergar na hora
+            // 🟢 Adiciona nos chamados manualmente para o "computed" enxergar na hora
             this.idsChamadosManualmente.push(itemClicado.agendamentoId || itemClicado.id)
-            
+
             // 🟢 Altera o status localmente de forma imediata (Otimismo de UI)
             itemClicado.situacao = 'CHAMADO'
-            itemClicado.gerenciadorId = meuId 
+            itemClicado.gerenciadorId = meuId
           }
 
           // 🟢 MUDA A ABA AQUI
           this.mudarAba('ATENDIMENTO')
-          
+
           // E depois vai no banco buscar os dados reais
           await this.buscarAgendamentos()
         }
@@ -230,11 +304,14 @@ export default {
     async handleChamarNormal() {
       try {
         const response = await AtendenteApi.chamarNormal(this.setorTrabalhoId, this.usuario.id)
-        const dados = response.data || response 
-        
+        const dados = response.data || response
+
         if (dados && dados.sucesso === false) {
           // 🟢 Garante que SEMPRE haverá uma mensagem legível, mesmo se a API falhar em enviar
-          alert(dados.mensagem || 'Ação bloqueada: Verifique se você já possui um atendimento em aberto ou se a fila está vazia.')
+          alert(
+            dados.mensagem ||
+              'Ação bloqueada: Verifique se você já possui um atendimento em aberto ou se a fila está vazia.',
+          )
         } else if (dados && (dados.sucesso === true || dados.id)) {
           this.$emit('senha-chamada', dados.id)
         }
@@ -248,9 +325,12 @@ export default {
         }
 
         // Tenta pegar a mensagem de erro do Spring, se não conseguir, dá uma mensagem genérica
-        const msgErro = error.response?.data?.mensagem || error.response?.data?.error || 'Não foi possível chamar a senha agora.'
+        const msgErro =
+          error.response?.data?.mensagem ||
+          error.response?.data?.error ||
+          'Não foi possível chamar a senha agora.'
         alert(typeof msgErro === 'string' ? msgErro : 'Erro de comunicação com o servidor.')
-      } 
+      }
     },
 
     async handleChamarPrioridade() {
@@ -259,8 +339,11 @@ export default {
         const dados = response.data || response
 
         if (dados && dados.sucesso === false) {
-           // 🟢 Garante a mensagem
-          alert(dados.mensagem || 'Ação bloqueada: Verifique se você já possui um atendimento em aberto ou se a fila de prioridades está vazia.')
+          // 🟢 Garante a mensagem
+          alert(
+            dados.mensagem ||
+              'Ação bloqueada: Verifique se você já possui um atendimento em aberto ou se a fila de prioridades está vazia.',
+          )
         } else if (dados && (dados.sucesso === true || dados.id)) {
           this.$emit('senha-chamada', dados.id)
         }
@@ -273,7 +356,10 @@ export default {
           return
         }
 
-        const msgErro = error.response?.data?.mensagem || error.response?.data?.error || 'Não foi possível chamar a senha agora.'
+        const msgErro =
+          error.response?.data?.mensagem ||
+          error.response?.data?.error ||
+          'Não foi possível chamar a senha agora.'
         alert(typeof msgErro === 'string' ? msgErro : 'Erro de comunicação com o servidor.')
       }
     },
@@ -282,7 +368,7 @@ export default {
       if (!confirm('Deseja realmente cancelar?')) return
       try {
         const token = localStorage.getItem('token')
-        
+
         // 1. Envia comando para a API
         await AtendenteApi.cancelarAtendimento(id, token)
 
@@ -313,7 +399,7 @@ export default {
 
         // 2. Limpa dos chamados manuais
         this.idsChamadosManualmente = this.idsChamadosManualmente.filter((itemId) => itemId !== id)
-        
+
         // 3. Fecha o modal de edição (caso esteja aberto)
         this.mostrarModalEdicao = false
 

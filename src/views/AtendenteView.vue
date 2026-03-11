@@ -40,9 +40,17 @@
           :class="[sidebarAberta ? 'justify-start px-4' : 'justify-center px-0']"
           class="flex items-center gap-3 py-3 bg-[#2563eb] text-white rounded-[13px] shadow-xl shadow-blue-100 transition-all duration-300"
         >
-          <i class="pi pi-grid-view"></i>
+          <i class="pi pi-objects-column"></i>
           <span v-if="sidebarAberta" class="text-sm font-bold whitespace-nowrap">Painel</span>
         </a>
+        <!-- <a
+          href="#"
+          :class="[sidebarAberta ? 'justify-start px-4' : 'justify-center px-0']"
+          class="flex items-center gap-3 py-3 bg-[#2563eb] text-white rounded-[13px] shadow-xl shadow-blue-100 transition-all duration-300"
+        >
+          <i class="pi pi-chart-bar"></i>
+          <span v-if="sidebarAberta" class="text-sm font-bold whitespace-nowrap">Métrica</span>
+        </a> -->
       </nav>
 
       <div class="mt-auto w-full px-4 pb-4">
@@ -108,12 +116,11 @@
       </header>
 
       <ChamarSenhas @senha-chamada="onSenhaChamadaPelosBotoes"></ChamarSenhas>
-      
+
       <div class="px-8 pb-8">
         <div class="bg-white rounded-[15px] shadow-sm border-b-4 border-transparent p-4">
           <div class="flex justify-between">
             <div class="flex justify-start gap-6 mb-4 px-4">
-              
               <button
                 @click="mudarAba('AGUARDANDO')"
                 :class="
@@ -121,9 +128,12 @@
                     ? 'bg-[#2563eb] text-white rounded-[7px] p-1 shadow-blue-100'
                     : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
                 "
-                class="text-xs font-black border-b-2 pb-1 uppercase tracking-widest"
+                class="text-xs font-black border-b-2 p-2 uppercase tracking-widest"
               >
-                Fila Geral<sup class="ml-0.5 font-bold">{{ agendamentosAguardando }}</sup>
+                Fila Geral<sup
+                  class="ml-0.5 bg-gray-400 text-white font-bold inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px]"
+                  >{{ agendamentosAguardando }}</sup
+                >
               </button>
 
               <button
@@ -133,9 +143,9 @@
                     ? 'bg-[#2563eb] text-white rounded-[7px] p-1 shadow-blue-100'
                     : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
                 "
-                class="text-xs font-black border-b-2 pb-1 uppercase tracking-widest"
+                class="text-xs font-black border-b-2 p-2 uppercase tracking-widest"
               >
-                Prioridades<sup class="ml-0.5 font-bold">{{ totalPrioridadeFila }}</sup>
+                Prioridades<sup class="ml-0.5 bg-gray-400 text-white font-bold inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px]"">{{ totalPrioridadeFila }}</sup>
               </button>
 
               <button
@@ -145,9 +155,9 @@
                     ? 'bg-[#2563eb] text-white rounded-[7px] p-1 shadow-blue-100'
                     : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
                 "
-                class="text-xs font-black border-b-2 pb-1 uppercase tracking-widest"
+                class="text-xs font-black border-b-2 p-2 uppercase tracking-widest"
               >
-                Em Atendimento<sup class="ml-0.5 font-bold">{{ agendamentosEmAtendimento }}</sup>
+                Em Atendimento<sup class="ml-0.5 bg-gray-400 text-white font-bold inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px]">{{ agendamentosEmAtendimento }}</sup>
               </button>
 
               <button
@@ -157,9 +167,9 @@
                     ? 'bg-[#2563eb] text-white rounded-[7px] p-1 shadow-blue-100'
                     : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
                 "
-                class="text-xs font-black border-b-2 pb-1 uppercase tracking-widest"
+                class="text-xs font-black border-b-2 p-2 uppercase tracking-widest"
               >
-                Ausentes<sup class="ml-0.5 font-bold">{{ agendamentosCancelados }}</sup>
+                Ausentes<sup class="ml-0.5 bg-gray-400 text-white font-bold inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px]"">{{ agendamentosCancelados }}</sup>
               </button>
 
               <button
@@ -169,9 +179,9 @@
                     ? 'bg-[#2563eb] text-white rounded-[7px] p-1 shadow-blue-100'
                     : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
                 "
-                class="text-xs font-black border-b-2 pb-1 uppercase tracking-widest"
+                class="text-xs font-black border-b-2 p-2 uppercase tracking-widest"
               >
-                Atendidos<sup class="ml-0.5 font-bold">{{ agendamentosFinalizados }}</sup>
+                Atendidos<sup class="ml-0.5 bg-gray-400 text-white font-bold inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px]"">{{ agendamentosFinalizados }}</sup>
               </button>
 
               <div
@@ -420,7 +430,9 @@
             </div>
           </div>
 
-          <div class="max-h-[450px] overflow-y-auto custom-scrollbar relative rounded-b-[10px] border-t border-gray-100">
+          <div
+            class="max-h-[450px] overflow-y-auto custom-scrollbar relative rounded-b-[10px] border-t border-gray-100"
+          >
             <table class="w-full relative">
               <thead
                 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-white sticky top-0 z-10 shadow-sm"
@@ -438,7 +450,11 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-50">
-                <tr v-for="(item, index) in agendamentosFiltrados" :key="index" class="group hover:bg-gray-50 transition-colors">
+                <tr
+                  v-for="(item, index) in agendamentosFiltrados"
+                  :key="index"
+                  class="group hover:bg-gray-50 transition-colors"
+                >
                   <td class="px-6 text-sm font-bold text-gray-500">
                     <v-btn
                       icon
@@ -495,7 +511,7 @@
                     <span
                       class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-600 text-[10px] font-black rounded-lg uppercase tracking-tight shadow-sm whitespace-nowrap"
                     >
-                      <i class="pi pi-clock text-[10px]"></i> 
+                      <i class="pi pi-clock text-[10px]"></i>
                       {{ calcularTempoEspera(item.horaAgendamento, item.situacao) }}
                     </span>
                   </td>
@@ -538,7 +554,7 @@
               </tbody>
             </table>
           </div>
-          </div>
+        </div>
       </div>
     </main>
   </div>
@@ -596,7 +612,7 @@ export default {
       return this.agendamentosPorSetor.some((a) => {
         const status = a.situacao?.toUpperCase()
         const idNoBanco = Number(a.gerenciadorId)
-        
+
         const ocupado = status === 'CHAMADO' || status === 'EM_ATENDIMENTO'
         const ehMeu = idNoBanco === meuId
 
@@ -611,7 +627,7 @@ export default {
         this.agendamentosPorSetor,
         this.abaAtiva,
         this.idsChamadosManualmente,
-        meuId, 
+        meuId,
       )
 
       if (this.filtroTexto && this.filtroTexto.trim() !== '') {
@@ -635,21 +651,22 @@ export default {
     agendamentosEmAtendimento() {
       const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'))
       return this.agendamentosPorSetor.filter(
-        (a) => ['CHAMADO', 'EM_ATENDIMENTO'].includes(a.situacao) && Number(a.gerenciadorId) === meuId
+        (a) =>
+          ['CHAMADO', 'EM_ATENDIMENTO'].includes(a.situacao) && Number(a.gerenciadorId) === meuId,
       ).length
     },
 
     agendamentosFinalizados() {
       const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'))
       return this.agendamentosPorSetor.filter(
-        (a) => a.situacao === 'ATENDIDO' && Number(a.gerenciadorId) === meuId
+        (a) => a.situacao === 'ATENDIDO' && Number(a.gerenciadorId) === meuId,
       ).length
     },
 
     agendamentosCancelados() {
       const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'))
       return this.agendamentosPorSetor.filter(
-        (a) => a.situacao === 'FALTOU' && Number(a.gerenciadorId) === meuId
+        (a) => a.situacao === 'FALTOU' && Number(a.gerenciadorId) === meuId,
       ).length
     },
     totalNormalFila() {
@@ -673,7 +690,9 @@ export default {
       // Altera o status na tabela visualmente sem esperar a internet
       if (idChamado) {
         const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'))
-        const index = this.agendamentosPorSetor.findIndex((a) => (a.agendamentoId || a.id) === idChamado)
+        const index = this.agendamentosPorSetor.findIndex(
+          (a) => (a.agendamentoId || a.id) === idChamado,
+        )
 
         if (index !== -1) {
           this.agendamentosPorSetor[index].situacao = 'CHAMADO'
@@ -722,7 +741,7 @@ export default {
       }
 
       const dataCriacao = new Date(horaAgendamento).getTime()
-      const agora = this.horaAtual.getTime() 
+      const agora = this.horaAtual.getTime()
       let diffMs = agora - dataCriacao
 
       if (diffMs < 0) diffMs = 0
@@ -744,13 +763,13 @@ export default {
       try {
         if (usuarioId && token) {
           await AtendenteApi.deslogarGuiche(usuarioId)
-        } 
+        }
       } catch (error) {
         console.error('Erro técnico ao deslogar guichê:', error.response?.data || error.message)
       } finally {
         localStorage.clear()
         this.usuario = null
-        
+
         // 🔴 APAGUE O ROUTER.PUSH
         // this.$router.push({ name: 'login' })
 
@@ -813,15 +832,14 @@ export default {
 
         if (res.status === 200) {
           if (itemClicado) {
-             // 🟢 Atualização Otimista Direta
+            // 🟢 Atualização Otimista Direta
             this.idsChamadosManualmente.push(itemClicado.agendamentoId || itemClicado.id)
             itemClicado.situacao = 'CHAMADO'
-            itemClicado.gerenciadorId = meuId 
+            itemClicado.gerenciadorId = meuId
           }
 
           // Muda a aba instantaneamente
           this.abaAtiva = 'ATENDIMENTO'
-          
         }
       } catch (e) {
         alert(e?.response?.data?.mensagem || 'Falha na chamada.')
@@ -854,14 +872,14 @@ export default {
         await AtendenteApi.finalizarAtendimento(id)
 
         this.idsChamadosManualmente = this.idsChamadosManualmente.filter((itemId) => itemId !== id)
-        
+
         const index = this.agendamentosPorSetor.findIndex((a) => (a.agendamentoId || a.id) === id)
         if (index !== -1) {
           this.agendamentosPorSetor[index].situacao = 'ATENDIDO'
         }
 
         this.mostrarModalEdicao = false
-        
+
         // Volta pra Fila Geral na hora
         this.abaAtiva = 'AGUARDANDO'
       } catch (e) {
@@ -955,7 +973,7 @@ export default {
     setInterval(() => {
       this.buscarAgendamentos()
     }, 2000)
-    
+
     this.carregarServicos()
     this.carregarTiposAtendimento()
     this.atualizarRelogioLocal()
@@ -976,14 +994,14 @@ export default {
   height: 6px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #f8f9fd; 
+  background: #f8f9fd;
   border-radius: 8px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #cbd5e1; 
+  background: #cbd5e1;
   border-radius: 8px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8; 
+  background: #94a3b8;
 }
 </style>

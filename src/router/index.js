@@ -9,6 +9,7 @@ import CadastroAtendente from '@/views/CadastroAtendenteView.vue'
 import ModalGuiche from '@/views/ModalGuiche.vue'
 import AgendamentoExternoView from '@/views/AgendamentoExternoView.vue'
 import ConfiguracaoDatasView from '@/views/ConfiguracaoDatasView.vue'
+import MetricasView from '@/views/MetricasView.vue'
 
 const routes = [
   // 🔓 Rotas públicas
@@ -32,6 +33,13 @@ const routes = [
     path: '/atendente',
     name: 'atendente',
     component: AtendenteView,
+    meta: { requiresAuth: true }
+  },
+
+  {
+  path: '/atendente/metricas',
+    name: 'metricas',
+    component: MetricasView,
     meta: { requiresAuth: true }
   },
 
