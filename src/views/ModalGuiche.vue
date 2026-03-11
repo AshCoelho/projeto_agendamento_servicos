@@ -110,12 +110,13 @@ export default {
   methods: {
     getUsuarioLogado() {
       const userData = localStorage.getItem('usuario')
+      const token = localStorage.getItem('token')
       
-      if (userData) {
+      if (userData && token) {
         try {
           this.usuario = JSON.parse(userData)
           
-          // 🟢 Força a re-renderização inicial (garante que os selects estão limpos ao abrir a tela)
+          // Força a re-renderização inicial (garante que os selects estão limpos ao abrir a tela)
           this.selectedGuiche = null
           this.selectedSetor = null
           this.selectedSecretaria = null
@@ -123,14 +124,15 @@ export default {
           // Preenche a primeira lista
           this.preencherSecretarias()
         } catch (e) {
-          // Se o JSON do usuário estiver corrompido, limpa tudo e desloga
+          // Se o JSON do usuário estiver corrompido, limpa tudo e desloga com hard reset
           console.error("Dados do usuário corrompidos no storage", e)
           localStorage.clear()
-          this.$router.push('/login')
+          window.location.href = '/'
         }
       } else {
-        // Se não tem dados, chuta pro login
-        this.$router.push('/login')
+        // Se não tem dados, chuta pro login com hard reset
+        localStorage.clear()
+        window.location.href = '/'
       }
     },
 
@@ -161,7 +163,7 @@ export default {
         if (e.response && (e.response.status === 401 || e.response.status === 403)) {
             alert("Sua sessão expirou. Faça login novamente.")
             localStorage.clear()
-            this.$router.push('/login')
+            window.location.href = '/' // 🟢 Hard reset
             return;
         }
 

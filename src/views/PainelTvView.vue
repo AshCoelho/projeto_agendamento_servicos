@@ -155,8 +155,8 @@ const route = useRoute()
 const setorId = computed(() => Number(route.params.setorId || 0))
 
 const apiPublico = axios.create({
-  baseURL: 'http://localhost:8080',
-  timeout: 8000,
+  baseURL: 'http://10.0.0.243:8080',
+  timeout: 4000,
 })
 
 const buscarInfoSetor = async () => {
@@ -191,7 +191,7 @@ const lastKey = ref(null)
 const fetching = ref(false)
 
 const qrSrc = computed(() => {
-  const urlPublica = `http://localhost/tv/${setorId.value}`
+  const urlPublica = `http://10.0.0.243:3000/tv/${setorId.value}`
   const data = encodeURIComponent(urlPublica)
   return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${data}`
 })
