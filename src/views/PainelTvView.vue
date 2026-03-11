@@ -161,12 +161,16 @@ const apiPublico = axios.create({
 
 const buscarInfoSetor = async () => {
   try {
-    const res = await apiPublico.get(`/setores/${setorId.value}`)
-    if (res.data && res.data.nome) {
-      nomeSecretaria.value = res.data.nome
+    const res = await apiPublico.get(`/setores/setor/${setorId.value}`);
+    console.log('Dados completos do setor (array):', res.data);
+
+    if (Array.isArray(res.data) && res.data.length > 0) {
+      const setor = res.data[0]; // pega o primeiro setor do array
+      nomeSecretaria.value = setor.secretaria?.nome || setor.nome || 'Secretaria';
+      console.log('Nome da secretaria definido como:', nomeSecretaria.value);
     }
   } catch (e) {
-    console.warn('Não foi possível buscar o nome do setor pelo endpoint direto.')
+    console.warn('Não foi possível buscar o nome do setor pelo endpoint direto.', e);
   }
 }
 
@@ -242,7 +246,7 @@ const buscarChamadas = async () => {
     if (lista.length > 0) {
       const item = lista[0]
       if (item.servicoNome) {
-        nomeSecretaria.value = item.servicoNome
+        
       } else {
         const nomeEncontrado = pegarCampo(item, [
           'secretariaNome',
@@ -254,11 +258,9 @@ const buscarChamadas = async () => {
           'nome',
         ])
 
-        if (nomeEncontrado) {
-          nomeSecretaria.value = nomeEncontrado
-        }
       }
     }
+    
     if (!lista.length) return
 
     const ultima = lista[0]
