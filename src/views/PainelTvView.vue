@@ -37,6 +37,16 @@
       <div
         class="flex-[4] md:flex-[4] bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden relative"
       >
+
+        <!-- Iframe da câmera ocupando só esse card -->
+        <iframe
+          v-if="!mostrarSenha"
+          src="https://cameras.saoluis.ma.gov.br/cam1.html"
+          class="absolute inset-0 w-full h-full z-0 rounded-2xl"
+          frameborder="0"
+        ></iframe>
+
+
         <div
           class="w-full text-[20px] md:text-[2vw] flex justify-center items-center pt-10 md:pt-2 font-bold"
           :class="senhaAtual?.numero?.includes('P') ? 'text-red-600' : 'text-blue-600'"
@@ -45,6 +55,7 @@
         </div>
 
         <div
+          v-show="mostrarSenha"
           class="flex-1 flex flex-col md:flex-row items-center justify-around px-4 md:px-10 bg-white"
         >
           <div class="flex flex-col items-center justify-center">
@@ -168,61 +179,47 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 
+/** ======= ROTAS E ESTADOS ======= **/
 const route = useRoute()
-
 const setorId = computed(() => Number(route.params.setorId || 0))
 
-const apiPublico = axios.create({
-  baseURL: 'http://localhost:8080',
-  timeout: 4000,
-})
-
-const buscarInfoSetor = async () => {
-  try {
-    const res = await apiPublico.get(`/setores/setor/${setorId.value}`)
-    console.log('Dados completos do setor (array):', res.data)
-
-    if (Array.isArray(res.data) && res.data.length > 0) {
-      const setor = res.data[0] // pega o primeiro setor do array
-      nomeSecretaria.value = setor.secretaria?.nome || setor.nome || 'Secretaria'
-      console.log('Nome da secretaria definido como:', nomeSecretaria.value)
-    }
-  } catch (e) {
-    console.warn('Não foi possível buscar o nome do setor pelo endpoint direto.', e)
-  }
-}
-
-onMounted(() => {
-  if (route.params.setorId) {
-    buscarInfoSetor()
-    start()
-  }
-})
+const nomeSecretaria = ref('Secretaria')
 const relogio = ref('')
 const audioPlayer = ref(null)
 const somAtivado = ref(false)
-const nomeSecretaria = ref('Secretaria')
-
 const senhaAtual = ref({ numero: '---', guiche: null, cidadao: 'Aguardando...' })
 const historico = ref([])
+const lastKey = ref(null)
+const fetching = ref(false)
+const mostrarSenha = ref(false)
 
 let intervalChamada = null
 let intervalRelogio = null
 
-const lastKey = ref(null)
-const fetching = ref(false)
-
-const qrSrc = computed(() => {
-  const urlPublica = `http://localhost/tv/${setorId.value}`
-  const data = encodeURIComponent(urlPublica)
-  return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${data}`
+/** ======= API ======= **/
+const apiPublico = axios.create({
+  baseURL: 'http://10.0.0.243:8080',
+  timeout: 3000,
 })
 
-const guicheFormatado = computed(() => {
-  const g = senhaAtual.value?.guiche
-  if (g == null || g === '' || g === '--') return '--'
-  return String(g).padStart(2, '0')
-})
+/** ======= UTILITÁRIOS ======= **/
+const extrairLista = (payload) =>
+  Array.isArray(payload)
+    ? payload
+    : Array.isArray(payload?.content)
+    ? payload.content
+    : Array.isArray(payload?.data)
+    ? payload.data
+    : Array.isArray(payload?.ultimasChamadas)
+    ? payload.ultimasChamadas
+    : []
+
+const pegarCampo = (item, chaves) => {
+  for (const k of chaves) {
+    if (item?.[k] != null && item[k] !== '') return item[k]
+  }
+  return null
+}
 
 const atualizarRelogio = () => {
   const agora = new Date()
@@ -233,99 +230,93 @@ const atualizarRelogio = () => {
   })
 }
 
-function extrairLista(payload) {
-  if (Array.isArray(payload)) return payload
-  if (Array.isArray(payload?.content)) return payload.content
-  if (Array.isArray(payload?.data)) return payload.data
-  if (Array.isArray(payload?.ultimasChamadas)) return payload.ultimasChamadas
-  return []
+const qrSrc = computed(() => {
+  const urlPublica = `http://10.0.0.243:3000/tv/${setorId.value}`
+  return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(urlPublica)}`
+})
+
+const guicheFormatado = computed(() => {
+  const g = senhaAtual.value?.guiche
+  return g == null || g === '' || g === '--' ? '--' : String(g).padStart(2, '0')
+})
+
+/** ======= FUNÇÕES PRINCIPAIS ======= **/
+const buscarInfoSetor = async () => {
+  if (!setorId.value) return
+
+  try {
+    const res = await apiPublico.get(`/setores/setor/${setorId.value}`)
+    const setor = Array.isArray(res.data) && res.data[0]
+    if (setor) {
+      nomeSecretaria.value = setor.secretaria?.nome || setor.nome || 'Secretaria'
+      console.log('Nome da secretaria definido como:', nomeSecretaria.value)
+    }
+  } catch (e) {
+    console.warn('Não foi possível buscar o nome do setor.', e)
+  }
 }
 
-function pegarCampo(item, chaves) {
-  for (const k of chaves) {
-    if (item && item[k] != null && item[k] !== '') return item[k]
+const falarChamada = (nome, senha, guiche) => {
+  if (!somAtivado.value) return
+
+  const texto = `Senha ${senha}, ${nome}, comparecer ao guichê ${guiche}`
+  const falar = (vezes) => {
+    const msg = new SpeechSynthesisUtterance(texto)
+    msg.lang = 'pt-BR'
+    msg.rate = 1.0
+    msg.onend = () => vezes > 1 && falar(vezes - 1)
+    window.speechSynthesis.speak(msg)
   }
-  return null
+
+  if (audioPlayer.value) {
+    audioPlayer.value.currentTime = 0
+    audioPlayer.value.play().catch(() => {})
+    setTimeout(() => falar(2), 1000)
+  } else {
+    falar(2)
+  }
 }
 
 const buscarChamadas = async () => {
-  if (!setorId.value || setorId.value === 0) return
-  if (fetching.value) return
+  if (!setorId.value || fetching.value) return
   fetching.value = true
 
   try {
     const res = await apiPublico.get(
       `/agendamentos/ultimas-chamadas/${setorId.value}?t=${Date.now()}`,
-      { headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' } },
+      { headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' } }
     )
-    console.log('Dados recebidos da API:', res.data)
+
     const lista = extrairLista(res.data)
-
-    if (lista.length > 0) {
-      const item = lista[0]
-      if (item.servicoNome) {
-      } else {
-        const nomeEncontrado = pegarCampo(item, [
-          'secretariaNome',
-          'nomeSecretaria',
-          'setorNome',
-          'nomeSetor',
-          'setor',
-          'secretaria',
-          'nome',
-        ])
-      }
-    }
-
     if (!lista.length) return
 
     const ultima = lista[0]
-
-    const senha =
-      pegarCampo(ultima, ['senha', 'numeroSenha', 'senhaAtual', 'nsenha', 'senha_agendamento']) ||
-      '---'
-
+    const senha = pegarCampo(ultima, ['senha', 'numeroSenha', 'senhaAtual', 'nsenha', 'senha_agendamento']) || '---'
     const guiche = pegarCampo(ultima, ['guiche', 'numeroGuiche', 'guicheNumero']) ?? null
-
     const cidadao =
-      pegarCampo(ultima, [
-        'nomeCidadao',
-        'nome_cidadao',
-        'usuarioNome',
-        'nomeUsuario',
-        'cidadao',
-      ]) || 'Cidadão'
+      pegarCampo(ultima, ['nomeCidadao', 'nome_cidadao', 'usuarioNome', 'nomeUsuario', 'cidadao']) || 'Cidadão'
 
-    const horaChamada = pegarCampo(ultima, ['horaChamada', 'dataChamada', 'data_chamada'])
-    const agendamentoId = pegarCampo(ultima, ['agendamentoId', 'id'])
-    const key = String(agendamentoId ?? '') + '|' + String(horaChamada ?? '') + '|' + String(senha)
+    const key = `${pegarCampo(ultima, ['agendamentoId', 'id']) ?? ''}|${pegarCampo(ultima, ['horaChamada', 'dataChamada', 'data_chamada']) ?? ''}|${senha}`
 
     historico.value = lista.slice(0, 5).map((item) => ({
-      numero:
-        pegarCampo(item, ['senha', 'numeroSenha', 'senhaAtual', 'nsenha', 'senha_agendamento']) ||
-        '---',
+      numero: pegarCampo(item, ['senha', 'numeroSenha', 'senhaAtual', 'nsenha', 'senha_agendamento']) || '---',
       guiche: pegarCampo(item, ['guiche', 'numeroGuiche', 'guicheNumero']) ?? null,
       cidadao:
-        pegarCampo(item, [
-          'nomeCidadao',
-          'nome_cidadao',
-          'usuarioNome',
-          'nomeUsuario',
-          'cidadao',
-        ]) || 'Cidadão',
+        pegarCampo(item, ['nomeCidadao', 'nome_cidadao', 'usuarioNome', 'nomeUsuario', 'cidadao']) || 'Cidadão',
     }))
 
     const mudou = key !== lastKey.value
     lastKey.value = key
 
-    senhaAtual.value = {
-      numero: String(senha),
-      guiche: guiche != null ? String(guiche) : null,
-      cidadao: String(cidadao),
-    }
+    senhaAtual.value = { numero: String(senha), guiche: guiche != null ? String(guiche) : null, cidadao: String(cidadao) }
 
     if (mudou) {
-      falarChamada(senhaAtual.value.cidadao, senhaAtual.value.numero, guicheFormatado.value)
+  mostrarSenha.value = true // mostra a senha
+  setTimeout(() => {
+    mostrarSenha.value = false // esconde depois de 5 segundos
+  }, 5000)
+
+  falarChamada(senhaAtual.value.cidadao, senhaAtual.value.numero, guicheFormatado.value)
     }
   } catch (error) {
     console.error('Erro ao buscar chamadas:', error)
@@ -334,36 +325,12 @@ const buscarChamadas = async () => {
   }
 }
 
-const falarChamada = (nome, senha, guiche) => {
-  if (!somAtivado.value) return
-  const texto = `Senha ${senha}, ${nome}, comparecer ao guichê ${guiche}`
-  const falar = (vezesRestantes) => {
-    const msg = new SpeechSynthesisUtterance()
-    msg.text = texto
-    msg.lang = 'pt-BR'
-    msg.rate = 1.0
-    msg.onend = () => {
-      if (vezesRestantes > 1) falar(vezesRestantes - 1)
-    }
-    window.speechSynthesis.speak(msg)
-  }
-  if (audioPlayer.value) {
-    audioPlayer.value.currentTime = 0
-    audioPlayer.value.play().catch(() => {})
-    setTimeout(() => {
-      falar(2)
-    }, 1000)
-  } else {
-    falar(2)
-  }
-}
-
 const ativarAudio = () => {
   somAtivado.value = true
   audioPlayer.value?.play().catch(() => {})
 }
 
-function start() {
+const start = () => {
   stop()
   atualizarRelogio()
   intervalRelogio = setInterval(atualizarRelogio, 1000)
@@ -371,20 +338,18 @@ function start() {
   intervalChamada = setInterval(buscarChamadas, 1500)
 }
 
-function stop() {
-  if (intervalChamada) clearInterval(intervalChamada)
-  if (intervalRelogio) clearInterval(intervalRelogio)
+const stop = () => {
+  clearInterval(intervalChamada)
+  clearInterval(intervalRelogio)
   intervalChamada = null
   intervalRelogio = null
 }
 
-onMounted(() => {
-  // Inicialização focada no setorId vindo da rota
-  if (route.params.setorId) {
-    start()
-  } else {
-    console.error('Nenhum setorId encontrado na URL')
-  }
+/** ======= CICLO DE VIDA ======= **/
+onMounted(async () => {
+  if (!setorId.value) return console.error('Nenhum setorId encontrado na URL')
+  await buscarInfoSetor()
+  start()
 })
 
 onUnmounted(stop)

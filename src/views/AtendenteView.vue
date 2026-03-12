@@ -588,21 +588,26 @@ export default {
       const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'))
       return this.agendamentosPorSetor.filter(
         (a) =>
-          ['CHAMADO', 'EM_ATENDIMENTO'].includes(a.situacao) && Number(a.gerenciadorId) === meuId,
+          ['CHAMADO', 'EM_ATENDIMENTO'].includes(a.situacao) &&
+          Number(a.gerenciadorId || a.usuarioId) === meuId
       ).length
     },
 
     agendamentosFinalizados() {
       const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'))
       return this.agendamentosPorSetor.filter(
-        (a) => a.situacao === 'ATENDIDO' && Number(a.gerenciadorId) === meuId,
+        (a) => 
+          a.situacao === 'ATENDIDO' && 
+          Number(a.gerenciadorId || a.usuarioId) === meuId
       ).length
     },
 
     agendamentosCancelados() {
       const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'))
       return this.agendamentosPorSetor.filter(
-        (a) => a.situacao === 'FALTOU' && Number(a.gerenciadorId) === meuId,
+        (a) => 
+          a.situacao === 'FALTOU' && 
+          Number(a.gerenciadorId || a.usuarioId) === meuId
       ).length
     },
     totalNormalFila() {
@@ -858,7 +863,6 @@ export default {
           await this.buscarAgendamentos()
           await this.carregarTiposAtendimento()
 
-          alert(`Atendimento registrado! Senha: ${senhaGerada}`)
         }
       } catch (e) {
         console.error('Erro ao salvar:', e)

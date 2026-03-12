@@ -121,27 +121,50 @@ export default {
   }),
 
   computed: {
-    totalRegistradosHoje() {
-      return this.agendamentosPorSetor.length
-    },
-    totalNormalGeral() {
-      return this.agendamentosPorSetor.filter((a) => a.tipoAtendimento === 'NORMAL').length
-    },
-    totalPrioridadeGeral() {
-      return this.agendamentosPorSetor.filter((a) => a.tipoAtendimento === 'PRIORIDADE').length
+    // 🟢 1. CRIAMOS UM FILTRO MESTRE BLINDADO
+    meusAgendamentos() {
+      const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'));
+
+      // 🐛 INÍCIO DO DEBUG
+      console.group('🔍 DEBUG: Meus Agendamentos');
+      console.log('👤 Meu ID (Guichê Logado):', meuId);
+      console.log('📦 Total no Setor (Cru do Banco):', this.agendamentosPorSetor.length);
+      
+      return this.agendamentosPorSetor.filter(a => {
+        const idAtendente = Number(a.gerenciadorId);
+        const status = a.situacao ? a.situacao.toUpperCase() : '';
+        
+        // Só conta como "Seu" se você efetivamente chamou para o seu guichê
+        const jaSaiuDaFila = ['CHAMADO', 'EM_ATENDIMENTO', 'ATENDIDO', 'FALTOU'].includes(status);
+
+        return idAtendente === meuId && jaSaiuDaFila;
+      });
     },
 
+    // 🟢 2. PAINEL "ATENDIMENTOS HOJE": (Agora é 100% a sua produtividade)
+    totalRegistradosHoje() {
+      return this.meusAgendamentos.filter((a) => a.situacao === 'ATENDIDO').length
+    },
+    totalNormalGeral() {
+      return this.meusAgendamentos.filter((a) => a.tipoAtendimento === 'NORMAL').length
+    },
+    totalPrioridadeGeral() {
+      return this.meusAgendamentos.filter((a) => a.tipoAtendimento.includes('PRIORIDADE')).length
+    },
+
+    // 🟢 3. PAINÉIS DE RESULTADO: Apenas os seus atendidos e ausentes
+    agendamentosFinalizados() {
+      return this.meusAgendamentos.filter((a) => a.situacao === 'ATENDIDO').length
+    },
+    agendamentosCancelados() {
+      return this.meusAgendamentos.filter((a) => a.situacao === 'FALTOU').length
+    },
+
+    // 🌎 4. PAINEL "PESSOAS NA FILA": Fila geral de quem está aguardando lá fora
     agendamentosAguardando() {
       return this.agendamentosPorSetor.filter(
         (a) => a.situacao === 'AGENDADO' && ['AGENDADO', 'ESPONTANEO'].includes(a.tipoAgendamento),
       ).length
-    },
-
-    agendamentosFinalizados() {
-      return this.agendamentosPorSetor.filter((a) => a.situacao === 'ATENDIDO').length
-    },
-    agendamentosCancelados() {
-      return this.agendamentosPorSetor.filter((a) => a.situacao === 'FALTOU').length
     },
     totalNormalFila() {
       return this.agendamentosPorSetor.filter(

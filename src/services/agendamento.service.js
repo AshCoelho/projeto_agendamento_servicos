@@ -13,7 +13,6 @@ export const AgendamentoService = {
     })
 
     const regras = {
-      // Volta a mostrar TODOS os aguardando, para o atendente ver o dia inteiro
       'AGUARDANDO': (a) => 
         a.situacao === 'AGENDADO' && 
         ['AGENDADO', 'ESPONTANEO'].includes(a.tipoAgendamento),
@@ -22,19 +21,31 @@ export const AgendamentoService = {
         a.situacao === 'AGENDADO' && 
         a.tipoAtendimento.includes('PRIORIDADE'),
 
-      // A regra que importa: Aba 'EM_ATENDIMENTO' mostra apenas o SEU paciente
       'ATENDIMENTO': (a) => {
-        const idNoBanco = Number(a.gerenciadorId || a.usuarioId);
+        // 🟢 APENAS gerenciadorId. Se vier nulo, vira 0 e a regra bloqueia com segurança.
+        const idNoBanco = Number(a.gerenciadorId);
         const ocupado = ['EM_ATENDIMENTO', 'CHAMADO'].includes(a.situacao);
-        const ehMeu = idNoBanco === Number(meuUsuarioId);
-        
-        return ocupado && ehMeu;
+        return ocupado && idNoBanco === Number(meuUsuarioId);
       },
 
-      'CANCELADOS': (a) => ['FALTOU'].includes(a.situacao),
-      'FINALIZADOS': (a) => ['ATENDIDO'].includes(a.situacao)
+      'CANCELADOS': (a) => {
+        const idNoBanco = Number(a.gerenciadorId);
+        return a.situacao === 'FALTOU' && idNoBanco === Number(meuUsuarioId);
+      },
+
+      'FINALIZADOS': (a) => {
+        const idNoBanco = Number(a.gerenciadorId);
+        return a.situacao === 'ATENDIDO' && idNoBanco === Number(meuUsuarioId);
+      }
     }
 
-    return regras[abaAtiva] ? listaNormalizada.filter(regras[abaAtiva]) : listaNormalizada
+    // Apelidos de segurança
+    regras['FINALIZADO'] = regras['FINALIZADOS'];
+    regras['ATENDIDOS'] = regras['FINALIZADOS'];
+    regras['CANCELADO'] = regras['CANCELADOS'];
+    regras['AUSENTES'] = regras['CANCELADOS'];
+
+    // Retorna a lista filtrada ou vazio se a aba não existir
+    return regras[abaAtiva] ? listaNormalizada.filter(regras[abaAtiva]) : [];
   }
 }

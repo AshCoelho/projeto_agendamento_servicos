@@ -133,48 +133,61 @@ export default {
   },
 
   computed: {
-    temAtendimentoAtivo() {
-      const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'))
+    // 🟢 1. O FILTRO MESTRE (Blindado contra o Bug do Zero)
+    meusAgendamentos() {
+      const meuId = this.usuario?.id || localStorage.getItem('usuarioId');
+      
+      if (!meuId) return []; // Se o sistema ainda não carregou o seu usuário, a lista fica vazia.
 
-      if (!this.agendamentosPorSetor.length) return false
-
-      return this.agendamentosPorSetor.some((a) => {
-        const status = a.situacao?.toUpperCase()
-        const idNoBanco = Number(a.gerenciadorId)
-
-        const ocupado = status === 'CHAMADO' || status === 'EM_ATENDIMENTO'
-        const ehMeu = idNoBanco === meuId
-
-        return ocupado && ehMeu
-      })
+      return this.agendamentosPorSetor.filter(a => {
+        // 🛑 A TRAVA: Se o paciente ainda não foi chamado (gerenciadorId é nulo/vazio), ignora ele na hora!
+        if (!a.gerenciadorId) return false;
+        
+        // Se ele tem um gerenciadorId, compara com o seu de forma segura
+        return Number(a.gerenciadorId) === Number(meuId);
+      });
     },
 
-    totalNormalFila() {
-      return this.agendamentosPorSetor.filter(
-        (a) => a.situacao === 'AGENDADO' && a.tipoAtendimento === 'NORMAL',
-      ).length
-    },
-    totalPrioridadeFila() {
-      return this.agendamentosPorSetor.filter(
-        (a) => a.situacao === 'AGENDADO' && a.tipoAtendimento.includes('PRIORIDADE'),
-      ).length
-    },
-
+    // 🟢 2. PAINEL "ATENDIMENTOS HOJE": Agora só mostra o total de quem passou pelo SEU guichê!
     totalRegistradosHoje() {
-      return this.agendamentosPorSetor.length
-    },
-    totalNormalGeral() {
-      return this.agendamentosPorSetor.filter((a) => a.tipoAtendimento === 'NORMAL').length
-    },
-    totalPrioridadeGeral() {
-      return this.agendamentosPorSetor.filter((a) => a.tipoAtendimento.includes('PRIORIDADE'))
-        .length
+      return this.meusAgendamentos.filter((a) => a.situacao === 'ATENDIDO').length
     },
 
+    totalNormalGeral() {
+      return this.meusAgendamentos.filter(
+        (a) => a.situacao === 'ATENDIDO' && a.tipoAtendimento === 'NORMAL'
+      ).length;
+    },
+    
+    totalPrioridadeGeral() {
+      return this.meusAgendamentos.filter(
+        (a) => a.situacao === 'ATENDIDO' && a.tipoAtendimento && a.tipoAtendimento.includes('PRIORIDADE')
+      ).length;
+    },
+
+    // 🟢 3. PAINÉIS DE RESULTADO: Apenas os seus atendidos e ausentes
+    agendamentosFinalizados() {
+      return this.meusAgendamentos.filter((a) => a.situacao === 'ATENDIDO').length;
+    },
+    agendamentosCancelados() {
+      return this.meusAgendamentos.filter((a) => a.situacao === 'FALTOU').length;
+    },
+
+    // 🌎 4. PAINEL "PESSOAS NA FILA": A fila geral de quem está aguardando no setor (Não mexemos, fica global)
     agendamentosAguardando() {
       return this.agendamentosPorSetor.filter(
         (a) => a.situacao === 'AGENDADO' && ['AGENDADO', 'ESPONTANEO'].includes(a.tipoAgendamento),
-      ).length
+      ).length;
+    },
+    totalNormalFila() {
+      return this.agendamentosPorSetor.filter(
+        (a) => a.situacao === 'AGENDADO' && a.tipoAtendimento === 'NORMAL',
+      ).length;
+    },
+    totalPrioridadeFila() {
+      return this.agendamentosPorSetor.filter(
+        (a) => a.situacao === 'AGENDADO' && a.tipoAtendimento && a.tipoAtendimento.includes('PRIORIDADE'),
+      ).length;
     },
   },
 
