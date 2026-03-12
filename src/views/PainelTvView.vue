@@ -1,18 +1,26 @@
 <template>
   <div class="h-screen w-screen bg-[#F0F2F5] flex flex-col overflow-hidden font-sans relative">
     <header
-      class="bg-white px-4 md:px-10 py-3 flex justify-between items-center border-b border-gray-100 shrink-0"
+      class="bg-white px-4 md:px-10 py-3 flex flex-col md:flex-row md:justify-between md:items-center border-b border-gray-100 shrink-0"
     >
-      <div class="flex items-center">
+      <div class="flex items-center justify-center md:justify-start gap-3">
         <img src="../assets/brasao.png" alt="Prefeitura" class="h-8 md:h-12 object-contain" />
-      </div>
-      <div class="flex items-center">
-        <h1 class="text-xl md:text-2xl font-bold text-[#003B73] uppercase">
+
+        <h1
+          class="text-sm sm:text-lg md:text-2xl font-bold text-[#003B73] uppercase text-center md:text-left"
+        >
           {{ nomeSecretaria }}
         </h1>
       </div>
-      <div class="text-right leading-none">
-        <div class="text-lg md:text-2xl font-bold text-gray-700">{{ relogio }}</div>
+
+      <!-- Relógio -->
+      <div
+        class="flex flex-col items-center md:items-end text-center md:text-right leading-none mt-2 md:mt-0"
+      >
+        <div class="text-base sm:text-lg md:text-2xl font-bold text-gray-700">
+          {{ relogio }}
+        </div>
+
         <div
           class="text-[8px] md:text-[10px] text-gray-400 uppercase font-black tracking-widest mt-1"
         >
@@ -27,13 +35,20 @@
       ></div>
 
       <div
-        class="flex-[3] md:flex-[4] bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden relative"
+        class="flex-[4] md:flex-[4] bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden relative"
       >
         <div
-          class="flex-1 flex flex-col md:flex-row items-center justify-around px-4 md:px-12 bg-white"
+          class="w-full text-[20px] md:text-[2vw] flex justify-center items-center pt-10 md:pt-2 font-bold"
+          :class="senhaAtual?.numero?.includes('P') ? 'text-red-600' : 'text-blue-600'"
+        >
+          {{ senhaAtual?.numero?.includes('P') ? 'PRIORIDADE' : 'NORMAL' }}
+        </div>
+
+        <div
+          class="flex-1 flex flex-col md:flex-row items-center justify-around px-4 md:px-10 bg-white"
         >
           <div class="flex flex-col items-center justify-center">
-            <span class="text-[#8e8e8e] text-2xl md:text-6xl font-bold uppercase tracking-widest"
+            <span class="text-[#8e8e8e] text-[15px] md:text-6xl font-bold uppercase tracking-widest"
               >SENHA</span
             >
             <h1
@@ -107,28 +122,31 @@
       </aside>
     </main>
 
-    <footer class="hidden md:block relative w-full py-12 shrink-0">
-      <div
-        class="bg-[#003B73] py-4 rounded-2xl shadow-inner w-full flex justify-center items-center"
-      >
-        <h2 class="text-6xl font-bold text-white text-center px-20">
-          {{ senhaAtual.cidadao || 'Aguardando...' }}
-        </h2>
-      </div>
-
-      <div class="absolute inset-0 flex items-center justify-between px-8 pointer-events-none">
-        <div class="pointer-events-auto transform -translate-y-4">
-          <div class="bg-white p-2 rounded-2xl shadow-2xl border border-gray-100">
+    <footer class="hidden md:block flex justify-between relative w-full py-5 shrink-0">
+      <div class="bg-[#003B73] py-2 rounded-2xl shadow-inner w-full flex items-center px-10">
+        <div class="flex-1">
+          <div class="bg-white p-2 rounded-2xl shadow-2xl border border-gray-100 w-fit">
             <img :src="qrSrc" alt="QR" class="w-20 h-20" />
           </div>
         </div>
-        <button
-          v-if="!somAtivado"
-          @click="ativarAudio"
-          class="bg-[#FFC107] hover:bg-yellow-500 text-black text-[11px] font-black py-3 px-8 rounded-2xl shadow-2xl pointer-events-auto transform translate-y-8"
-        >
-          🔔 Clique para ativar áudio
-        </button>
+
+        <div class="flex-1 text-center">
+          <h2
+            class="text-[17px] md:text-6xl font-medium text-white break-words leading-tight max-w-full"
+          >
+            {{ senhaAtual.cidadao || 'Aguardando...' }}
+          </h2>
+        </div>
+
+        <div class="flex-1 flex justify-end">
+          <button
+            v-if="!somAtivado"
+            @click="ativarAudio"
+            class="bg-[#FFC107] hover:bg-yellow-500 text-black text-[11px] font-black py-3 px-8 rounded-2xl shadow-2xl"
+          >
+            🔔 Clique para ativar áudio
+          </button>
+        </div>
       </div>
     </footer>
 
@@ -155,22 +173,22 @@ const route = useRoute()
 const setorId = computed(() => Number(route.params.setorId || 0))
 
 const apiPublico = axios.create({
-  baseURL: 'http://10.0.0.243:8080',
+  baseURL: 'http://localhost:8080',
   timeout: 4000,
 })
 
 const buscarInfoSetor = async () => {
   try {
-    const res = await apiPublico.get(`/setores/setor/${setorId.value}`);
-    console.log('Dados completos do setor (array):', res.data);
+    const res = await apiPublico.get(`/setores/setor/${setorId.value}`)
+    console.log('Dados completos do setor (array):', res.data)
 
     if (Array.isArray(res.data) && res.data.length > 0) {
-      const setor = res.data[0]; // pega o primeiro setor do array
-      nomeSecretaria.value = setor.secretaria?.nome || setor.nome || 'Secretaria';
-      console.log('Nome da secretaria definido como:', nomeSecretaria.value);
+      const setor = res.data[0] // pega o primeiro setor do array
+      nomeSecretaria.value = setor.secretaria?.nome || setor.nome || 'Secretaria'
+      console.log('Nome da secretaria definido como:', nomeSecretaria.value)
     }
   } catch (e) {
-    console.warn('Não foi possível buscar o nome do setor pelo endpoint direto.', e);
+    console.warn('Não foi possível buscar o nome do setor pelo endpoint direto.', e)
   }
 }
 
@@ -195,7 +213,7 @@ const lastKey = ref(null)
 const fetching = ref(false)
 
 const qrSrc = computed(() => {
-  const urlPublica = `http://10.0.0.243:3000/tv/${setorId.value}`
+  const urlPublica = `http://localhost/tv/${setorId.value}`
   const data = encodeURIComponent(urlPublica)
   return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${data}`
 })
@@ -246,7 +264,6 @@ const buscarChamadas = async () => {
     if (lista.length > 0) {
       const item = lista[0]
       if (item.servicoNome) {
-        
       } else {
         const nomeEncontrado = pegarCampo(item, [
           'secretariaNome',
@@ -257,10 +274,9 @@ const buscarChamadas = async () => {
           'secretaria',
           'nome',
         ])
-
       }
     }
-    
+
     if (!lista.length) return
 
     const ultima = lista[0]

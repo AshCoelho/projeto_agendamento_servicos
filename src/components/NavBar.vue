@@ -4,7 +4,7 @@
     class="bg-white border-r border-gray-100 flex flex-col items-center py-6 transition-all duration-300 relative"
   >
     <button
-      @click="sidebarAberta = !sidebarAberta"
+      @click="$emit('update:sidebarAberta', !sidebarAberta)"
       class="absolute -right-3 top-10 bg-white border border-gray-100 rounded-full w-6 h-6 flex items-center justify-center shadow-sm hover:bg-gray-50 z-50"
     >
       <i
@@ -23,27 +23,24 @@
         SA
       </div>
       <div v-if="sidebarAberta" class="flex flex-col justify-start mr-15 leading-tight">
-        <span class="text-[11px] font-medium text-blue-800 uppercase tracking-wide">
-          Sistema de
-        </span>
-
-        <span class="text-[14px] font-extrabold text-blue-900 uppercase tracking-tight">
-          Agendamento
-        </span>
+        <span class="text-[11px] font-medium text-blue-800 uppercase tracking-wide"
+          >Sistema de</span
+        >
+        <span class="text-[14px] font-extrabold text-blue-900 uppercase tracking-tight"
+          >Agendamento</span
+        >
       </div>
     </div>
 
-    <nav class="w-full px-4 space-y-2 overflow-y-auto flex-1 transition-all duration-300">
+    <nav class="w-full px-4 space-y-2">
       <router-link
         to="/atendente"
-        class="flex items-center gap-3 px-4 py-3 rounded-[13px] transition-all text-gray-500 hover:bg-gray-50 group"
+        class="flex items-center gap-3 px-4 py-3 rounded-[13px] transition-all text-gray-500 hover:bg-gray-50"
         :class="[!sidebarAberta ? 'justify-center px-0' : '']"
         active-class="bg-[#2563eb] text-white shadow-xl shadow-blue-100"
       >
         <i class="pi pi-objects-column"></i>
-        <span v-if="sidebarAberta" class="text-sm font-bold whitespace-nowrap"
-          >Painel de Senhas</span
-        >
+        <span v-if="sidebarAberta" class="text-sm font-bold whitespace-nowrap">Painel</span>
       </router-link>
 
       <router-link
@@ -52,7 +49,7 @@
         :class="[!sidebarAberta ? 'justify-center px-0' : '']"
         active-class="bg-[#2563eb] text-white shadow-xl shadow-blue-100"
       >
-        <i class="pi pi-cog"></i>
+        <i class="pi pi-chart-bar"></i>
         <span v-if="sidebarAberta" class="text-sm font-bold whitespace-nowrap">Métricas</span>
       </router-link>
     </nav>
@@ -78,7 +75,7 @@
       </div>
 
       <button
-        @click="handleLogout"
+        @click="$emit('logout')"
         :class="[sidebarAberta ? 'justify-start px-2' : 'justify-center px-0']"
         class="flex items-center gap-2 w-full text-red-500 font-bold text-xs uppercase tracking-tight transition-all duration-300"
       >
@@ -90,66 +87,12 @@
 </template>
 
 <script>
-import api from '@/services/api'
-import 'primeicons/primeicons.css'
-
 export default {
-  data: () => ({
-    usuario: null,
-    fila: [],
-    agendamentosPorSec: [],
-    abaAtiva: 'AGUARDANDO',
-    relogio: '--:--:--',
-    filtroTexto: '',
-    abrirCadastros: false,
-    menuAtivo: 'painel',
-    sidebarAberta: false,
-  }),
-  methods: {
-    selecionarMenu(id) {
-      this.menuAtivo = id
-
-      if (!id.startsWith('cadastro')) {
-        this.abrirCadastros = false
-      } else {
-        this.abrirCadastros = true
-      }
-    },
-    async buscarAgendamentos() {
-      try {
-        const resposta = await api.get('/agendamentos/secretaria/1')
-        console.log('Dados recebidos no painel:', resposta.data)
-        if (Array.isArray(resposta.data)) {
-          this.agendamentosPorSec = resposta.data
-        }
-      } catch (e) {
-        console.error(e)
-      }
-    },
-
-    async getUsuarioLogado() {
-      try {
-        const usuario_logado = JSON.parse(localStorage.getItem('usuario'))
-        const resposta = await api.get('/gerenciador/usuario-logado', {
-          headers: { Authorization: `Bearer ${usuario_logado.token}` },
-        })
-        this.usuario = resposta.data
-      } catch (error) {
-        console.error('Erro ao buscar usuário logado', error)
-      }
-    },
-
-    handleLogout() {
-      localStorage.clear()
-      this.$router.push({ name: 'login' })
-    },
+  name: 'NavBar',
+  props: {
+    sidebarAberta: Boolean,
+    usuario: Object,
   },
-
-  mounted() {
-    this.buscarAgendamentos()
-    this.getUsuarioLogado()
-    this.atualizarRelogioLocal()
-    setInterval(() => this.atualizarRelogioLocal(), 1000)
-  },
+  emits: ['update:sidebarAberta', 'logout'],
 }
 </script>

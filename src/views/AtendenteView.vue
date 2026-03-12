@@ -1,88 +1,11 @@
 <template>
   <div class="flex min-h-screen bg-[#f8f9fd] font-sans text-[#2d3748]">
-    <aside
-      :class="[sidebarAberta ? 'w-64' : 'w-20']"
-      class="bg-white border-r border-gray-100 flex flex-col items-center py-6 transition-all duration-300 relative"
-    >
-      <button
-        @click="sidebarAberta = !sidebarAberta"
-        class="absolute -right-3 top-10 bg-white border border-gray-100 rounded-full w-6 h-6 flex items-center justify-center shadow-sm hover:bg-gray-50 z-50"
-      >
-        <i
-          :class="['pi', sidebarAberta ? 'pi-chevron-left' : 'pi-chevron-right']"
-          style="font-size: 0.7rem"
-        ></i>
-      </button>
-
-      <div
-        :class="[sidebarAberta ? 'px-6' : 'px-0']"
-        class="flex items-center gap-2 mb-10 w-full transition-all duration-300 justify-center"
-      >
-        <div
-          class="min-w-[40px] w-10 h-10 bg-[#2563eb] rounded-[13px] flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-200"
-        >
-          SA
-        </div>
-        <div v-if="sidebarAberta" class="flex flex-col justify-start mr-15 leading-tight">
-          <span class="text-[11px] font-medium text-blue-800 uppercase tracking-wide">
-            Sistema de
-          </span>
-
-          <span class="text-[14px] font-extrabold text-blue-900 uppercase tracking-tight">
-            Agendamento
-          </span>
-        </div>
-      </div>
-
-      <nav class="w-full px-4 space-y-2">
-        <a
-          href="#"
-          :class="[sidebarAberta ? 'justify-start px-4' : 'justify-center px-0']"
-          class="flex items-center gap-3 py-3 bg-[#2563eb] text-white rounded-[13px] shadow-xl shadow-blue-100 transition-all duration-300"
-        >
-          <i class="pi pi-objects-column"></i>
-          <span v-if="sidebarAberta" class="text-sm font-bold whitespace-nowrap">Painel</span>
-        </a>
-        <!-- <a
-          href="#"
-          :class="[sidebarAberta ? 'justify-start px-4' : 'justify-center px-0']"
-          class="flex items-center gap-3 py-3 bg-[#2563eb] text-white rounded-[13px] shadow-xl shadow-blue-100 transition-all duration-300"
-        >
-          <i class="pi pi-chart-bar"></i>
-          <span v-if="sidebarAberta" class="text-sm font-bold whitespace-nowrap">Métrica</span>
-        </a> -->
-      </nav>
-
-      <div class="mt-auto w-full px-4 pb-4">
-        <div
-          :class="[sidebarAberta ? 'p-3' : 'p-0 bg-transparent border-none shadow-none']"
-          class="flex items-center gap-3 bg-gray-50 rounded-2xl mb-4 border border-gray-100 transition-all duration-300 justify-center"
-        >
-          <div
-            class="min-w-[40px] w-10 h-10 bg-[#2563eb] rounded-full flex items-center justify-center text-white font-bold shadow-sm"
-          >
-            {{ usuario?.nome?.charAt(0).toUpperCase() || 'U' }}
-          </div>
-          <div v-if="sidebarAberta" class="leading-tight whitespace-nowrap overflow-hidden">
-            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
-              {{ usuario?.perfil || 'Atendente' }}
-            </p>
-            <p class="text-sm font-black text-[#1e3a8a] truncate w-24">
-              {{ usuario?.nome || 'Usuário' }}
-            </p>
-          </div>
-        </div>
-
-        <button
-          @click="handleLogout"
-          :class="[sidebarAberta ? 'justify-start px-2' : 'justify-center px-0']"
-          class="flex items-center gap-2 w-full text-red-500 font-bold text-xs uppercase tracking-tight transition-all duration-300"
-        >
-          <i class="pi pi-sign-out"></i>
-          <span v-if="sidebarAberta">Sair</span>
-        </button>
-      </div>
-    </aside>
+    <NavBar
+      :sidebar-aberta="sidebarAberta"
+      @update:sidebar-aberta="sidebarAberta = $event"
+      :usuario="usuario"
+      @logout="handleLogout"
+    />
 
     <main class="flex-1 overflow-x-hidden">
       <header
@@ -128,7 +51,7 @@
                     ? 'bg-[#2563eb] text-white rounded-[7px] p-1 shadow-blue-100'
                     : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
                 "
-                class="text-xs font-black border-b-2 p-2 uppercase tracking-widest"
+                class="text-xs font-black border-b-2 p-2 uppercase "
               >
                 Fila Geral<sup
                   class="ml-0.5 bg-gray-400 text-white font-bold inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px]"
@@ -467,13 +390,24 @@
                   <td class="px-6 py-4">
                     <div class="flex items-center gap-3">
                       <div
-                        class="w-10 h-10 bg-[#2563eb] rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-100"
+                        :class="[
+                          isPrioridade(item.senha)
+                            ? 'bg-red-500 shadow-red-100'
+                            : 'bg-blue-600 shadow-blue-100'
+                        ]"
+                        class="w-7 h-7 rounded-xl flex items-center justify-center text-white shadow-lg"
                       >
-                        <i class="pi pi-bolt"></i>
+                        <i
+                          :class="isPrioridade(item.senha) ? 'pi pi-bolt' : 'pi pi-user'"
+                        ></i>
                       </div>
-                      <span class="font-black text-[#1e3a8a] text-base leading-none">{{
-                        item.senha
-                      }}</span>
+
+                      <span
+                        :class="isPrioridade(item.senha) ? 'text-red-700' : 'text-blue-800'"
+                        class="font-black text-base leading-none"
+                      >
+                        {{ item.senha }}
+                      </span>
                     </div>
                   </td>
                   <td class="px-6 text-sm font-bold text-gray-500">{{ item.usuarioNome }}</td>
@@ -491,7 +425,7 @@
                   <td class="px-6">
                     <span
                       :class="[
-                        item.tipoAtendimento === 'PRIORIDADE'
+                        item.tipoAtendimento === 'PRIORIDADE' 
                           ? 'bg-orange-50 text-orange-600'
                           : 'bg-gray-100 text-gray-500',
                       ]"
@@ -562,6 +496,7 @@
 
 <script>
 import ChamarSenhas from '@/components/ChamarSenhas.vue'
+import NavBar from '@/components/NavBar.vue';
 import { AgendamentoService } from '@/services/agendamento.service'
 import { AtendenteApi } from '@/services/atendente.api'
 import 'primeicons/primeicons.css'
@@ -569,6 +504,7 @@ import 'primeicons/primeicons.css'
 export default {
   components: {
     ChamarSenhas,
+    NavBar
   },
 
   data: () => ({
@@ -682,6 +618,9 @@ export default {
   },
 
   methods: {
+    isPrioridade(senha) {
+      return senha?.startsWith('P')
+    },
     // 🟢 MÉTODO NOVO QUE FALTAVA (Reage ao clique dos botões gigantes)
     onSenhaChamadaPelosBotoes(idChamado) {
       // Pula para a aba Em Atendimento na mesma hora
