@@ -37,7 +37,6 @@
       <div
         class="flex-[4] md:flex-[4] bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden relative"
       >
-
         <!-- Iframe da câmera ocupando só esse card -->
         <iframe
           v-if="!mostrarSenha"
@@ -45,7 +44,6 @@
           class="absolute inset-0 w-full h-full z-0 rounded-2xl"
           frameborder="0"
         ></iframe>
-
 
         <div
           class="w-full text-[20px] md:text-[2vw] flex justify-center items-center pt-10 md:pt-2 font-bold"
@@ -112,7 +110,8 @@
                 >Senha</span
               >
               <span
-                class="text-3xl md:text-5xl lg:text-6xl font-black text-gray-700 tracking-tighter"
+                class="text-3xl md:text-5xl lg:text-6xl font-black tracking-tighter"
+                :class="item.numero.includes('P') ? 'text-red-600' : 'text-gray-700'"
                 >{{ item.numero }}</span
               >
             </div>
@@ -187,8 +186,10 @@ const nomeSecretaria = ref('Secretaria')
 const relogio = ref('')
 const audioPlayer = ref(null)
 const somAtivado = ref(false)
+
 const senhaAtual = ref({ numero: '---', guiche: null, cidadao: 'Aguardando...' })
 const historico = ref([])
+
 const lastKey = ref(null)
 const fetching = ref(false)
 const mostrarSenha = ref(false)
@@ -196,9 +197,13 @@ const mostrarSenha = ref(false)
 let intervalChamada = null
 let intervalRelogio = null
 
+/** ======= FILA DE ÁUDIO ======= **/
+const filaChamadas = []
+const falando = ref(false)
+
 /** ======= API ======= **/
 const apiPublico = axios.create({
-  baseURL: 'http://10.0.0.243:8080',
+  baseURL: 'http://localhost:8080',
   timeout: 3000,
 })
 
@@ -207,12 +212,12 @@ const extrairLista = (payload) =>
   Array.isArray(payload)
     ? payload
     : Array.isArray(payload?.content)
-    ? payload.content
-    : Array.isArray(payload?.data)
-    ? payload.data
-    : Array.isArray(payload?.ultimasChamadas)
-    ? payload.ultimasChamadas
-    : []
+      ? payload.content
+      : Array.isArray(payload?.data)
+        ? payload.data
+        : Array.isArray(payload?.ultimasChamadas)
+          ? payload.ultimasChamadas
+          : []
 
 const pegarCampo = (item, chaves) => {
   for (const k of chaves) {
@@ -231,8 +236,10 @@ const atualizarRelogio = () => {
 }
 
 const qrSrc = computed(() => {
-  const urlPublica = `http://10.0.0.243:3000/tv/${setorId.value}`
-  return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(urlPublica)}`
+  const urlPublica = `http://localhost:3000/tv/${setorId.value}`
+  return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
+    urlPublica,
+  )}`
 })
 
 const guicheFormatado = computed(() => {
@@ -240,100 +247,174 @@ const guicheFormatado = computed(() => {
   return g == null || g === '' || g === '--' ? '--' : String(g).padStart(2, '0')
 })
 
-/** ======= FUNÇÕES PRINCIPAIS ======= **/
+/** ======= PROCESSADOR DA FILA ======= **/
+const processarFila = () => {
+  if (falando.value || filaChamadas.length === 0) return
+
+  falando.value = true
+  mostrarSenha.value = true
+
+  const chamada = filaChamadas.shift()
+
+  const texto = `Senha ${chamada.senha}, ${chamada.nome}, comparecer ao guichê ${chamada.guiche}`
+
+  const falar = (vezes) => {
+    const msg = new SpeechSynthesisUtterance(texto)
+    msg.lang = 'pt-BR'
+    msg.rate = 1
+
+    msg.onend = () => {
+      if (vezes > 1) {
+        falar(vezes - 1)
+      } else {
+        falando.value = false
+
+        // 👇 mantém a senha na tela por mais 5 segundos
+        setTimeout(() => {
+          mostrarSenha.value = false
+        }, 5000)
+
+        processarFila()
+      }
+    }
+
+    window.speechSynthesis.speak(msg)
+  }
+
+  // evita voz acumulada
+  window.speechSynthesis.cancel()
+
+  if (audioPlayer.value) {
+    audioPlayer.value.currentTime = 0
+
+    audioPlayer.value.play().catch(() => {})
+
+    setTimeout(() => {
+      falar(2)
+    }, 1000)
+  } else {
+    falar(2)
+  }
+}
+
+/** ======= ADICIONA NA FILA ======= **/
+const falarChamada = (nome, senha, guiche) => {
+  if (!somAtivado.value) return
+  mostrarSenha.value = true
+  filaChamadas.push({
+    nome,
+    senha,
+    guiche,
+  })
+
+  processarFila()
+}
+
+/** ======= BUSCAR SETOR ======= **/
 const buscarInfoSetor = async () => {
   if (!setorId.value) return
 
   try {
     const res = await apiPublico.get(`/setores/setor/${setorId.value}`)
     const setor = Array.isArray(res.data) && res.data[0]
+
     if (setor) {
       nomeSecretaria.value = setor.secretaria?.nome || setor.nome || 'Secretaria'
-      console.log('Nome da secretaria definido como:', nomeSecretaria.value)
     }
   } catch (e) {
-    console.warn('Não foi possível buscar o nome do setor.', e)
+    console.warn('Erro ao buscar setor', e)
   }
 }
 
-const falarChamada = (nome, senha, guiche) => {
-  if (!somAtivado.value) return
-
-  const texto = `Senha ${senha}, ${nome}, comparecer ao guichê ${guiche}`
-  const falar = (vezes) => {
-    const msg = new SpeechSynthesisUtterance(texto)
-    msg.lang = 'pt-BR'
-    msg.rate = 1.0
-    msg.onend = () => vezes > 1 && falar(vezes - 1)
-    window.speechSynthesis.speak(msg)
-  }
-
-  if (audioPlayer.value) {
-    audioPlayer.value.currentTime = 0
-    audioPlayer.value.play().catch(() => {})
-    setTimeout(() => falar(2), 1000)
-  } else {
-    falar(2)
-  }
-}
-
+/** ======= BUSCAR CHAMADAS ======= **/
 const buscarChamadas = async () => {
   if (!setorId.value || fetching.value) return
+
   fetching.value = true
 
   try {
     const res = await apiPublico.get(
       `/agendamentos/ultimas-chamadas/${setorId.value}?t=${Date.now()}`,
-      { headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' } }
+      {
+        headers: {
+          'Cache-Control': 'no-cache',
+          Pragma: 'no-cache',
+        },
+      },
     )
 
     const lista = extrairLista(res.data)
+
     if (!lista.length) return
 
     const ultima = lista[0]
-    const senha = pegarCampo(ultima, ['senha', 'numeroSenha', 'senhaAtual', 'nsenha', 'senha_agendamento']) || '---'
-    const guiche = pegarCampo(ultima, ['guiche', 'numeroGuiche', 'guicheNumero']) ?? null
-    const cidadao =
-      pegarCampo(ultima, ['nomeCidadao', 'nome_cidadao', 'usuarioNome', 'nomeUsuario', 'cidadao']) || 'Cidadão'
 
-    const key = `${pegarCampo(ultima, ['agendamentoId', 'id']) ?? ''}|${pegarCampo(ultima, ['horaChamada', 'dataChamada', 'data_chamada']) ?? ''}|${senha}`
+    const senha =
+      pegarCampo(ultima, ['senha', 'numeroSenha', 'senhaAtual', 'nsenha', 'senha_agendamento']) ||
+      '---'
+
+    const guiche = pegarCampo(ultima, ['guiche', 'numeroGuiche', 'guicheNumero']) ?? null
+
+    const cidadao =
+      pegarCampo(ultima, [
+        'nomeCidadao',
+        'nome_cidadao',
+        'usuarioNome',
+        'nomeUsuario',
+        'cidadao',
+      ]) || 'Cidadão'
+
+    const key = `${
+      pegarCampo(ultima, ['agendamentoId', 'id']) ?? ''
+    }|${pegarCampo(ultima, ['horaChamada', 'dataChamada', 'data_chamada']) ?? ''}|${senha}`
 
     historico.value = lista.slice(0, 5).map((item) => ({
-      numero: pegarCampo(item, ['senha', 'numeroSenha', 'senhaAtual', 'nsenha', 'senha_agendamento']) || '---',
+      numero:
+        pegarCampo(item, ['senha', 'numeroSenha', 'senhaAtual', 'nsenha', 'senha_agendamento']) ||
+        '---',
       guiche: pegarCampo(item, ['guiche', 'numeroGuiche', 'guicheNumero']) ?? null,
       cidadao:
-        pegarCampo(item, ['nomeCidadao', 'nome_cidadao', 'usuarioNome', 'nomeUsuario', 'cidadao']) || 'Cidadão',
+        pegarCampo(item, [
+          'nomeCidadao',
+          'nome_cidadao',
+          'usuarioNome',
+          'nomeUsuario',
+          'cidadao',
+        ]) || 'Cidadão',
     }))
 
     const mudou = key !== lastKey.value
     lastKey.value = key
 
-    senhaAtual.value = { numero: String(senha), guiche: guiche != null ? String(guiche) : null, cidadao: String(cidadao) }
+    senhaAtual.value = {
+      numero: String(senha),
+      guiche: guiche != null ? String(guiche) : null,
+      cidadao: String(cidadao),
+    }
 
     if (mudou) {
-  mostrarSenha.value = true // mostra a senha
-  setTimeout(() => {
-    mostrarSenha.value = false // esconde depois de 5 segundos
-  }, 5000)
-
-  falarChamada(senhaAtual.value.cidadao, senhaAtual.value.numero, guicheFormatado.value)
+      falarChamada(senhaAtual.value.cidadao, senhaAtual.value.numero, guicheFormatado.value)
     }
   } catch (error) {
-    console.error('Erro ao buscar chamadas:', error)
+    console.error('Erro ao buscar chamadas', error)
   } finally {
     fetching.value = false
   }
 }
 
+/** ======= ATIVAR SOM ======= **/
 const ativarAudio = () => {
   somAtivado.value = true
   audioPlayer.value?.play().catch(() => {})
 }
 
+/** ======= START / STOP ======= **/
 const start = () => {
   stop()
+
   atualizarRelogio()
   intervalRelogio = setInterval(atualizarRelogio, 1000)
+
   buscarChamadas()
   intervalChamada = setInterval(buscarChamadas, 1500)
 }
@@ -341,13 +422,18 @@ const start = () => {
 const stop = () => {
   clearInterval(intervalChamada)
   clearInterval(intervalRelogio)
+
   intervalChamada = null
   intervalRelogio = null
 }
 
 /** ======= CICLO DE VIDA ======= **/
 onMounted(async () => {
-  if (!setorId.value) return console.error('Nenhum setorId encontrado na URL')
+  if (!setorId.value) {
+    console.error('Nenhum setorId encontrado na URL')
+    return
+  }
+
   await buscarInfoSetor()
   start()
 })

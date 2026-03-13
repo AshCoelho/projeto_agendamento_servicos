@@ -8,7 +8,7 @@
     />
     <main class="flex-1 overflow-x-hidden">
       <header
-        class="flex justify-between bg-white border-b border-black items-center px-8 mb-5 py-4"
+        class="flex justify-between bg-white border-b border-black items-center px-8 mb-5 py-[22px]"
       >
         <div class="text-[13px] font-bold text-gray-400">
           Gestão / <span class="text-gray-900">Monitor Operacional</span>
@@ -123,22 +123,22 @@ export default {
   computed: {
     // 🟢 1. CRIAMOS UM FILTRO MESTRE BLINDADO
     meusAgendamentos() {
-      const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'));
+      const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'))
 
       // 🐛 INÍCIO DO DEBUG
-      console.group('🔍 DEBUG: Meus Agendamentos');
-      console.log('👤 Meu ID (Guichê Logado):', meuId);
-      console.log('📦 Total no Setor (Cru do Banco):', this.agendamentosPorSetor.length);
-      
-      return this.agendamentosPorSetor.filter(a => {
-        const idAtendente = Number(a.gerenciadorId);
-        const status = a.situacao ? a.situacao.toUpperCase() : '';
-        
-        // Só conta como "Seu" se você efetivamente chamou para o seu guichê
-        const jaSaiuDaFila = ['CHAMADO', 'EM_ATENDIMENTO', 'ATENDIDO', 'FALTOU'].includes(status);
+      console.group('🔍 DEBUG: Meus Agendamentos')
+      console.log('👤 Meu ID (Guichê Logado):', meuId)
+      console.log('📦 Total no Setor (Cru do Banco):', this.agendamentosPorSetor.length)
 
-        return idAtendente === meuId && jaSaiuDaFila;
-      });
+      return this.agendamentosPorSetor.filter((a) => {
+        const idAtendente = Number(a.gerenciadorId)
+        const status = a.situacao ? a.situacao.toUpperCase() : ''
+
+        // Só conta como "Seu" se você efetivamente chamou para o seu guichê
+        const jaSaiuDaFila = ['CHAMADO', 'EM_ATENDIMENTO', 'ATENDIDO', 'FALTOU'].includes(status)
+
+        return idAtendente === meuId && jaSaiuDaFila
+      })
     },
 
     // 🟢 2. PAINEL "ATENDIMENTOS HOJE": (Agora é 100% a sua produtividade)
