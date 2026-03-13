@@ -203,7 +203,7 @@ const falando = ref(false)
 
 /** ======= API ======= **/
 const apiPublico = axios.create({
-  baseURL: 'http://localhost:8080',
+  baseURL: 'http://10.0.0.243:8080',
   timeout: 3000,
 })
 
@@ -236,7 +236,7 @@ const atualizarRelogio = () => {
 }
 
 const qrSrc = computed(() => {
-  const urlPublica = `http://localhost:3000/tv/${setorId.value}`
+  const urlPublica = `http://10.0.0.243:3000/tv/${setorId.value}`
   return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
     urlPublica,
   )}`
@@ -252,12 +252,41 @@ const processarFila = () => {
   if (falando.value || filaChamadas.length === 0) return
 
   falando.value = true
-  mostrarSenha.value = true
 
   const chamada = filaChamadas.shift()
 
+  // 🟢 O SEGREDO 1: A tela só muda quando chega a vez EXATA dessa senha na fila de áudio
+  senhaAtual.value = {
+    numero: String(chamada.senha),
+    guiche: chamada.guiche != null ? String(chamada.guiche) : null,
+    cidadao: String(chamada.nome),
+  }
+
+  mostrarSenha.value = true // Traz a tela pra frente da câmera
+
   const texto = `Senha ${chamada.senha}, ${chamada.nome}, comparecer ao guichê ${chamada.guiche}`
 
+  // 🟢 Função isolada para fechar a tela e chamar a próxima
+  const finalizarChamada = () => {
+    // 🟢 O SEGREDO 2: Dá 4 segundos para a pessoa ler a tela DEPOIS que a voz calar a boca
+    setTimeout(() => {
+      falando.value = false // Libera a catraca para a próxima senha
+
+      if (filaChamadas.length === 0) {
+        mostrarSenha.value = false // Fila vazia? Volta pra câmera
+      } else {
+        processarFila() // Tem gente na fila? Puxa o próximo!
+      }
+    }, 4000) 
+  }
+
+  // Se o som estiver mudo (apenas mostra a tela por 6 segundos no total)
+  if (!somAtivado.value) {
+    setTimeout(finalizarChamada, 2000)
+    return
+  }
+
+  // Se o som estiver ativado: Toca o gongo e fala
   const falar = (vezes) => {
     const msg = new SpeechSynthesisUtterance(texto)
     msg.lang = 'pt-BR'
@@ -267,31 +296,19 @@ const processarFila = () => {
       if (vezes > 1) {
         falar(vezes - 1)
       } else {
-        falando.value = false
-
-        // 👇 mantém a senha na tela por mais 5 segundos
-        setTimeout(() => {
-          mostrarSenha.value = false
-        }, 5000)
-
-        processarFila()
+        finalizarChamada() // Terminou de falar 2 vezes, chama a finalização
       }
     }
 
     window.speechSynthesis.speak(msg)
   }
 
-  // evita voz acumulada
-  window.speechSynthesis.cancel()
+  window.speechSynthesis.cancel() // Limpa vozes travadas
 
   if (audioPlayer.value) {
     audioPlayer.value.currentTime = 0
-
     audioPlayer.value.play().catch(() => {})
-
-    setTimeout(() => {
-      falar(2)
-    }, 1000)
+    setTimeout(() => { falar(2) }, 1000)
   } else {
     falar(2)
   }
@@ -299,8 +316,7 @@ const processarFila = () => {
 
 /** ======= ADICIONA NA FILA ======= **/
 const falarChamada = (nome, senha, guiche) => {
-  if (!somAtivado.value) return
-  mostrarSenha.value = true
+  // 🔴 TRAVA REMOVIDA: A senha vai pra fila visual mesmo se o som estiver desligado!
   filaChamadas.push({
     nome,
     senha,
@@ -347,54 +363,55 @@ const buscarChamadas = async () => {
 
     if (!lista.length) return
 
-    const ultima = lista[0]
-
-    const senha =
-      pegarCampo(ultima, ['senha', 'numeroSenha', 'senhaAtual', 'nsenha', 'senha_agendamento']) ||
-      '---'
-
-    const guiche = pegarCampo(ultima, ['guiche', 'numeroGuiche', 'guicheNumero']) ?? null
-
-    const cidadao =
-      pegarCampo(ultima, [
-        'nomeCidadao',
-        'nome_cidadao',
-        'usuarioNome',
-        'nomeUsuario',
-        'cidadao',
-      ]) || 'Cidadão'
-
-    const key = `${
-      pegarCampo(ultima, ['agendamentoId', 'id']) ?? ''
-    }|${pegarCampo(ultima, ['horaChamada', 'dataChamada', 'data_chamada']) ?? ''}|${senha}`
-
+    // 🟢 1. Atualiza o histórico lateral
     historico.value = lista.slice(0, 5).map((item) => ({
-      numero:
-        pegarCampo(item, ['senha', 'numeroSenha', 'senhaAtual', 'nsenha', 'senha_agendamento']) ||
-        '---',
+      numero: pegarCampo(item, ['senha', 'numeroSenha', 'senhaAtual', 'nsenha', 'senha_agendamento']) || '---',
       guiche: pegarCampo(item, ['guiche', 'numeroGuiche', 'guicheNumero']) ?? null,
-      cidadao:
-        pegarCampo(item, [
-          'nomeCidadao',
-          'nome_cidadao',
-          'usuarioNome',
-          'nomeUsuario',
-          'cidadao',
-        ]) || 'Cidadão',
+      cidadao: pegarCampo(item, ['nomeCidadao', 'nome_cidadao', 'usuarioNome', 'nomeUsuario', 'cidadao']) || 'Cidadão',
     }))
 
-    const mudou = key !== lastKey.value
-    lastKey.value = key
+    const ultima = lista[0]
+    const keyDaVez = `${pegarCampo(ultima, ['agendamentoId', 'id']) ?? ''}|${pegarCampo(ultima, ['horaChamada', 'dataChamada', 'data_chamada']) ?? ''}|${pegarCampo(ultima, ['senha', 'numeroSenha', 'senhaAtual', 'nsenha', 'senha_agendamento'])}`
 
-    senhaAtual.value = {
-      numero: String(senha),
-      guiche: guiche != null ? String(guiche) : null,
-      cidadao: String(cidadao),
+    // 🟢 2. Se for o primeiro load, só preenche a tela inicial e salva a chave
+    if (lastKey.value === null) {
+      lastKey.value = keyDaVez
+      senhaAtual.value = {
+        numero: String(historico.value[0].numero),
+        guiche: historico.value[0].guiche,
+        cidadao: String(historico.value[0].cidadao),
+      }
+      return // Para a execução aqui no primeiro load
     }
 
-    if (mudou) {
-      falarChamada(senhaAtual.value.cidadao, senhaAtual.value.numero, guicheFormatado.value)
+    // 🟢 3. Se a chave não mudou, ninguém novo foi chamado
+    if (lastKey.value === keyDaVez) return
+
+    // 🟢 4. A MÁGICA: Varre a lista de trás pra frente achando TODO MUNDO que é novo
+    const novasChamadas = []
+    
+    for (const item of lista) {
+      const itemKey = `${pegarCampo(item, ['agendamentoId', 'id']) ?? ''}|${pegarCampo(item, ['horaChamada', 'dataChamada', 'data_chamada']) ?? ''}|${pegarCampo(item, ['senha', 'numeroSenha', 'senhaAtual', 'nsenha', 'senha_agendamento'])}`
+      
+      // Se achamos a chave antiga, significa que todos os itens antes desse são novos!
+      if (itemKey === lastKey.value) break
+      
+      // Adiciona no começo do array temporário para manter a ordem (do mais antigo pro mais novo)
+      novasChamadas.unshift(item) 
     }
+
+    // Atualiza a chave mestra com a última pessoa da lista nova
+    lastKey.value = keyDaVez
+
+    // 🟢 5. Joga as novas chamadas (na ordem correta) para a fila de áudio
+    for (const nova of novasChamadas) {
+      const senha = pegarCampo(nova, ['senha', 'numeroSenha', 'senhaAtual', 'nsenha', 'senha_agendamento']) || '---'
+      const guiche = pegarCampo(nova, ['guiche', 'numeroGuiche', 'guicheNumero']) ?? null
+      const cidadao = pegarCampo(nova, ['nomeCidadao', 'nome_cidadao', 'usuarioNome', 'nomeUsuario', 'cidadao']) || 'Cidadão'
+
+      falarChamada(String(cidadao), String(senha), guiche != null ? String(guiche) : null)
+    }
+
   } catch (error) {
     console.error('Erro ao buscar chamadas', error)
   } finally {
