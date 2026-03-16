@@ -76,15 +76,13 @@
             <v-select
               v-model="form.setorId"
               :items="setores"
-              item-title="nome"
+              :item-title="formatarTextoSetor"
               item-value="id"
               :disabled="!form.secretariaId"
               placeholder="Selecione o setor"
               density="compact"
               variant="outlined"
               rounded="lg"
-              flat
-              border
               @update:model-value="buscarServicos"
             />
           </div>
@@ -106,6 +104,13 @@
               @update:model-value="limparHorarios"
             />
           </div>
+        </div>
+
+        <div v-if="form.setorId && setores.length" class="mt-2 ml-1">
+          <p v-for="s in [setores.find(x => x.id === form.setorId)]" :key="s.id" class="text-[11px] text-blue-700 italic">
+            <i class="pi pi-map-marker mr-1"></i>
+            {{ s.endereco.logradouro }}, {{ s.endereco.numero }} - {{ s.endereco.bairro }}, {{ s.endereco.cidade }}/{{ s.endereco.uf }}
+          </p>
         </div>
 
         <div v-if="form.servicoId" class="mt-8 pt-6 border-t border-slate-100">
@@ -306,7 +311,7 @@ import 'primeicons/primeicons.css'
 
 const etapa = ref(1)
 const loading = ref(false)
-const API_BASE = 'http://localhost:8080'
+const API_BASE = 'http://192.168.200.29:8080'
 const disponibilidadeDias = ref({})
 const meuFormulario = ref(null)
 
@@ -426,6 +431,29 @@ async function buscarSetores() {
   }
 }
 
+function formatarTextoEndereco(item) {
+  if (!item) return ''
+
+  const nome = item.nome
+  const e = item.endereco
+
+  // Se não houver endereço, retorna apenas o nome
+  if (!e || !e.logradouro) return nome
+
+  // Monta: Setor X - Rua das Graças, 100, Bairro
+  const rua = e.logradouro
+  const num = e.numero ? `, ${e.numero}` : ' - S/N'
+  const bairro = e.bairro ? ` - ${e.bairro}` : ''
+
+  return `${nome} (${rua}${num}${bairro})`
+}
+
+function formatarTextoSetor(item) {
+  if (!item) return ''
+  const bairro = item.endereco?.bairro
+  return bairro ? `${item.nome} - ${bairro}` : item.nome
+}
+
 async function buscarServicos() {
   if (!form.value.setorId) return
 
@@ -479,21 +507,37 @@ function resetarFormulario() {
 async function buscarHorarios() {
   if (!form.value.data || !form.value.setorId) return
 
-  form.value.hora = '' // Resetar seleção de hora ao mudar data
-
-  // Garantir formatação ISO YYYY-MM-DD
-  const d = new Date(form.value.data)
-  const dataFormatada = d.toISOString().split('T')[0]
+  form.value.hora = '' 
 
   try {
-    console.log('Data escolhida:', dataFormatada)
-
+    const dataFormatada = form.value.data.toISOString().split('T')[0]
+    
     const res = await fetch(
-      `${API_BASE}/api/slots/horarios-disponiveis?setorId=${form.value.setorId}&data=${form.value.data.toISOString().split('T')[0]}`,
+      `${API_BASE}/api/slots/horarios-disponiveis?setorId=${form.value.setorId}&data=${dataFormatada}`,
     )
     const data = await res.json()
-    console.log('Horários ', data)
-    slots.value = data.filter((s) => s.vagasDisponiveis > 0)
+
+    // 1. Pegamos a data e hora atual
+    const agora = new Date()
+    const hojeIso = agora.toISOString().split('T')[0]
+    const horaAtualStr = agora.toTimeString().slice(0, 5) // "HH:mm"
+
+    // 2. Filtramos os slots
+    slots.value = data
+      .filter((s) => s.vagasDisponiveis > 0)
+      .map((s) => ({
+        ...s,
+        hora: s.hora.slice(0, 5) // Converte "14:30:00" para "14:30"
+      }))
+      .filter((s) => {
+        // Se a data selecionada for hoje, remove horários que já passaram
+        if (dataFormatada === hojeIso) {
+          return s.hora > horaAtualStr
+        }
+        // Se for uma data futura, exibe todos os horários com vaga
+        return true
+      })
+
   } catch (err) {
     console.error(err)
   }

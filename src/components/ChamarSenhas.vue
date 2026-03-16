@@ -189,6 +189,19 @@ export default {
         (a) => a.situacao === 'AGENDADO' && a.tipoAtendimento && a.tipoAtendimento.includes('PRIORIDADE'),
       ).length;
     },
+
+    atendimentoAtual() {
+      const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'))
+      // Procura na lista quem está em atendimento com este usuário
+      return this.agendamentosPorSetor.find(
+        (a) =>
+          (a.situacao === 'EM_ATENDIMENTO' || a.situacao === 'CHAMADO') &&
+          Number(a.gerenciadorId || a.usuarioId) === meuId
+      )
+    },
+    temAtendimentoAtivo() {
+      return !!this.atendimentoAtual
+    },
   },
 
   methods: {
@@ -222,6 +235,27 @@ export default {
         hour: '2-digit',
         minute: '2-digit',
       })
+    },
+
+    async enviarPing() {
+      try {
+        // Busca o ID prioritariamente do que está sendo atendido agora
+        const agendamentoId = 
+          this.atendimentoAtual?.agendamentoId || 
+          this.atendimentoAtual?.id ||
+          this.selectedItem?.agendamentoId || 
+          this.selectedItem?.id;
+
+        if (!agendamentoId) {
+          console.log('Nenhum atendimento ativo para ping.');
+          return;
+        }
+
+        await AtendenteApi.heartbeat(agendamentoId);
+        console.log('💓 Heartbeat enviado para ID:', agendamentoId);
+      } catch (e) {
+        console.warn('Falha no ping:', e);
+      }
     },
 
     async handleLogout() {
@@ -516,6 +550,9 @@ export default {
     this.carregarTiposAtendimento()
     this.atualizarRelogioLocal()
     setInterval(this.atualizarRelogioLocal, 1000)
+
+    // 3. 💓 PING: Envia a cada 10 segundos
+    setInterval(() => this.enviarPing(), 10000);
 
     if (this.usuario?.setores) {
       const setorAtual = this.usuario.setores.find((s) => s.id == this.setorTrabalhoId)

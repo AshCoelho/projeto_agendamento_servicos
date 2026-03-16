@@ -61,5 +61,9 @@ export const AtendenteApi = {
     // Adicionamos um log aqui para você ver se o método é chamado
     console.log("API: Chamando logout-guiche para ID", gerenciadorId);
     return await api.post(`/gerenciador/${gerenciadorId}/logout-guiche`);
-  }
+  },
+
+  async heartbeat(agendamentoId) {
+    return await this.api.put(`/agendamentos/heartbeat/${agendamentoId}`)
+  },
 }

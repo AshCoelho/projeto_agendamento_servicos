@@ -620,9 +620,41 @@ export default {
         (a) => a.situacao === 'AGENDADO' && a.tipoAtendimento.includes('PRIORIDADE'),
       ).length
     },
+
+    atendimentoAtual() {
+      const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'));
+      if (!this.agendamentosPorSetor.length) return null;
+
+      return this.agendamentosPorSetor.find(a => {
+        const status = a.situacao?.toUpperCase();
+        const gerenciadorId = Number(a.gerenciadorId || a.usuarioId);
+        return (status === 'EM_ATENDIMENTO' || status === 'CHAMADO') && gerenciadorId === meuId;
+      });
+    },
   },
 
   methods: {
+
+    async enviarPing() {
+      try {
+        // Tenta pegar o ID do atendimento automático ou do selecionado
+        const agendamentoId = this.atendimentoAtual?.agendamentoId || 
+                            this.atendimentoAtual?.id || 
+                            this.selectedItem?.agendamentoId || 
+                            this.selectedItem?.id;
+
+        if (!agendamentoId) {
+          // console.log("Sem atendimento ativo para pingar.");
+          return;
+        }
+
+        console.log("💓 Enviando ping para:", agendamentoId);
+        await AtendenteApi.heartbeat(agendamentoId);
+      } catch (e) {
+        console.warn('Ping falhou:', e);
+      }
+    },
+    
     isPrioridade(senha) {
       return senha?.startsWith('P')
     },
@@ -644,6 +676,17 @@ export default {
           this.idsChamadosManualmente.push(idChamado)
         }
       }
+    },
+
+    handleBeforeUnload(event) {
+      if (this.temAtendimentoAtivo) {
+        event.preventDefault()
+        event.returnValue = ''
+      }
+    },
+
+    handleEsc(e) {
+      if (e.key === 'Escape') this.mostrarModalEspontaneo = false
     },
 
     mudarAba(novaAba) {
@@ -909,6 +952,9 @@ export default {
   },
 
   async mounted() {
+
+    window.addEventListener('beforeunload', this.handleBeforeUnload)
+
     await this.getUsuarioLogado()
     await this.buscarAgendamentos()
 
@@ -921,12 +967,18 @@ export default {
     this.carregarTiposAtendimento()
     this.atualizarRelogioLocal()
     setInterval(this.atualizarRelogioLocal, 1000)
+    setInterval(() => {
+      this.enviarPing()
+    }, 10000)
 
     if (this.usuario?.setores) {
       const setorAtual = this.usuario.setores.find((s) => s.id == this.setorTrabalhoId)
       this.enderecoEstatico = setorAtual ? `Unidade: ${setorAtual.nome}` : 'Unidade de Atendimento'
     }
   },
+  beforeUnmount() {
+      window.removeEventListener('beforeunload', this.handleBeforeUnload)
+  }
 }
 </script>
 
