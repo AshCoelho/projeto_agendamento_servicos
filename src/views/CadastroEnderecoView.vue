@@ -35,9 +35,12 @@
                 class="bg-gray-50/50 text-gray-400 text-[10px] font-black uppercase tracking-[0.15em] border-b border-gray-50"
               >
                 <th class="px-6 py-5 text-center w-20">Editar</th>
-                <th class="px-6 py-5">Logradouro / CEP</th>
-                <th class="px-6 py-5">Bairro / Cidade</th>
-                <th class="px-6 py-5">Status</th>
+                <th class="px-6 py-5">Logradouro</th>
+                <th class="px-6 py-5">Complemento</th>
+                <th class="px-6 py-5">Bairro</th>
+                <th class="px-6 py-5">CEP</th>
+                <th class="px-6 py-5">Cidade</th>
+
                 <th class="px-6 py-5 text-right">Ações</th>
               </tr>
             </thead>
@@ -55,33 +58,29 @@
                     <i class="pi pi-pencil text-xs"></i>
                   </button>
                 </td>
+
                 <td class="px-6 py-4">
-                  <div class="flex items-center gap-3">
-                    <div class="leading-tight">
-                      <div class="font-bold text-sm text-[#1e3a8a]">
-                        {{ endereco.logradouro }}, {{ endereco.numero }}
-                      </div>
-                      <div class="text-[10px] text-gray-400 font-bold uppercase tracking-tight">
-                        {{ endereco.cep }}
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                <td class="px-6 py-4">
-                  <div class="text-sm text-gray-600 font-medium">{{ endereco.bairro }}</div>
-                  <div class="text-[11px] text-gray-400">
-                    {{ endereco.cidade }} - {{ endereco.uf }}
+                  <div class="font-bold text-sm text-[#1e3a8a]">
+                    {{ endereco.logradouro }}
                   </div>
                 </td>
 
-                <td class="px-6 py-4 text-center">
-                  <span
-                    :class="getStatusClass(endereco.status)"
-                    class="px-3 py-1 rounded-full text-[9px] font-black uppercase border tracking-tighter"
-                  >
-                    {{ endereco.status }}
-                  </span>
+                <td class="px-6 py-4 text-sm text-gray-600">
+                  {{ endereco.complemento || '-' }}
                 </td>
+
+                <td class="px-6 py-4 text-sm text-gray-600">
+                  {{ endereco.bairro }}
+                </td>
+
+                <td class="px-6 py-4 text-sm text-gray-600">
+                  {{ endereco.cep }}
+                </td>
+
+                <td class="px-6 py-4 text-sm text-gray-600">
+                  {{ endereco.cidade }} - {{ endereco.uf }}
+                </td>
+
                 <td class="px-6 py-4 text-right">
                   <button
                     @click="excluir(endereco.id)"
@@ -92,7 +91,7 @@
                 </td>
               </tr>
               <tr v-if="lista.length === 0">
-                <td colspan="6" class="px-6 py-20 text-center">
+                <td colspan="7" class="px-6 py-20 text-center">
                   <i class="pi pi-map text-4xl text-gray-100 mb-4 block"></i>
                   <p class="text-gray-400 text-sm font-bold uppercase">
                     Nenhum endereço cadastrado
@@ -132,6 +131,18 @@
                 />
               </div>
 
+              <div class="col-span-2">
+                <label
+                  class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"
+                  >Complemento</label
+                >
+                <input
+                  v-model="form.complemento"
+                  type="text"
+                  class="w-full bg-gray-50 border-none rounded-[12px] p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                />
+              </div>
+
               <div>
                 <label
                   class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"
@@ -153,6 +164,17 @@
                   v-model="form.cep"
                   type="text"
                   placeholder="00000-000"
+                  class="w-full bg-gray-50 border-none rounded-[12px] p-3 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label
+                  class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"
+                  >UF</label
+                >
+                <input
+                  v-model="form.uf"
+                  type="text"
                   class="w-full bg-gray-50 border-none rounded-[12px] p-3 text-sm outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -180,20 +202,6 @@
                   class="w-full bg-gray-50 border-none rounded-[12px] p-3 text-sm outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-
-              <div>
-                <label
-                  class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"
-                  >Status</label
-                >
-                <select
-                  v-model="form.status"
-                  class="w-full bg-gray-50 border-none rounded-[12px] p-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
-                >
-                  <option value="ATIVO">ATIVO</option>
-                  <option value="INATIVO">INATIVO</option>
-                </select>
-              </div>
             </div>
           </div>
 
@@ -220,73 +228,102 @@
 <script>
 import AdminConfig from '@/components/AdminConfig.vue'
 import 'primeicons/primeicons.css'
+import axios from 'axios'
 
 export default {
   components: { AdminConfig },
-  data: () => ({
-    showModal: false,
-    lista: [
-      {
-        id: 1,
-        logradouro: 'Avenida Brasil',
-        numero: '1500',
-        cep: '01234-567',
-        bairro: 'Centro',
-        cidade: 'São Luís',
-        uf: 'MA',
-        status: 'ATIVO',
+
+  data() {
+    return {
+      showModal: false,
+      lista: [],
+
+      form: {
+        id: null,
+        logradouro: '',
+        numero: '',
+        cep: '',
+        bairro: '',
+        cidade: '',
+        uf: '',
+        complemento: '',
       },
-    ],
-    form: {
-      id: null,
-      logradouro: '',
-      numero: '',
-      cep: '',
-      bairro: '',
-      cidade: '',
-      uf: 'MA',
-      status: 'ATIVO',
-    },
-  }),
+    }
+  },
+
+  mounted() {
+    this.carregarEnderecos()
+  },
+
   methods: {
+    async carregarEnderecos() {
+      try {
+        const res = await axios.get('http://localhost:8080/enderecos/listar-todos')
+        this.lista = res.data
+      } catch (err) {
+        console.error('Erro ao carregar endereços', err)
+      }
+    },
+
     openModal(item = null) {
       if (item) {
-        this.form = { ...item }
+        this.form.id = item.id
+        this.form.logradouro = item.logradouro || ''
+        this.form.numero = item.numero || ''
+        this.form.cep = item.cep || ''
+        this.form.bairro = item.bairro || ''
+        this.form.cidade = item.cidade || ''
+        this.form.uf = item.uf || ''
+        this.form.complemento = item.complemento || ''
       } else {
-        this.form = {
-          id: null,
-          logradouro: '',
-          numero: '',
-          cep: '',
-          bairro: '',
-          cidade: '',
-          uf: 'MA',
-          status: 'ATIVO',
-        }
+        this.form.id = null
+        this.form.logradouro = ''
+        this.form.numero = ''
+        this.form.cep = ''
+        this.form.bairro = ''
+        this.form.cidade = ''
+        this.form.uf = ''
+        this.form.complemento = ''
       }
+
       this.showModal = true
     },
-    save() {
-      if (this.form.id) {
-        const index = this.lista.findIndex((i) => i.id === this.form.id)
-        this.lista[index] = { ...this.form }
-      } else {
-        this.lista.push({
-          ...this.form,
-          id: this.lista.length + 1,
-        })
+
+    async save() {
+      try {
+        const payload = {
+          logradouro: this.form.logradouro,
+          numero: this.form.numero,
+          bairro: this.form.bairro,
+          cidade: this.form.cidade,
+          uf: this.form.uf,
+          cep: this.form.cep,
+          complemento: this.form.complemento,
+        }
+
+        if (this.form.id) {
+          await axios.put(`http://localhost:8080/enderecos/${this.form.id}`, payload)
+        } else {
+          await axios.post('http://localhost:8080/enderecos', payload)
+        }
+
+        this.showModal = false
+        await this.carregarEnderecos()
+      } catch (err) {
+        console.error('Erro ao salvar endereço', err)
       }
-      this.showModal = false
     },
-    excluir(id) {
-      if (confirm('Deseja excluir este endereço?')) {
-        this.lista = this.lista.filter((i) => i.id !== id)
+
+    async excluir(id) {
+      if (!confirm('Deseja excluir este endereço?')) return
+
+      try {
+        await axios.delete(`http://localhost:8080/enderecos/${id}`)
+
+        this.carregarEnderecos()
+      } catch (err) {
+        console.error('Erro ao excluir', err)
       }
-    },
-    getStatusClass(status) {
-      return status === 'ATIVO'
-        ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
-        : 'bg-red-50 text-red-600 border-red-100'
     },
   },
 }

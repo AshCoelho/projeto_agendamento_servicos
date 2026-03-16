@@ -35,10 +35,9 @@
                 class="bg-gray-50/50 text-gray-400 text-[10px] font-black uppercase tracking-[0.15em] border-b border-gray-50"
               >
                 <th class="px-6 py-5 text-center w-20">Editar</th>
-                <th class="px-6 py-5">Nome do Setor / ID</th>
-                <th class="px-6 py-5">Responsável</th>
-                <th class="px-6 py-5 text-center">Status</th>
-                <th class="px-6 py-5">Última Atualização</th>
+                <th class="px-6 py-5">Nome do Setor</th>
+                <th class="px-6 py-5">Descrição</th>
+                <th class="px-6 py-5">Secretaria</th>
                 <th class="px-6 py-5 text-right">Ações</th>
               </tr>
             </thead>
@@ -61,20 +60,15 @@
                     <div class="font-bold text-sm text-[#1e3a8a]">{{ setor.nome }}</div>
                   </div>
                 </td>
+
                 <td class="px-6 py-4 text-sm text-gray-500">
-                  {{ setor.responsavel }}
+                  {{ setor.descricao || 'Sem descrição' }}
                 </td>
-                <td class="px-6 py-4 text-center">
-                  <span
-                    :class="getStatusClass(setor.status)"
-                    class="px-3 py-1 rounded-full text-[9px] font-black uppercase border tracking-tighter"
-                  >
-                    {{ setor.status }}
-                  </span>
+
+                <td class="px-6 py-4 text-sm text-gray-500">
+                  {{ setor.secretaria?.nome }}
                 </td>
-                <td class="px-6 py-4 text-gray-400 text-[11px] font-medium">
-                  {{ setor.data }}
-                </td>
+
                 <td class="px-6 py-4 text-right">
                   <button
                     @click="excluir(setor.id)"
@@ -124,28 +118,16 @@
               <div>
                 <label
                   class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"
-                  >Responsável / Gestor</label
                 >
+                  Descrição
+                </label>
+
                 <input
-                  v-model="form.responsavel"
+                  v-model="form.descricao"
                   type="text"
-                  placeholder="Nome do gestor"
+                  placeholder="Descrição do setor"
                   class="w-full bg-gray-50 border-none rounded-[12px] p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 />
-              </div>
-              <div>
-                <label
-                  class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"
-                  >Status do Setor</label
-                >
-                <select
-                  v-model="form.status"
-                  class="w-full bg-gray-50 border-none rounded-[12px] p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer"
-                >
-                  <option value="ATIVO">ATIVO</option>
-                  <option value="INATIVO">INATIVO</option>
-                  <option value="MANUTENÇÃO">MANUTENÇÃO</option>
-                </select>
               </div>
             </div>
           </div>
@@ -172,67 +154,105 @@
 <script>
 import AdminConfig from '@/components/AdminConfig.vue'
 import 'primeicons/primeicons.css'
+import axios from 'axios'
+
+const api = axios.create({
+  baseURL: 'http://localhost:8080',
+})
 
 export default {
   components: { AdminConfig },
   data: () => ({
+    lista: [],
     showModal: false,
-    lista: [
-      {
-        id: 1,
-        nome: 'Atendimento ao Cliente',
-        responsavel: 'Ana Souza',
-        status: 'ATIVO',
-        data: '07/03/2026 09:00',
-      },
-    ],
+    usuarioCompleto: null,
     form: {
       id: null,
       nome: '',
-      responsavel: '',
-      status: 'ATIVO',
+      descricao: '',
+      secretariaId: null,
     },
   }),
   methods: {
+    async inicializar() {
+      try {
+        const storage = localStorage.getItem('usuario')
+        if (!storage) return
+
+        const usuarioLocalStorage = JSON.parse(storage)
+        const token = usuarioLocalStorage.token
+
+        const resUser = await api.get('/gerenciador/usuario-logado', {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+
+        this.usuarioCompleto = resUser.data
+
+        // AQUI ESTÁ O PULO DO GATO:
+        // Pelo print, sua secretaria está dentro de um array. Vamos pegar a primeira:
+        if (this.usuarioCompleto.secretarias && this.usuarioCompleto.secretarias.length > 0) {
+          const idSecretaria = this.usuarioCompleto.secretarias[0].id
+          console.log('ID da Secretaria encontrado:', idSecretaria)
+
+          await this.carregarSetores(idSecretaria)
+        } else {
+          console.warn(
+            "Este usuário não está vinculado a nenhuma secretaria no array 'secretarias'",
+          )
+        }
+      } catch (error) {
+        console.error('Erro ao inicializar:', error)
+      }
+    },
+
+    async carregarSetores(idSecretaria) {
+      try {
+        const res = await api.get(`/setores/por-secretaria/${idSecretaria}`)
+        this.lista = res.data
+      } catch (error) {
+        console.error('Erro ao buscar setores da secretaria:', error)
+      }
+    },
+
     openModal(item = null) {
       if (item) {
         this.form = { ...item }
       } else {
-        this.form = { id: null, nome: '', responsavel: '', status: 'ATIVO' }
+        this.form = {
+          id: null,
+          nome: '',
+          descricao: '',
+
+          secretariaId: this.usuarioCompleto?.secretarias[0]?.id,
+        }
       }
       this.showModal = true
     },
-    save() {
-      // Simulação de salvar
-      if (this.form.id) {
-        const index = this.lista.findIndex((i) => i.id === this.form.id)
-        this.lista[index] = { ...this.form, data: new Date().toLocaleString() }
-      } else {
-        this.lista.push({
-          ...this.form,
-          id: this.lista.length + 1,
-          data: new Date().toLocaleString(),
-        })
-      }
-      this.showModal = false
-    },
-    excluir(id) {
-      if (confirm('Deseja realmente excluir este setor?')) {
-        this.lista = this.lista.filter((i) => i.id !== id)
+
+    async save() {
+      try {
+        if (this.form.id) {
+          await api.put(`/setores/${this.form.id}`, this.form)
+        } else {
+          await api.post('/setores', this.form)
+        }
+        this.showModal = false
+
+        await this.carregarSetores(this.usuarioCompleto.secretariaId)
+      } catch (error) {
+        alert('Erro ao salvar setor.')
       }
     },
-    getStatusClass(status) {
-      switch (status) {
-        case 'ATIVO':
-          return 'bg-emerald-50 text-emerald-600 border-emerald-100'
-        case 'INATIVO':
-          return 'bg-red-50 text-red-600 border-red-100'
-        case 'MANUTENÇÃO':
-          return 'bg-amber-50 text-amber-600 border-amber-100'
-        default:
-          return 'bg-gray-50 text-gray-600 border-gray-200'
-      }
+
+    async excluir(id) {
+      if (!confirm('Deseja realmente excluir?')) return
+      await api.delete(`/setores/${id}`)
+      await this.carregarSetores(this.usuarioCompleto.secretariaId)
     },
+  },
+
+  mounted() {
+    this.inicializar()
   },
 }
 </script>

@@ -7,7 +7,15 @@
     class="min-h-screen bg-slate-50 font-sans px-4 py-6 md:px-10 md:py-10 flex flex-col items-center"
   >
     <header class="text-center mb-8">
-      <h1 class="text-2xl md:text-4xl font-bold text-slate-900 mb-2">Agendamento Online</h1>
+      <div class="flex justify-center">
+        <img
+          src="../assets/brasao.png"
+          alt="Prefeitura"
+          class="text-center h-8 md:h-12 object-contain"
+        />
+      </div>
+
+      <h1 class="text-2xl md:text-3xl font-bold text-slate-900 mb-2">Agendamento Online</h1>
       <p class="text-slate-500 text-sm md:text-lg px-2">
         Escolha o serviço desejado e reserve seu horário de forma rápida e segura.
       </p>
@@ -295,7 +303,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import 'primeicons/primeicons.css'
-import { AppWindow } from 'lucide-vue-next'
 
 const etapa = ref(1)
 const loading = ref(false)
