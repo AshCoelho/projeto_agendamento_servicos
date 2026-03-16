@@ -31,30 +31,66 @@
 
         <v-col cols="12">
           <v-card class="pa-4">
-            <v-row> </v-row>
-            <v-row>
-              <v-col>
-                <v-sheet class="">
-                  <v-data-table :items="configuracoesAtendimentos" :headers="headers">
-                    <template #bottom> </template>
-                  </v-data-table>
-                </v-sheet>
-              </v-col>
-            </v-row>
+            <v-data-table :items="allConfigs" :headers="headers" class="elevation-0">
+              <template v-slot:[`item.horario`]="{ item }">
+                <div class="font-weight-medium">{{ item.horaInicio }} — {{ item.horaFim }}</div>
+              </template>
+
+              <template v-slot:[`item.pausa`]="{ item }">
+                <v-chip v-if="item.pausaInicio" size="small" variant="tonal" color="orange">
+                  {{ item.pausaInicio }} - {{ item.pausaFim }}
+                </v-chip>
+                <span v-else class="text-caption text-grey">Sem pausa</span>
+              </template>
+
+              <template v-slot:[`item.detalheRegra`]="{ item }">
+                <span v-if="item.tipoRegra === 'POR_QUANTIDADE'">
+                  {{ item.quantidadeAtendimentos }} atend.
+                </span>
+                <span v-else> {{ item.intervaloMinutos }} min. </span>
+              </template>
+
+              <template v-slot:[`item.ativo`]="{ item }">
+                <v-chip
+                  :color="item.ativo ? 'green' : 'red'"
+                  size="x-small"
+                  class="text-uppercase font-weight-bold"
+                >
+                  {{ item.ativo ? 'Ativo' : 'Inativo' }}
+                </v-chip>
+              </template>
+
+              <template v-slot:[`item.acoes`]="{ item }">
+                <div class="d-flex justify-end gap-2">
+                  <v-btn
+                    icon="mdi-power"
+                    variant="text"
+                    size="small"
+                    :color="item.ativo ? 'red' : 'green'"
+                    @click="alterarStatus(item)"
+                    :title="item.ativo ? 'Desativar' : 'Ativar'"
+                  ></v-btn>
+                  <v-btn icon="mdi-pencil" variant="text" size="small" color="blue"></v-btn>
+                </div>
+              </template>
+
+              <template #bottom></template>
+            </v-data-table>
           </v-card>
         </v-col>
       </v-row>
     </v-container>
-    <v-dialog v-model="dialog.addConfig" class="w-50">
+
+    <v-dialog v-model="dialog.addConfig" persistent max-width="700">
       <v-card>
-        <v-card-title class="d-flex justify-space-between">
-          <span class="text-subtitle-1 font-weight-semibold"
-            >Criar configuração de Atendimento</span
-          >
-          <span class="text-caption">Regra de Atendimento</span>
+        <v-card-title class="d-flex justify-space-between align-center pa-4">
+          <span class="text-h6 font-weight-bold">Criar configuração de Atendimento</span>
+          <v-btn icon="mdi-close" variant="text" @click="dialog.addConfig = false"></v-btn>
         </v-card-title>
-        <v-divider thickness="2" opacity="1"></v-divider>
-        <AdicionarConfiguracao></AdicionarConfiguracao>
+        <v-divider></v-divider>
+        <v-card-text>
+          <AdicionarConfiguracao @salvo="onConfigSalva" @cancelar="dialog.addConfig = false" />
+        </v-card-text>
       </v-card>
     </v-dialog>
   </div>
@@ -62,112 +98,72 @@
 
 <script>
 import AdminConfig from '@/components/AdminConfig.vue'
-import { DecimalsArrowRight } from 'lucide-vue-next'
 import AdicionarConfiguracao from '@/components/AdicionarConfiguracao.vue'
 import api from '@/services/api'
 
 export default {
   components: { AdminConfig, AdicionarConfiguracao },
   data: () => ({
+    allConfigs: [],
     configuracoesAtendimentos: [],
-    setores: [],
-    dialog: {
-      addConfig: false,
-    },
-    perfilUsuario: '', // Vai vir do LocalStorage
-    configHorario: {
-      inicio: '08:00',
-      fim: '18:00',
-      intervalo: '30',
-    },
-    horáriosGerados: [
-      '08:00',
-      '08:30',
-      '09:00',
-      '09:30',
-      '10:00',
-      '10:30',
-      '11:00',
-      '11:30',
-      '12:00',
-      '12:30',
-      '13:00',
-      '13:30',
-      '14:00',
-      '14:30',
-      '15:00',
-      '15:30',
-      '16:00',
-      '16:30',
-      '17:00',
-      '17:30',
-    ],
-
+    dialog: { addConfig: false },
     headers: [
-      {
-        title: 'Regra',
-        value: 'regra',
-      },
-      {
-        title: 'Horário',
-        value: 'horario',
-      },
-      {
-        title: 'Pausa',
-        value: 'pausa',
-      },
-      {
-        title: 'Guichês',
-        value: 'guiches',
-      },
-      {
-        title: 'Status',
-        value: 'status',
-      },
+      { title: 'Setor', key: 'setor.nome' },
+      { title: 'Regra', key: 'tipoRegra' },
+      { title: 'Horário de Atendimento', key: 'horario' },
+      { title: 'Pausa', key: 'pausa' },
+      { title: 'Qtd/Intervalo', key: 'detalheRegra' },
+      { title: 'Guichês', key: 'numeroGuiches', align: 'center' },
+      { title: 'Status', key: 'ativo', align: 'center' },
+      { title: 'Ações', key: 'acoes', sortable: false, align: 'end' },
     ],
   }),
   methods: {
-    async getSetoresPorSecretaria() {
-      try {
-        const { data } = await api.get(`http://localhost:8080/setores/por-secretaria/${5}`)
-        this.setores = data
-      } catch (e) {
-        console.error(e)
-      }
-    },
     async getConfiguracoesAtendimento() {
       try {
-        const { data } = await api.get(`http://localhost:8080/api/configuracoes-atendimento`)
+        // Como o GET geral não existe, vamos buscar de um setor específico (ex: setor 5)
+        // No futuro, você pode pegar o setorId do usuário logado
+        const setorId = 5
+        const { data } = await api.get(`/api/configuracoes-atendimento/setor/${setorId}`)
         this.configuracoesAtendimentos = data
+      } catch (e) {
+        console.error('Erro ao carregar configurações:', e)
+      }
+    },
+
+    async alterarStatus(item) {
+      const id = item.id
+      try {
+        if (item.ativo) {
+          // Bate no @DeleteMapping("/{id}/desativar")
+          await api.delete(`/api/configuracoes-atendimento/${id}/desativar`)
+        } else {
+          // Bate no @PutMapping("/{id}/ativar")
+          await api.put(`/api/configuracoes-atendimento/${id}/ativar`)
+        }
+        this.getConfiguracoesAtendimento()
+      } catch (e) {
+        alert('Erro ao alterar status da configuração.', e)
+      }
+    },
+
+    onConfigSalva() {
+      this.dialog.addConfig = false
+      this.getConfiguracoesAtendimento()
+    },
+
+    async getAllConfigs() {
+      try {
+        const { data } = await api.get('/api/configuracoes-atendimento')
+        this.allConfigs = data
       } catch (e) {
         console.error(e)
       }
     },
   },
   mounted() {
-    // Busca o perfil do usuário logado
-    this.getSetoresPorSecretaria()
     this.getConfiguracoesAtendimento()
-    const user = JSON.parse(localStorage.getItem('usuario'))
-    if (user) {
-      this.perfilUsuario = user.perfil // Ex: 'SuperAdministrador', 'Admin' ou 'Atendente'
-    }
+    this.getAllConfigs()
   },
 }
 </script>
-
-<style scoped>
-.animate-in {
-  animation: slideUp 0.4s ease-out;
-}
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-</style>

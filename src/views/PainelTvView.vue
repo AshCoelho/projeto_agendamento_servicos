@@ -203,7 +203,7 @@ const falando = ref(false)
 
 /** ======= API ======= **/
 const apiPublico = axios.create({
-  baseURL: 'http://10.0.0.243:8080',
+  baseURL: 'http://localhost:8080',
   timeout: 3000,
 })
 
@@ -236,7 +236,7 @@ const atualizarRelogio = () => {
 }
 
 const qrSrc = computed(() => {
-  const urlPublica = `http://10.0.0.243:3000/tv/${setorId.value}`
+  const urlPublica = `http://localhost:3000/tv/${setorId.value}`
   return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
     urlPublica,
   )}`
@@ -277,7 +277,7 @@ const processarFila = () => {
       } else {
         processarFila() // Tem gente na fila? Puxa o próximo!
       }
-    }, 4000) 
+    }, 4000)
   }
 
   // Se o som estiver mudo (apenas mostra a tela por 6 segundos no total)
@@ -308,7 +308,9 @@ const processarFila = () => {
   if (audioPlayer.value) {
     audioPlayer.value.currentTime = 0
     audioPlayer.value.play().catch(() => {})
-    setTimeout(() => { falar(2) }, 1000)
+    setTimeout(() => {
+      falar(2)
+    }, 1000)
   } else {
     falar(2)
   }
@@ -365,9 +367,18 @@ const buscarChamadas = async () => {
 
     // 🟢 1. Atualiza o histórico lateral
     historico.value = lista.slice(0, 5).map((item) => ({
-      numero: pegarCampo(item, ['senha', 'numeroSenha', 'senhaAtual', 'nsenha', 'senha_agendamento']) || '---',
+      numero:
+        pegarCampo(item, ['senha', 'numeroSenha', 'senhaAtual', 'nsenha', 'senha_agendamento']) ||
+        '---',
       guiche: pegarCampo(item, ['guiche', 'numeroGuiche', 'guicheNumero']) ?? null,
-      cidadao: pegarCampo(item, ['nomeCidadao', 'nome_cidadao', 'usuarioNome', 'nomeUsuario', 'cidadao']) || 'Cidadão',
+      cidadao:
+        pegarCampo(item, [
+          'nomeCidadao',
+          'nome_cidadao',
+          'usuarioNome',
+          'nomeUsuario',
+          'cidadao',
+        ]) || 'Cidadão',
     }))
 
     const ultima = lista[0]
@@ -389,15 +400,15 @@ const buscarChamadas = async () => {
 
     // 🟢 4. A MÁGICA: Varre a lista de trás pra frente achando TODO MUNDO que é novo
     const novasChamadas = []
-    
+
     for (const item of lista) {
       const itemKey = `${pegarCampo(item, ['agendamentoId', 'id']) ?? ''}|${pegarCampo(item, ['horaChamada', 'dataChamada', 'data_chamada']) ?? ''}|${pegarCampo(item, ['senha', 'numeroSenha', 'senhaAtual', 'nsenha', 'senha_agendamento'])}`
-      
+
       // Se achamos a chave antiga, significa que todos os itens antes desse são novos!
       if (itemKey === lastKey.value) break
-      
+
       // Adiciona no começo do array temporário para manter a ordem (do mais antigo pro mais novo)
-      novasChamadas.unshift(item) 
+      novasChamadas.unshift(item)
     }
 
     // Atualiza a chave mestra com a última pessoa da lista nova
@@ -405,13 +416,21 @@ const buscarChamadas = async () => {
 
     // 🟢 5. Joga as novas chamadas (na ordem correta) para a fila de áudio
     for (const nova of novasChamadas) {
-      const senha = pegarCampo(nova, ['senha', 'numeroSenha', 'senhaAtual', 'nsenha', 'senha_agendamento']) || '---'
+      const senha =
+        pegarCampo(nova, ['senha', 'numeroSenha', 'senhaAtual', 'nsenha', 'senha_agendamento']) ||
+        '---'
       const guiche = pegarCampo(nova, ['guiche', 'numeroGuiche', 'guicheNumero']) ?? null
-      const cidadao = pegarCampo(nova, ['nomeCidadao', 'nome_cidadao', 'usuarioNome', 'nomeUsuario', 'cidadao']) || 'Cidadão'
+      const cidadao =
+        pegarCampo(nova, [
+          'nomeCidadao',
+          'nome_cidadao',
+          'usuarioNome',
+          'nomeUsuario',
+          'cidadao',
+        ]) || 'Cidadão'
 
       falarChamada(String(cidadao), String(senha), guiche != null ? String(guiche) : null)
     }
-
   } catch (error) {
     console.error('Erro ao buscar chamadas', error)
   } finally {
