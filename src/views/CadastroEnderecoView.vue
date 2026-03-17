@@ -109,37 +109,38 @@
         v-if="showModal"
         class="fixed inset-0 z-[100] flex items-center justify-center bg-[#1e3a8a]/20 backdrop-blur-md p-4"
       >
-        <div class="bg-white rounded-[15px] shadow-2xl w-full max-w-lg overflow-hidden animate-in">
+        <div
+          class="bg-white rounded-[12px] shadow-2xl w-full max-w-4xl overflow-hidden animate-in fade-in zoom-in duration-300"
+        >
           <div class="p-8">
-            <h2
-              class="text-xl font-black mb-6 text-[#1e3a8a] tracking-tighter border-b border-gray-50 pb-4"
-            >
+            <h2 class="text-xl font-black mb-6 text-[#1e3a8a] border-b border-gray-50 pb-4">
               {{ form.id ? 'Editar Endereço' : 'Novo Endereço' }}
             </h2>
 
             <div class="grid grid-cols-2 gap-5">
               <div class="col-span-2">
                 <label
-                  class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"
+                  class="block text-[10px] rounded-[14px] font-black text-gray-400 uppercase mb-2"
                   >Logradouro</label
                 >
                 <input
                   v-model="form.logradouro"
                   type="text"
                   placeholder="Rua, Avenida, etc..."
-                  class="w-full bg-gray-50 border-none rounded-[12px] p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  class="w-full bg-gray-5 border rounded-[6px] p-3 text-sm focus:ring-blue-500 outline-none transition-all"
+                  required
                 />
               </div>
 
               <div class="col-span-2">
-                <label
-                  class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"
+                <label class="block text-[10px] font-black text-gray-400 uppercase mb-2"
                   >Complemento</label
                 >
                 <input
                   v-model="form.complemento"
                   type="text"
-                  class="w-full bg-gray-50 border-none rounded-[12px] p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  class="w-full bg-gray-5 border rounded-[6px] p-3 text-sm focus:ring-blue-500 outline-none transition-all"
+                  required
                 />
               </div>
 
@@ -151,7 +152,8 @@
                 <input
                   v-model="form.numero"
                   type="text"
-                  class="w-full bg-gray-50 border-none rounded-[12px] p-3 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                  class="w-full bg-gray-5 border rounded-[6px] rounded-[12px] p-3 text-sm outline-none focus:ring-blue-500"
+                  required
                 />
               </div>
 
@@ -164,9 +166,11 @@
                   v-model="form.cep"
                   type="text"
                   placeholder="00000-000"
-                  class="w-full bg-gray-50 border-none rounded-[12px] p-3 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                  class="w-full bg-gray-5 border rounded-[6px] rounded-[12px] p-3 text-sm outline-none focus:ring-blue-500"
+                  required
                 />
               </div>
+
               <div>
                 <label
                   class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"
@@ -175,7 +179,8 @@
                 <input
                   v-model="form.uf"
                   type="text"
-                  class="w-full bg-gray-50 border-none rounded-[12px] p-3 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                  class="w-full bg-gray-5 border rounded-[6px] p-3 text-sm outline-none focus:ring-blue-500"
+                  required
                 />
               </div>
 
@@ -187,7 +192,8 @@
                 <input
                   v-model="form.bairro"
                   type="text"
-                  class="w-full bg-gray-50 border-none rounded-[12px] p-3 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                  class="w-full bg-gray-5 border rounded-[6px] p-3 text-sm outline-none focus:ring-blue-500"
+                  required
                 />
               </div>
 
@@ -199,22 +205,23 @@
                 <input
                   v-model="form.cidade"
                   type="text"
-                  class="w-full bg-gray-50 border-none rounded-[12px] p-3 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                  class="w-full bg-gray-5 border rounded-[6px] p-3 text-sm outline-none focus:ring-blue-500"
+                  required
                 />
               </div>
             </div>
           </div>
 
-          <div class="bg-gray-50 p-6 flex justify-end gap-3 border-t border-gray-100">
+          <div class="p-6 flex justify-end gap-3">
             <button
               @click="showModal = false"
-              class="text-gray-400 font-black uppercase text-[10px] px-6 py-2 hover:text-gray-600 transition-colors"
+              class="text-gray-400 font-black text-[13px] px-6 py-2 hover:text-gray-600 transition-colors"
             >
               Cancelar
             </button>
             <button
               @click="save"
-              class="bg-[#2563eb] text-white px-8 py-3 rounded-[8px] font-black uppercase text-[10px] shadow-lg shadow-blue-200 hover:scale-105 active:scale-95 transition-all"
+              class="bg-[#2563eb] text-white px-8 py-3 rounded-[5px] font-semibold text-[13px] shadow-lg shadow-blue-200 hover:scale-105 active:scale-95 transition-all"
             >
               Salvar Endereço
             </button>

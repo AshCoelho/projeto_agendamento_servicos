@@ -55,31 +55,50 @@
                     <i class="pi pi-pencil text-xs"></i>
                   </button>
                 </td>
+
+                <!-- NOME -->
                 <td class="px-6 py-4">
-                  <div class="flex items-center gap-3">
-                    <div class="font-bold text-sm text-[#1e3a8a]">{{ item.usuario }}</div>
+                  <div class="font-bold text-sm text-[#1e3a8a]">
+                    {{ item.nome }}
                   </div>
                 </td>
+
+                <!-- EMAIL -->
                 <td class="px-6 py-4 text-sm text-gray-500">
                   {{ item.email }}
                 </td>
+
+                <!-- PERFIL -->
                 <td class="px-6 py-4 text-center">
                   <span
-                    :class="getStatusClass(item.status)"
-                    class="px-3 py-1 rounded-full text-[9px] font-black uppercase border tracking-tighter"
+                    class="px-3 py-1 rounded-full text-[9px] font-black uppercase border"
+                    :class="
+                      item.perfil === 'ADMIN'
+                        ? 'bg-purple-50 text-purple-600 border-purple-100'
+                        : 'bg-blue-50 text-blue-600 border-blue-100'
+                    "
                   >
-                    {{ item.status }}
+                    {{ item.perfil }}
                   </span>
                 </td>
+
+                <!-- DATA -->
                 <td class="px-6 py-4 text-gray-400 text-[11px] font-medium">
-                  {{ item.data }}
+                  {{ formatarData(item.criadoEm) }}
                 </td>
+
+                <td>{{ item.secretariaPrincipal?.nome }}</td>
+
+                <td>
+                  {{ item.setores?.map((s) => s.nome).join(', ') }}
+                </td>
+
                 <td class="px-6 py-4 text-right">
                   <button
-                    @click="chamar(item.id)"
-                    class="bg-[#1e3a8a] hover:bg-[#2563eb] text-white text-[10px] px-4 py-2 rounded-lg font-black uppercase transition-all shadow-md shadow-blue-100"
+                    @click="excluir(item.id)"
+                    class="text-red-400 hover:text-red-600 text-[10px] font-black uppercase transition-all px-3"
                   >
-                    Chamar
+                    Excluir
                   </button>
                 </td>
               </tr>
@@ -103,7 +122,7 @@
         class="fixed inset-0 z-[100] flex items-center justify-center bg-[#1e3a8a]/20 backdrop-blur-md p-4"
       >
         <div
-          class="bg-white rounded-[15px] shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-300"
+          class="bg-white rounded-[12px] shadow-2xl w-full max-w-3xl overflow-hidden animate-in fade-in zoom-in duration-300"
         >
           <div class="p-8">
             <h2
@@ -111,57 +130,116 @@
             >
               {{ form.id ? 'Editar Registro' : 'Novo Registro' }}
             </h2>
-            <div class="space-y-5">
-              <div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div class="md:col-span-2">
                 <label
                   class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"
-                  >Nome do Usuário</label
                 >
+                  Nome do Usuário
+                </label>
                 <input
                   v-model="form.usuario"
                   type="text"
-                  class="w-full bg-gray-50 border-none rounded-[12px] p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  class="w-full bg-gray-5 border rounded-[6px] p-3 text-sm focus:ring-blue-500 outline-none transition-all"
                 />
               </div>
+
               <div>
                 <label
                   class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"
-                  >E-mail / Serviço</label
                 >
+                  CPF
+                </label>
+                <input
+                  v-model="form.cpf"
+                  type="text"
+                  placeholder="000.000.000-00"
+                  class="w-full bg-gray-5 border rounded-[6px] p-3 text-sm focus:ring-blue-500 outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label
+                  class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"
+                >
+                  Contato
+                </label>
+                <input
+                  v-model="form.contato"
+                  type="text"
+                  placeholder="(00) 00000-0000"
+                  class="w-full bg-gray-5 border rounded-[6px] p-3 text-sm focus:ring-blue-500 outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label
+                  class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"
+                >
+                  E-mail
+                </label>
                 <input
                   v-model="form.email"
-                  type="text"
-                  class="w-full bg-gray-50 border-none rounded-[12px] p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  type="email"
+                  class="w-full bg-gray-5 border rounded-[6px] p-3 text-sm focus:ring-blue-500 outline-none transition-all"
                 />
               </div>
+
               <div>
                 <label
                   class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"
-                  >Situação</label
                 >
+                  Perfil
+                </label>
+                <select
+                  v-model="form.perfil"
+                  class="w-full bg-gray-5 border rounded-[6px] p-3 text-sm focus:ring-blue-500 outline-none transition-all"
+                >
+                  <option value="ATENDENTE">Atendente</option>
+
+                  <option
+                    v-if="usuarioLogadoPerfil === 'SUPER_ADMIN' || form.perfil === 'ADMIN'"
+                    value="ADMIN"
+                  >
+                    Administrador
+                  </option>
+
+                  <option v-if="usuarioLogadoPerfil === 'SUPER_ADMIN'" value="SUPER_ADMIN">
+                    Super Administrador
+                  </option>
+                </select>
+              </div>
+
+              <div>
+                <label
+                  class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"
+                >
+                  Situação
+                </label>
                 <select
                   v-model="form.status"
-                  class="w-full bg-gray-50 border-none rounded-[12px] p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer"
+                  class="w-full bg-gray-5 border rounded-[6px] p-3 text-sm focus:ring-blue-500 outline-none transition-all"
                 >
-                  <option value="AGENDADO">AGENDADO</option>
-                  <option value="FINALIZADO">FINALIZADO</option>
-                  <option value="CANCELADO">CANCELADO</option>
+                  <option value="Ativo">Ativo</option>
+                  <option value="Desativado">Desativado</option>
                 </select>
               </div>
             </div>
           </div>
-          <div class="bg-gray-50 p-6 flex justify-end gap-3 border-t border-gray-100">
+
+          <div class="p-6 flex justify-end gap-3">
             <button
               @click="showModal = false"
-              class="text-gray-400 font-black uppercase text-[10px] px-6 py-2 hover:text-gray-600 transition-colors"
+              class="text-gray-400 font-black text-[13px] px-6 py-2 hover:text-gray-600 transition-colors"
             >
               Cancelar
             </button>
             <button
               @click="save"
-              class="bg-[#2563eb] text-white px-8 py-3 rounded-[8px] font-black uppercase text-[10px] shadow-lg shadow-blue-200 hover:scale-105 active:scale-95 transition-all"
+              class="bg-[#2563eb] text-white px-8 py-3 rounded-[5px] font-semibold text-[13px] shadow-lg shadow-blue-200 hover:scale-105 active:scale-95 transition-all"
             >
-              Salvar Dados
+              Salvar Endereço
             </button>
           </div>
         </div>
@@ -173,6 +251,7 @@
 <script>
 import AdminConfig from '@/components/AdminConfig.vue'
 import 'primeicons/primeicons.css'
+import axios from 'axios'
 
 export default {
   components: {
@@ -180,31 +259,60 @@ export default {
   },
 
   data: () => ({
-    // UI/Controle
     showModal: false,
-
-    // Dados
     lista: [],
-
-    // Formulário
+    usuarioLogadoPerfil: '', // Armazenar o perfil de quem está logado
     form: {
       id: null,
       usuario: '',
       email: '',
-      status: 'AGENDADO',
+      perfil: 'ATENDENTE', // Adicionei perfil aqui
+      status: 'Ativo',
     },
   }),
 
-  computed: {
-    // Espaço para futuras lógicas de filtro (ex: listaFiltrada)
-  },
+  computed: {},
 
   methods: {
+    formatarData(data) {
+      if (!data) return '-'
+
+      return new Date(data).toLocaleString('pt-BR')
+    },
+
+    async carregarUsuarios() {
+      try {
+        const token = localStorage.getItem('token')
+
+        const userRes = await axios.get('http://localhost:8080/gerenciador/usuario-logado', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+
+        const usuario = userRes.data
+        this.usuarioLogadoPerfil = usuario.perfil
+        const secretariaId = usuario.secretarias[0]?.id
+        const res = await axios.get(
+          `http://localhost:8080/gerenciador/secretaria/${secretariaId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        )
+
+        this.lista = res.data
+      } catch (error) {
+        console.error('Erro:', error)
+      }
+    },
+
     openModal(item = null) {
       if (item) {
         this.form = { ...item }
       } else {
-        this.form = { id: null, usuario: '', email: '', status: 'AGENDADO' }
+        this.form = { id: null, usuario: '', email: '', status: 'Ativo' }
       }
       this.showModal = true
     },
@@ -221,11 +329,9 @@ export default {
 
     getStatusClass(status) {
       switch (status) {
-        case 'AGENDADO':
-          return 'bg-blue-50 text-blue-600 border-blue-100'
-        case 'FINALIZADO':
+        case 'Desativado':
           return 'bg-emerald-50 text-emerald-600 border-emerald-100'
-        case 'CANCELADO':
+        case 'Ativo':
           return 'bg-red-50 text-red-600 border-red-100'
         default:
           return 'bg-gray-50 text-gray-600 border-gray-200'
@@ -234,7 +340,7 @@ export default {
   },
 
   mounted() {
-    // Lógica inicial aqui (ex: buscar lista da API)
+    this.carregarUsuarios()
   },
 }
 </script>

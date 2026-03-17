@@ -112,7 +112,7 @@
                   v-model="form.nome"
                   type="text"
                   placeholder="Ex: Recursos Humanos"
-                  class="w-full bg-gray-50 border-none rounded-[12px] p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  class="w-full bg-gray-5 border rounded-[6px] p-3 text-sm focus:ring-blue-500 outline-none transition-all"
                 />
               </div>
               <div>
@@ -126,23 +126,35 @@
                   v-model="form.descricao"
                   type="text"
                   placeholder="Descrição do setor"
-                  class="w-full bg-gray-50 border-none rounded-[12px] p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  class="w-full bg-gray-5 border rounded-[6px] p-3 text-sm focus:ring-blue-500 outline-none transition-all"
                 />
+              </div>
+              <div class="md:col-span-2">
+                <label
+                  class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"
+                  >Secretaria</label
+                >
+
+                <select
+                  name=""
+                  id=""
+                  class="w-full bg-gray-5 border rounded-[6px] p-3 text-sm focus:ring-blue-500 outline-none transition-all"
+                ></select>
               </div>
             </div>
           </div>
-          <div class="bg-gray-50 p-6 flex justify-end gap-3 border-t border-gray-100">
+          <div class="p-6 flex justify-end gap-3">
             <button
               @click="showModal = false"
-              class="text-gray-400 font-black uppercase text-[10px] px-6 py-2 hover:text-gray-600 transition-colors"
+              class="text-gray-400 font-black text-[13px] px-6 py-2 hover:text-gray-600 transition-colors"
             >
               Cancelar
             </button>
             <button
               @click="save"
-              class="bg-[#2563eb] text-white px-8 py-3 rounded-[8px] font-black uppercase text-[10px] shadow-lg shadow-blue-200 hover:scale-105 active:scale-95 transition-all"
+              class="bg-[#2563eb] text-white px-8 py-3 rounded-[5px] font-semibold text-[13px] shadow-lg shadow-blue-200 hover:scale-105 active:scale-95 transition-all"
             >
-              Confirmar
+              Salvar Endereço
             </button>
           </div>
         </div>
@@ -163,6 +175,7 @@ const api = axios.create({
 export default {
   components: { AdminConfig },
   data: () => ({
+    secretariaId: null,
     lista: [],
     showModal: false,
     usuarioCompleto: null,
@@ -188,8 +201,6 @@ export default {
 
         this.usuarioCompleto = resUser.data
 
-        // AQUI ESTÁ O PULO DO GATO:
-        // Pelo print, sua secretaria está dentro de um array. Vamos pegar a primeira:
         if (this.usuarioCompleto.secretarias && this.usuarioCompleto.secretarias.length > 0) {
           const idSecretaria = this.usuarioCompleto.secretarias[0].id
           console.log('ID da Secretaria encontrado:', idSecretaria)
