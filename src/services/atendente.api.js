@@ -64,6 +64,6 @@ export const AtendenteApi = {
   },
 
   async heartbeat(agendamentoId) {
-    return await this.api.put(`/agendamentos/heartbeat/${agendamentoId}`)
+    return await api.put(`/agendamentos/heartbeat/${agendamentoId}`)
   },
 }

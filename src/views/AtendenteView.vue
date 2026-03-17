@@ -757,9 +757,6 @@ export default {
         localStorage.clear()
         this.usuario = null
 
-        // 🔴 APAGUE O ROUTER.PUSH
-        // this.$router.push({ name: 'login' })
-
         // 🟢 USE ISSO: Faz o papel de um "F5" e manda pro login com a memória limpa!
         window.location.href = '/'
       }

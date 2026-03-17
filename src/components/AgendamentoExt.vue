@@ -55,15 +55,22 @@
       </div>
 
       <div v-if="form.setorId && setores.length" class="mt-2 ml-1">
-        <p
-          v-for="s in [setores.find((x) => x.id === form.setorId)]"
-          :key="s.id"
-          class="text-[11px] text-blue-700 italic"
-        >
-          <i class="pi pi-map-marker mr-1"></i>
-          {{ s.endereco.logradouro }}, {{ s.endereco.numero }} - {{ s.endereco.bairro }},
-          {{ s.endereco.cidade }}/{{ s.endereco.uf }}
-        </p>
+        <div v-for="s in [setores.find((x) => x.id === form.setorId)]" :key="s.id">
+          <div class="flex flex-col sm:flex-row sm:items-center gap-1">
+            <span class="text-[11px] text-slate-600 italic">
+              <i class="pi pi-map-marker mr-1 text-red-500"></i>
+              {{ s.endereco.logradouro }}, {{ s.endereco.numero }} - {{ s.endereco.bairro }}
+            </span>
+            <a
+              :href="gerarLinkMapa(s.endereco)"
+              target="_blank"
+              class="text-[11px] font-bold text-blue-700 hover:underline flex items-center"
+            >
+              Clique aqui para ver no Maps
+              <i class="pi pi-external-link ml-1 text-[9px]"></i>
+            </a>
+          </div>
+        </div>
       </div>
 
       <div v-if="form.servicoId" class="mt-8 pt-6 border-t border-slate-100">
@@ -167,12 +174,12 @@
           <v-text-field
             v-model="form.cpf"
             placeholder="000.000.000-00"
+            maxlength="14"
             :rules="[regras.obrigatorio, regras.cpf]"
+            @input="formatarCPF"
             density="compact"
             variant="outlined"
             rounded="lg"
-            flat
-            border
           />
         </div>
         <div>
@@ -180,6 +187,7 @@
           <v-text-field
             v-model="form.dataNascimento"
             type="date"
+            :rules="[regras.obrigatorio, regras.maioridade]"
             density="compact"
             variant="outlined"
             rounded="lg"
@@ -192,12 +200,12 @@
           <v-text-field
             v-model="form.celular"
             placeholder="(00) 00000-0000"
+            maxlength="15"
             :rules="[regras.obrigatorio, regras.celular]"
+            @input="formatarCelular"
             density="compact"
             variant="outlined"
             rounded="lg"
-            flat
-            border
           />
         </div>
         <div>
@@ -256,7 +264,7 @@ import 'primeicons/primeicons.css'
 
 const etapa = ref(1)
 const loading = ref(false)
-const API_BASE = 'http://localhost:8080'
+const API_BASE = 'http://192.168.200.29:8080'
 const disponibilidadeDias = ref({})
 const meuFormulario = ref(null)
 
@@ -269,6 +277,21 @@ const regras = {
   },
   cpf: (v) => (v && v.length >= 11) || 'CPF incompleto',
   celular: (v) => (v && v.length >= 10) || 'Telefone incompleto',
+
+  maioridade: (v) => {
+    if (!v) return 'Data de nascimento é obrigatória'
+    const dataNasc = new Date(v)
+    const hoje = new Date()
+    let idade = hoje.getFullYear() - dataNasc.getFullYear()
+    const mes = hoje.getMonth() - dataNasc.getMonth()
+    
+    // Ajusta a idade se ainda não fez aniversário no ano corrente
+    if (mes < 0 || (mes === 0 && hoje.getDate() < dataNasc.getDate())) {
+      idade--
+    }
+    
+    return idade >= 18 || 'Você deve ter pelo menos 18 anos'
+  },
 }
 
 const form = ref({
@@ -291,6 +314,27 @@ const snackbar = ref({
   icon: 'pi pi-check-circle',
 })
 
+function formatarCPF() {
+  let v = form.value.cpf.replace(/\D/g, ""); // Remove tudo que não é dígito
+  if (v.length > 11) v = v.slice(0, 11);     // Limita a 11 números
+
+  v = v.replace(/(\d{3})(\d)/, "$1.$2");       // Ponto após o 3º dígito
+  v = v.replace(/(\d{3})(\d)/, "$1.$2");       // Ponto após o 6º dígito
+  v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2"); // Traço após o 9º dígito
+
+  form.value.cpf = v;
+}
+
+function formatarCelular() {
+  let v = form.value.celular.replace(/\D/g, ""); // Remove tudo que não é dígito
+  if (v.length > 11) v = v.slice(0, 11);         // Limita a 11 números
+
+  v = v.replace(/^(\d{2})(\d)/g, "($1) $2");    // Parênteses no DDD
+  v = v.replace(/(\d{5})(\d)/, "$1-$2");        // Traço após o 5º dígito do número
+
+  form.value.celular = v;
+}
+
 function mostrarMensagem(texto, tipo = 'success') {
   snackbar.value.text = texto
   snackbar.value.color = tipo === 'success' ? 'green-darken-2' : 'red-darken-2'
@@ -303,6 +347,22 @@ const setores = ref([])
 const servicos = ref([])
 const slots = ref([])
 const configuracao = ref({})
+
+// 🟢 Função para gerar o link do Google Maps
+function gerarLinkMapa(endereco) {
+  if (!endereco) return '#'
+  
+  // Se tiver coordenadas, usa o link direto por geolocalização (mais preciso)
+  if (endereco.latitude && endereco.longitude) {
+    return `https://www.google.com/maps/search/?api=1&query=${endereco.latitude},${endereco.longitude}`
+  }
+
+  //console.log("Endereço:",endereco.latitude)
+  
+  // Caso não tenha coordenadas, gera o link por busca de texto (fallback)
+  const buscaTexto = `${endereco.logradouro}, ${endereco.numero}, ${endereco.bairro}, ${endereco.cidade} - ${endereco.uf}`
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(buscaTexto)}`
+}
 
 async function carregarSecretarias() {
   try {
@@ -350,9 +410,9 @@ async function buscarDiasDisponiveis() {
     )
 
     const data = await res.json()
-    console.log('DATAS ', data)
+    //console.log('DATAS ', data)
     disponibilidadeDias.value = data
-    console.log(disponibilidadeDias)
+    //console.log(disponibilidadeDias)
     // disponibilidadeDias.value = {}
 
     // data.forEach((d) => {
@@ -418,7 +478,7 @@ async function getConfiguracaoBySetorId() {
   try {
     const res = await fetch(`${API_BASE}/api/configuracoes-atendimento/setor/${form.value.setorId}`)
     configuracao.value = await res.json()
-    console.log(configuracao.value)
+    //console.log(configuracao.value)
   } catch (e) {
     console.error(e)
   }
@@ -488,22 +548,34 @@ function limparHorarios() {
 }
 
 async function agendar() {
+  if (meuFormulario.value) {
+    const { valid } = await meuFormulario.value.validate()
+    if (!valid) {
+      mostrarMensagem('Por favor, verifique os campos em vermelho.', 'error')
+      return
+    }
+  }
+
   loading.value = true
   try {
+    // 🟢 Criamos uma cópia dos dados para não estragar a formatação da tela do usuário
+    const payload = {
+      ...form.value,
+      // Removemos pontos, traços e parênteses para enviar apenas os 11 números
+      cpf: form.value.cpf.replace(/\D/g, ''),
+      celular: form.value.celular.replace(/\D/g, '')
+    }
+
     const response = await fetch(`${API_BASE}/agendamentos/externo`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form.value),
+      body: JSON.stringify(payload), // 🟢 Enviamos o payload limpo
     })
 
     if (!response.ok) throw new Error(await response.text())
 
     const result = await response.json()
-
-    // Feedback elegante
     mostrarMensagem(`Agendamento realizado! Senha: ${result.senha}`, 'success')
-
-    // Limpa os dados e volta para a etapa 1
     resetarFormulario()
   } catch (err) {
     mostrarMensagem('Erro: ' + err.message, 'error')
