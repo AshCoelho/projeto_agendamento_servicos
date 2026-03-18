@@ -926,8 +926,8 @@ export default {
 
     async carregarServicos() {
       try {
-        const res = await AtendenteApi.carregarServicos(this.secretariaTrabalhoId)
-        this.servicos = res.data
+        const servicos = await AtendenteApi.carregarServicosPorSetor(this.setorTrabalhoId)
+        this.servicos = servicos // já é a lista correta
       } catch (e) {
         console.error(e)
       }

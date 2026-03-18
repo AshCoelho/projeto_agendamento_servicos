@@ -53,8 +53,11 @@ export const AtendenteApi = {
     return await api.get('/gerenciador/usuario-logado')
   },
 
-  async carregarServicos(secretariaId) {
-    return await api.get(`/secretarias/${secretariaId}/servicos`)
+  async carregarServicosPorSetor(setorId) {
+    console.log(setorId);
+      const response = await api.get(`/agendamento/api/servico/setor/${setorId}`);
+      console.log(response);
+      return response.data; // já vem a lista de ServicoResponseDTO
   },
 
   async deslogarGuiche(gerenciadorId) {
