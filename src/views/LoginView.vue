@@ -141,6 +141,9 @@ export default {
           case 'ATENDENTE':
             this.$router.push('/guiche')
             break
+          case 'MEDICO':
+            this.$router.push('/guiche')
+            break
           case 'USUARIO':
             this.$router.push('/agendamento')
             break

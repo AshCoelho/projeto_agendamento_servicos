@@ -55,25 +55,6 @@
     </nav>
 
     <div class="mt-auto w-full px-4 pb-4">
-      <div
-        :class="[sidebarAberta ? 'p-3' : 'p-0 bg-transparent border-none shadow-none']"
-        class="flex items-center gap-3 bg-gray-50 rounded-2xl mb-4 border border-gray-100 transition-all duration-300 justify-center"
-      >
-        <div
-          class="min-w-[40px] w-10 h-10 bg-[#2563eb] rounded-full flex items-center justify-center text-white font-bold shadow-sm"
-        >
-          {{ usuario?.nome?.charAt(0).toUpperCase() || 'U' }}
-        </div>
-        <div v-if="sidebarAberta" class="leading-tight whitespace-nowrap overflow-hidden">
-          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
-            {{ usuario?.perfil || 'Atendente' }}
-          </p>
-          <p class="text-sm font-black text-[#1e3a8a] truncate w-24">
-            {{ usuario?.nome || 'Usuário' }}
-          </p>
-        </div>
-      </div>
-
       <button
         @click="$emit('logout')"
         :class="[sidebarAberta ? 'justify-start px-2' : 'justify-center px-0']"

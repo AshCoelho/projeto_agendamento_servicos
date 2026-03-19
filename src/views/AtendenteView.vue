@@ -9,32 +9,60 @@
 
     <main class="flex-1 overflow-x-hidden">
       <header
-        class="flex justify-between bg-white border-b border-black items-center px-8 mb-5 py-4"
+        class="flex items-center justify-between bg-white border-b border-gray-100 px-8 py-3 mb-5 shadow-sm"
       >
-        <div class="text-[13px] font-bold text-gray-400">
-          Gestão / <span class="text-gray-900">Monitor Operacional</span>
+        <div class="flex items-center gap-2 text-[13px] font-bold">
+          <span class="text-gray-400">Gestão</span>
+          <i class="pi pi-angle-right text-[10px] text-gray-300"></i>
+          <span class="text-[#1e3a8a]">Monitor Operacional</span>
         </div>
 
-        <div class="relative w-1/3">
-          <i class="pi pi-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-300"></i>
+        <div class="relative w-1/4 max-w-md">
+          <i class="pi pi-search absolute left-4 top-1/2 -translate-y-1/2 text-blue-400"></i>
           <input
             v-model="filtroTexto"
             type="text"
             placeholder="Localizar senha ou cidadão..."
-            class="w-full bg-[#f1f4f9] border-none rounded-full py-2.5 pl-12 text-xs placeholder-gray-400 focus:ring-1 outline-none"
+            class="w-full bg-[#f1f4f9] border-none rounded-full py-2 pl-11 text-xs placeholder-gray-400 focus:ring-1 focus:ring-blue-200 outline-none transition-all"
           />
         </div>
 
-        <div class="flex items-center gap-8">
-          <div class="text-right">
-            <span class="text-[16px] text-sm font-bold">GUICHÊ: </span>
-            <span class="text-[16px] text-sm font-bold">
-              {{ usuario?.guiche || '--' }}
-            </span>
+        <div class="flex items-center gap-6">
+          <div class="text-right leading-tight">
+            <div class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">
+              {{ labelLocalTrabalho }}
+              <span class="text-[18px] text-blue-600 ml-1">{{ usuario?.guiche || '01' }}</span>
+            </div>
+            <div class="text-gray-500 text-[12px] font-medium">
+              {{ relogio }}
+            </div>
           </div>
-          <div class="text-[#1e3a8a] text-[16px] text-sm font-bold">
-            {{ relogio }}
+
+          <div class="h-10 w-[1px] bg-gray-100"></div>
+
+          <div class="flex items-center gap-3 text-right">
+            <div class="leading-tight">
+              <p class="text-sm font-medium text-gray-800 whitespace-nowrap">
+                {{ usuario?.nome || 'Nome desconhecido' }}
+              </p>
+              <p class="text-[10px] font-medium text-blue-600 uppercase tracking-widest text-right">
+                {{ usuario?.perfil || 'Perfil desconhecido' }}
+              </p>
+            </div>
+
+            <div
+              class="w-10 h-10 bg-blue-50 border border-blue-100 rounded-full flex items-center justify-center text-blue-600 shadow-sm"
+            >
+              <i class="pi pi-user text-lg"></i>
+            </div>
           </div>
+
+          <button
+            @click="$emit('logout')"
+            class="flex items-center gap-2 px-3 py-2 text-red-500 hover:text-gray-400 font-bold text-[11px] uppercase tracking-tighter transition-all"
+          >
+            <span>Sair</span>
+          </button>
         </div>
       </header>
 
@@ -51,7 +79,7 @@
                     ? 'bg-[#2563eb] text-white rounded-[7px] p-1 shadow-blue-100'
                     : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
                 "
-                class="text-xs font-black border-b-2 p-2 uppercase "
+                class="text-xs font-black border-b-2 p-2 uppercase"
               >
                 Fila Geral<sup
                   class="ml-0.5 bg-gray-400 text-white font-bold inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px]"
@@ -68,7 +96,10 @@
                 "
                 class="text-xs font-black border-b-2 p-2 uppercase tracking-widest"
               >
-                Prioridades<sup class="ml-0.5 bg-gray-400 text-white font-bold inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px]"">{{ totalPrioridadeFila }}</sup>
+                Prioridades<sup
+                  class="ml-0.5 bg-gray-400 text-white font-bold inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px]"
+                  >{{ totalPrioridadeFila }}</sup
+                >
               </button>
 
               <button
@@ -80,7 +111,10 @@
                 "
                 class="text-xs font-black border-b-2 p-2 uppercase tracking-widest"
               >
-                Em Atendimento<sup class="ml-0.5 bg-gray-400 text-white font-bold inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px]">{{ agendamentosEmAtendimento }}</sup>
+                Em Atendimento<sup
+                  class="ml-0.5 bg-gray-400 text-white font-bold inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px]"
+                  >{{ agendamentosEmAtendimento }}</sup
+                >
               </button>
 
               <button
@@ -92,7 +126,10 @@
                 "
                 class="text-xs font-black border-b-2 p-2 uppercase tracking-widest"
               >
-                Ausentes<sup class="ml-0.5 bg-gray-400 text-white font-bold inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px]"">{{ agendamentosCancelados }}</sup>
+                Ausentes<sup
+                  class="ml-0.5 bg-gray-400 text-white font-bold inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px]"
+                  >{{ agendamentosCancelados }}</sup
+                >
               </button>
 
               <button
@@ -104,14 +141,16 @@
                 "
                 class="text-xs font-black border-b-2 p-2 uppercase tracking-widest"
               >
-                Atendidos<sup class="ml-0.5 bg-gray-400 text-white font-bold inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px]"">{{ agendamentosFinalizados }}</sup>
+                Atendidos<sup
+                  class="ml-0.5 bg-gray-400 text-white font-bold inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px]"
+                  >{{ agendamentosFinalizados }}</sup
+                >
               </button>
-
               <div
                 v-if="mostrarModalEspontaneo"
                 class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm"
               >
-                <div class="bg-white w-full max-w-md rounded-[12px] p-8 shadow-2xl">
+                <div class="bg-white w-full max-w-3xl rounded-[12px] p-8 shadow-2xl">
                   <div class="d-flex align-center justify-space-between mb-6">
                     <h2
                       class="text-[#1e3a8a] text-lg font-black uppercase"
@@ -128,8 +167,11 @@
                       <v-icon> mdi-close </v-icon>
                     </v-btn>
                   </div>
-                  <form @submit.prevent="salvarEspontaneo" class="space-y-4">
-                    <div>
+                  <form
+                    @submit.prevent="salvarEspontaneo"
+                    class="grid grid-cols-1 md:grid-cols-2 gap-5"
+                  >
+                    <div class="col-span-2">
                       <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1"
                         >Nome do Cidadão</label
                       >
@@ -137,7 +179,7 @@
                         v-model="novoAgendamento.nomeCidadao"
                         type="text"
                         rounded="12px"
-                        variant="solo"
+                        variant="outlined"
                         density="compact"
                         class="w-full border-none text-xs font-bold ring-gray-500 focus:ring-gray-500"
                         required
@@ -155,7 +197,7 @@
                         "
                         density="compact"
                         rounded="12px"
-                        variant="solo"
+                        variant="outlined"
                         bg-color="transparent"
                         class=""
                         required
@@ -172,7 +214,7 @@
                         v-model="enderecoEstatico"
                         density="compact"
                         rounded-2xl
-                        variant="solo"
+                        variant="outlined"
                         bg-color="transparent"
                         class=""
                         required
@@ -191,7 +233,7 @@
                         item-title="nome"
                         item-value="id"
                         density="compact"
-                        variant="solo"
+                        variant="outlined"
                         required
                       ></v-select>
                     </div>
@@ -207,21 +249,43 @@
                         item-value="id"
                         density="compact"
                         rounded-2xl
-                        variant="solo"
+                        variant="outlined"
                         bg-color="transparent"
                         class=""
                         required
                       >
                       </v-select>
                     </div>
-                    <div>
-                      <v-btn
-                        color="primary"
+
+                    <div v-if="podeVerObservacao" class="col-span-2">
+                      <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1"
+                        >Observação</label
+                      >
+                      <v-textarea
+                        v-model="novoAgendamento.observacoes"
+                        density="compact"
+                        rounded-2xl
+                        variant="outlined"
+                        bg-color="transparent"
+                        class=""
+                        required
+                      >
+                      </v-textarea>
+                    </div>
+
+                    <div class="col-span-1 md:col-span-2 flex justify-end items-center gap-3 mt-4">
+                      <button
+                        @click="showModal = false"
+                        class="text-gray-400 font-black text-[13px] px-6 py-2 hover:text-gray-600 transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                      <button
                         @click="salvarEspontaneo"
-                        class="text-capitalize w-100"
+                        class="bg-[#2563eb] text-white px-8 py-3 rounded-[5px] font-semibold text-[13px] shadow-lg shadow-blue-200 hover:scale-110 active:scale-95 transition-all"
                       >
                         Cadastrar
-                      </v-btn>
+                      </button>
                     </div>
                   </form>
                 </div>
@@ -248,7 +312,7 @@
                       <v-icon> mdi-close </v-icon>
                     </v-btn>
                   </div>
-                  <form @submit.prevent="atualizarEspontaneo" class="space-y-4">
+                  <form @submit.prevent="atualizarEspontaneo">
                     <div>
                       <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1"
                         >Nome do Cidadão</label
@@ -257,45 +321,11 @@
                         v-model="selectedItem.usuarioNome"
                         type="text"
                         rounded="12px"
-                        variant="solo"
+                        variant="outlined"
                         density="compact"
                         class="w-full border-none text-xs font-bold ring-gray-500 focus:ring-gray-500"
                         required
                       />
-                    </div>
-
-                    <div>
-                      <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1"
-                        >Secretaria</label
-                      >
-                      <v-text-field
-                        v-model="selectedItem.secretariaNome"
-                        density="compact"
-                        rounded="12px"
-                        variant="solo"
-                        bg-color="transparent"
-                        class=""
-                        required
-                        readonly
-                      >
-                      </v-text-field>
-                    </div>
-
-                    <div>
-                      <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1"
-                        >Setor</label
-                      >
-                      <v-text-field
-                        v-model="enderecoEstatico"
-                        density="compact"
-                        rounded-2xl
-                        variant="solo"
-                        bg-color="transparent"
-                        class=""
-                        required
-                        readonly
-                      >
-                      </v-text-field>
                     </div>
 
                     <div>
@@ -307,9 +337,8 @@
                         :items="tiposAtendimento"
                         item-title="nome"
                         item-value="id"
-                        label="Tipo de Atendimento"
                         density="compact"
-                        variant="solo"
+                        variant="outlined"
                         required
                       ></v-select>
                     </div>
@@ -323,12 +352,28 @@
                         :items="servicos"
                         item-title="nome"
                         item-value="id"
-                        label="Serviço"
                         density="compact"
-                        variant="solo"
+                        variant="outlined"
                         required
                       ></v-select>
                     </div>
+
+                    <div v-if="podeVerObservacao" class="col-span-2">
+                      <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1"
+                        >Observação</label
+                      >
+                      <v-textarea
+                        v-model="novoAgendamento.observacoes"
+                        density="compact"
+                        rounded-2xl
+                        variant="outlined"
+                        bg-color="transparent"
+                        class=""
+                        required
+                      >
+                      </v-textarea>
+                    </div>
+
                     <div>
                       <v-btn
                         color="primary"
@@ -369,6 +414,9 @@
                   <th class="px-6 py-4 text-left">Tipo</th>
                   <th class="px-6 py-4 text-left">Data/Hora</th>
                   <th class="px-6 py-4 text-left">Tempo de Espera</th>
+
+                  <th v-if="podeVerObservacao" class="px-6 py-4 text-left">Observação</th>
+
                   <th class="px-6 py-4 text-right pr-10">Ações</th>
                 </tr>
               </thead>
@@ -393,13 +441,11 @@
                         :class="[
                           isPrioridade(item.senha)
                             ? 'bg-red-500 shadow-red-100'
-                            : 'bg-blue-600 shadow-blue-100'
+                            : 'bg-blue-600 shadow-blue-100',
                         ]"
                         class="w-7 h-7 rounded-xl flex items-center justify-center text-white shadow-lg"
                       >
-                        <i
-                          :class="isPrioridade(item.senha) ? 'pi pi-bolt' : 'pi pi-user'"
-                        ></i>
+                        <i :class="isPrioridade(item.senha) ? 'pi pi-bolt' : 'pi pi-user'"></i>
                       </div>
 
                       <span
@@ -425,7 +471,7 @@
                   <td class="px-6">
                     <span
                       :class="[
-                        item.tipoAtendimento === 'PRIORIDADE' 
+                        item.tipoAtendimento === 'PRIORIDADE'
                           ? 'bg-orange-50 text-orange-600'
                           : 'bg-gray-100 text-gray-500',
                       ]"
@@ -449,6 +495,13 @@
                       {{ calcularTempoEspera(item.horaAgendamento, item.situacao) }}
                     </span>
                   </td>
+
+                  <td v-if="podeVerObservacao" class="px-6 text-xs text-gray-500 italic">
+                    {{ item.observacoes ? item.observacoes : 'Chave não encontrada no JSON' }}
+                  </td>
+
+                  <td class="px-6 text-right pr-6 py-2 flex gap-2 justify-end"></td>
+
                   <td class="px-6 text-right pr-6 py-4 flex gap-2 justify-end">
                     <v-btn
                       v-if="['AGENDADO', 'EM_ATENDIMENTO', 'FALTOU'].includes(item.situacao)"
@@ -496,7 +549,7 @@
 
 <script>
 import ChamarSenhas from '@/components/ChamarSenhas.vue'
-import NavBar from '@/components/NavBar.vue';
+import NavBar from '@/components/NavBar.vue'
 import { AgendamentoService } from '@/services/agendamento.service'
 import { AtendenteApi } from '@/services/atendente.api'
 import 'primeicons/primeicons.css'
@@ -504,7 +557,7 @@ import 'primeicons/primeicons.css'
 export default {
   components: {
     ChamarSenhas,
-    NavBar
+    NavBar,
   },
 
   data: () => ({
@@ -529,7 +582,7 @@ export default {
     horaAtual: new Date(),
 
     // Formulários
-    novoAgendamento: { nomeCidadao: '', servico: null, tipoAtendimentoId: null },
+    novoAgendamento: { nomeCidadao: '', servico: null, tipoAtendimentoId: null, observacoes: '' },
   }),
 
   watch: {
@@ -540,6 +593,18 @@ export default {
   },
 
   computed: {
+    labelLocalTrabalho() {
+      const perfil = this.usuario?.perfil?.toUpperCase()
+      if (perfil === 'MEDICO') return 'Consultório'
+      if (perfil === 'TRIAGEM') return 'Sala'
+      return 'Guichê'
+    },
+    podeVerObservacao() {
+      const perfil = this.usuario?.perfil?.toUpperCase()
+
+      return perfil && ['MEDICO', 'RECEPÇÃO', 'TRIAGEM'].includes(perfil)
+    },
+
     temAtendimentoAtivo() {
       const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'))
 
@@ -589,25 +654,21 @@ export default {
       return this.agendamentosPorSetor.filter(
         (a) =>
           ['CHAMADO', 'EM_ATENDIMENTO'].includes(a.situacao) &&
-          Number(a.gerenciadorId || a.usuarioId) === meuId
+          Number(a.gerenciadorId || a.usuarioId) === meuId,
       ).length
     },
 
     agendamentosFinalizados() {
       const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'))
       return this.agendamentosPorSetor.filter(
-        (a) => 
-          a.situacao === 'ATENDIDO' && 
-          Number(a.gerenciadorId || a.usuarioId) === meuId
+        (a) => a.situacao === 'ATENDIDO' && Number(a.gerenciadorId || a.usuarioId) === meuId,
       ).length
     },
 
     agendamentosCancelados() {
       const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'))
       return this.agendamentosPorSetor.filter(
-        (a) => 
-          a.situacao === 'FALTOU' && 
-          Number(a.gerenciadorId || a.usuarioId) === meuId
+        (a) => a.situacao === 'FALTOU' && Number(a.gerenciadorId || a.usuarioId) === meuId,
       ).length
     },
     totalNormalFila() {
@@ -622,39 +683,39 @@ export default {
     },
 
     atendimentoAtual() {
-      const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'));
-      if (!this.agendamentosPorSetor.length) return null;
+      const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'))
+      if (!this.agendamentosPorSetor.length) return null
 
-      return this.agendamentosPorSetor.find(a => {
-        const status = a.situacao?.toUpperCase();
-        const gerenciadorId = Number(a.gerenciadorId || a.usuarioId);
-        return (status === 'EM_ATENDIMENTO' || status === 'CHAMADO') && gerenciadorId === meuId;
-      });
+      return this.agendamentosPorSetor.find((a) => {
+        const status = a.situacao?.toUpperCase()
+        const gerenciadorId = Number(a.gerenciadorId || a.usuarioId)
+        return (status === 'EM_ATENDIMENTO' || status === 'CHAMADO') && gerenciadorId === meuId
+      })
     },
   },
 
   methods: {
-
     async enviarPing() {
       try {
         // Tenta pegar o ID do atendimento automático ou do selecionado
-        const agendamentoId = this.atendimentoAtual?.agendamentoId || 
-                            this.atendimentoAtual?.id || 
-                            this.selectedItem?.agendamentoId || 
-                            this.selectedItem?.id;
+        const agendamentoId =
+          this.atendimentoAtual?.agendamentoId ||
+          this.atendimentoAtual?.id ||
+          this.selectedItem?.agendamentoId ||
+          this.selectedItem?.id
 
         if (!agendamentoId) {
           // console.log("Sem atendimento ativo para pingar.");
-          return;
+          return
         }
 
-        console.log("💓 Enviando ping para:", agendamentoId);
-        await AtendenteApi.heartbeat(agendamentoId);
+        console.log('💓 Enviando ping para:', agendamentoId)
+        await AtendenteApi.heartbeat(agendamentoId)
       } catch (e) {
-        console.warn('Ping falhou:', e);
+        console.warn('Ping falhou:', e)
       }
     },
-    
+
     isPrioridade(senha) {
       return senha?.startsWith('P')
     },
@@ -890,6 +951,7 @@ export default {
           servicoId: Number(this.novoAgendamento.servico),
           setorId: Number(this.setorTrabalhoId),
           situacao: 'AGENDADO',
+          observacoes: this.novoAgendamento.observacoes,
         }
 
         const res = await AtendenteApi.salvarEspontaneo(this.secretariaTrabalhoId, payload)
@@ -902,7 +964,6 @@ export default {
 
           await this.buscarAgendamentos()
           await this.carregarTiposAtendimento()
-
         }
       } catch (e) {
         console.error('Erro ao salvar:', e)
@@ -949,7 +1010,6 @@ export default {
   },
 
   async mounted() {
-
     window.addEventListener('beforeunload', this.handleBeforeUnload)
 
     await this.getUsuarioLogado()
@@ -974,8 +1034,8 @@ export default {
     }
   },
   beforeUnmount() {
-      window.removeEventListener('beforeunload', this.handleBeforeUnload)
-  }
+    window.removeEventListener('beforeunload', this.handleBeforeUnload)
+  },
 }
 </script>
 

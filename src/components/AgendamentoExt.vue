@@ -264,7 +264,7 @@ import 'primeicons/primeicons.css'
 
 const etapa = ref(1)
 const loading = ref(false)
-const API_BASE = 'http://192.168.200.29:8080'
+const API_BASE = 'http://localhost:8080'
 const disponibilidadeDias = ref({})
 const meuFormulario = ref(null)
 
@@ -284,12 +284,12 @@ const regras = {
     const hoje = new Date()
     let idade = hoje.getFullYear() - dataNasc.getFullYear()
     const mes = hoje.getMonth() - dataNasc.getMonth()
-    
+
     // Ajusta a idade se ainda não fez aniversário no ano corrente
     if (mes < 0 || (mes === 0 && hoje.getDate() < dataNasc.getDate())) {
       idade--
     }
-    
+
     return idade >= 18 || 'Você deve ter pelo menos 18 anos'
   },
 }
@@ -315,24 +315,24 @@ const snackbar = ref({
 })
 
 function formatarCPF() {
-  let v = form.value.cpf.replace(/\D/g, ""); // Remove tudo que não é dígito
-  if (v.length > 11) v = v.slice(0, 11);     // Limita a 11 números
+  let v = form.value.cpf.replace(/\D/g, '') // Remove tudo que não é dígito
+  if (v.length > 11) v = v.slice(0, 11) // Limita a 11 números
 
-  v = v.replace(/(\d{3})(\d)/, "$1.$2");       // Ponto após o 3º dígito
-  v = v.replace(/(\d{3})(\d)/, "$1.$2");       // Ponto após o 6º dígito
-  v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2"); // Traço após o 9º dígito
+  v = v.replace(/(\d{3})(\d)/, '$1.$2') // Ponto após o 3º dígito
+  v = v.replace(/(\d{3})(\d)/, '$1.$2') // Ponto após o 6º dígito
+  v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2') // Traço após o 9º dígito
 
-  form.value.cpf = v;
+  form.value.cpf = v
 }
 
 function formatarCelular() {
-  let v = form.value.celular.replace(/\D/g, ""); // Remove tudo que não é dígito
-  if (v.length > 11) v = v.slice(0, 11);         // Limita a 11 números
+  let v = form.value.celular.replace(/\D/g, '') // Remove tudo que não é dígito
+  if (v.length > 11) v = v.slice(0, 11) // Limita a 11 números
 
-  v = v.replace(/^(\d{2})(\d)/g, "($1) $2");    // Parênteses no DDD
-  v = v.replace(/(\d{5})(\d)/, "$1-$2");        // Traço após o 5º dígito do número
+  v = v.replace(/^(\d{2})(\d)/g, '($1) $2') // Parênteses no DDD
+  v = v.replace(/(\d{5})(\d)/, '$1-$2') // Traço após o 5º dígito do número
 
-  form.value.celular = v;
+  form.value.celular = v
 }
 
 function mostrarMensagem(texto, tipo = 'success') {
@@ -351,14 +351,14 @@ const configuracao = ref({})
 // 🟢 Função para gerar o link do Google Maps
 function gerarLinkMapa(endereco) {
   if (!endereco) return '#'
-  
+
   // Se tiver coordenadas, usa o link direto por geolocalização (mais preciso)
   if (endereco.latitude && endereco.longitude) {
     return `https://www.google.com/maps/search/?api=1&query=${endereco.latitude},${endereco.longitude}`
   }
 
   //console.log("Endereço:",endereco.latitude)
-  
+
   // Caso não tenha coordenadas, gera o link por busca de texto (fallback)
   const buscaTexto = `${endereco.logradouro}, ${endereco.numero}, ${endereco.bairro}, ${endereco.cidade} - ${endereco.uf}`
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(buscaTexto)}`
@@ -563,7 +563,7 @@ async function agendar() {
       ...form.value,
       // Removemos pontos, traços e parênteses para enviar apenas os 11 números
       cpf: form.value.cpf.replace(/\D/g, ''),
-      celular: form.value.celular.replace(/\D/g, '')
+      celular: form.value.celular.replace(/\D/g, ''),
     }
 
     const response = await fetch(`${API_BASE}/agendamentos/externo`, {
