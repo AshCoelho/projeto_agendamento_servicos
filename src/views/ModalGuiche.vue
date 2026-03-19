@@ -108,6 +108,28 @@ export default {
   }),
 
   methods: {
+
+    formatarNomeSaude(numero) {
+      // 1. Forçamos a conversão para número para evitar conflito de String vs Number
+      const num = Number(numero);
+
+      const nomes = {
+        1: "Classificação 01",
+        2: "Classificação 02",
+        3: "Recepção",
+        4: "Consultório 01",
+        5: "Consultório 02",
+      };
+
+      // 2. Verificamos se o número existe nas chaves do objeto
+      if (nomes[num]) {
+        return nomes[num];
+      }
+
+      // 3. Fallback: Se for Saúde mas não estiver no mapa (ex: guichê 7, 8...)
+      return `Consultório ${String(num).padStart(2, '0')}`;
+    },
+
     getUsuarioLogado() {
       const userData = localStorage.getItem('usuario')
       const token = localStorage.getItem('token')
@@ -137,25 +159,37 @@ export default {
     },
 
     async updateGerenciador() {
-      try {
-        if (!this.selectedSetor || !this.selectedSecretaria || !this.selectedGuiche) {
-          alert('Por favor, selecione a secretaria, o setor e o guichê.')
-          return
-        }
+  try {
+    if (!this.selectedSetor || !this.selectedSecretaria || !this.selectedGuiche) {
+      alert('Por favor, selecione a secretaria, o setor e o guichê.')
+      return
+    }
 
-        this.salvando = true 
+    this.salvando = true 
 
-        const payload = { guicheId: this.selectedGuiche }
+    // 🟢 CAPTURAR O NOME DA SECRETARIA PARA O LOCALSTORAGE
+    const secretariaEncontrada = this.secretarias.find(s => s.value === this.selectedSecretaria);
+    if (secretariaEncontrada) {
+      localStorage.setItem('secretariaNomeAtiva', secretariaEncontrada.title);
+    }
 
-        // Faz a requisição enviando o PATCH para o servidor
-        await api.patch(`/gerenciador/${this.usuario.id}/guiche`, payload)
+    // 🟢 CAPTURAR O NÚMERO DO GUICHÊ (OPCIONAL, MAS AJUDA NO FEEDBACK)
+    const guicheEncontrado = this.guiches.find(g => g.value === this.selectedGuiche);
+    // Nota: salvamos o valor bruto (ex: 4) para a função de mapeamento da outra tela funcionar
+    const numeroOriginal = this.guichesOriginal?.find(g => g.id === this.selectedGuiche)?.numero;
 
-        // Se chegou aqui, o Spring retornou sucesso (200 OK)
-        localStorage.setItem('setorTrabalhoId', this.selectedSetor)
-        localStorage.setItem('secretariaTrabalhoId', this.selectedSecretaria)
-        localStorage.setItem('guicheTrabalho', this.selectedGuiche)
+    const payload = { guicheId: this.selectedGuiche }
 
-        this.$router.push('/atendente')
+    await api.patch(`/gerenciador/${this.usuario.id}/guiche`, payload)
+
+    localStorage.setItem('setorTrabalhoId', this.selectedSetor)
+    localStorage.setItem('secretariaTrabalhoId', this.selectedSecretaria)
+    
+    // Importante: Guardar o número real do guichê para a lógica de "Consultório 01"
+    // Se o seu 'this.usuario' na outra tela carregar do banco, ele pegará o 4 lá.
+    localStorage.setItem('guicheTrabalho', this.selectedGuiche)
+
+    this.$router.push('/atendente')
       } catch (e) {
         console.error('Erro ao atualizar guichê:', e)
         
@@ -199,22 +233,34 @@ export default {
     },
 
     async buscarGuichesDoSetor(setorId) {
-      this.carregandoGuiches = true
+      this.carregandoGuiches = true;
       try {
-        const response = await api.get(`/guiches/setor/${setorId}`)
-        if (response.data && response.data.length > 0) {
-            this.guiches = response.data.map((g) => ({
-              title: `Guichê ${String(g.numero).padStart(2, '0')}`,
+        const response = await api.get(`/guiches/setor/${setorId}`);
+
+        if (Array.isArray(response.data)) {
+          this.guiches = response.data.map((g) => {
+            // Buscamos o nome da secretaria selecionada no seu array de secretarias
+            const secretariaAtiva = this.secretarias.find(s => s.value === this.selectedSecretaria);
+            const nomeSec = secretariaAtiva ? secretariaAtiva.title.toUpperCase() : '';
+
+            let labelCustomizado = `Guichê ${String(g.numero).padStart(2, '0')}`;
+
+            // Regra de Negócio para SAÚDE
+            if (nomeSec.includes("SAÚDE") || nomeSec.includes("SAUDE")) {
+              labelCustomizado = this.formatarNomeSaude(g.numero);
+            }
+
+            return {
+              title: labelCustomizado,
               value: g.id,
-            }))
-        } else {
-            this.guiches = [] 
+            };
+          });
         }
       } catch (e) {
-        console.error('Erro ao carregar guichês:', e)
-        this.guiches = [] 
+        console.error('Erro ao carregar guichês:', e);
+        this.guiches = [];
       } finally {
-        this.carregandoGuiches = false
+        this.carregandoGuiches = false;
       }
     },
   },

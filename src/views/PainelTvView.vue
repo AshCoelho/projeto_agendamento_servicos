@@ -203,7 +203,7 @@ const falando = ref(false)
 
 /** ======= API ======= **/
 const apiPublico = axios.create({
-  baseURL: 'http://localhost:8080',
+  baseURL: 'http://192.168.200.29:8080',
   timeout: 3000,
 })
 
@@ -236,7 +236,7 @@ const atualizarRelogio = () => {
 }
 
 const qrSrc = computed(() => {
-  const urlPublica = `http://localhost:3000/tv/${setorId.value}`
+  const urlPublica = `http://192.168.200.29:3000/tv/${setorId.value}`
   return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
     urlPublica,
   )}`

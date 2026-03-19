@@ -264,18 +264,22 @@ import 'primeicons/primeicons.css'
 
 const etapa = ref(1)
 const loading = ref(false)
-const API_BASE = 'http://localhost:8080'
+const API_BASE = 'http://192.168.200.29:8080'
 const disponibilidadeDias = ref({})
 const meuFormulario = ref(null)
 
 const regras = {
-  obrigatorio: (v) => !!v || 'Campo obrigatório',
+ obrigatorio: (v) => (v && v.trim().length > 0) || 'Campo obrigatório',
   email: (v) => {
     const pattern =
       /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
     return pattern.test(v) || 'E-mail inválido'
   },
-  cpf: (v) => (v && v.length >= 11) || 'CPF incompleto',
+  cpf: (v) => {
+    if (!v) return 'CPF é obrigatório'
+    const cpfLimpo = v.replace(/\D/g, '')
+    return validarCPF(cpfLimpo) || 'CPF inválido'
+  },
   celular: (v) => (v && v.length >= 10) || 'Telefone incompleto',
 
   maioridade: (v) => {
@@ -292,6 +296,25 @@ const regras = {
 
     return idade >= 18 || 'Você deve ter pelo menos 18 anos'
   },
+}
+
+function validarCPF(cpf) {
+  cpf = cpf.replace(/[^\d]+/g, '');
+  if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
+
+  let soma = 0;
+  for (let i = 0; i < 9; i++) soma += parseInt(cpf.charAt(i)) * (10 - i);
+  let resto = (soma * 10) % 11;
+  if (resto === 10 || resto === 11) resto = 0;
+  if (resto !== parseInt(cpf.charAt(9))) return false;
+
+  soma = 0;
+  for (let i = 0; i < 10; i++) soma += parseInt(cpf.charAt(i)) * (11 - i);
+  resto = (soma * 10) % 11;
+  if (resto === 10 || resto === 11) resto = 0;
+  if (resto !== parseInt(cpf.charAt(10))) return false;
+
+  return true;
 }
 
 const form = ref({
