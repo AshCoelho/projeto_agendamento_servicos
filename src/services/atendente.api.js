@@ -9,9 +9,7 @@ export const AtendenteApi = {
   },
   
   async chamarPorSenha(senha, gerenciadorId, setorId) {
-    return await api.post(
-  `/agendamentos/chamar/por-senha/${encodeURIComponent(senha)}/${gerenciadorId}/${setorId}`
-)
+    return await api.post(`/agendamentos/chamar/por-senha/${encodeURIComponent(senha)}/${gerenciadorId}/${setorId}`)
   },
 
   // ✅ Alterado: Chamar Próximo Normal por SETOR
