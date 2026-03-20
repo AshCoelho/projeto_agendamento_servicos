@@ -38,7 +38,7 @@ export const AtendenteApi = {
   },
 
   async carregarTiposAtendimento(secretariaId) {
-    return await api.get(`/api/tipos-atendimento/secretaria/${secretariaId}/ativos`);
+    return await api.get(`/tipos-atendimento/secretaria/${secretariaId}/ativos`);
   },
 
   async atualizarEspontaneo(id, payload, token) {

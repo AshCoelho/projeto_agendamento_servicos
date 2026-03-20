@@ -178,6 +178,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 
+
 /** ======= ROTAS E ESTADOS ======= **/
 const route = useRoute()
 const setorId = computed(() => Number(route.params.setorId || 0))
@@ -203,7 +204,7 @@ const falando = ref(false)
 
 /** ======= API ======= **/
 const apiPublico = axios.create({
-  baseURL: 'http://192.168.200.29:8080',
+  baseURL: import.meta.env.VITE_API_URL,
   timeout: 3000,
 })
 
@@ -236,7 +237,7 @@ const atualizarRelogio = () => {
 }
 
 const qrSrc = computed(() => {
-  const urlPublica = `http://192.168.200.29:3000/tv/${setorId.value}`
+  const urlPublica = `https://agendamento.saoluis.ma.gov.br/tv/${setorId.value}`
   return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
     urlPublica,
   )}`
