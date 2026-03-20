@@ -753,7 +753,7 @@ export default {
           return
         }
 
-        console.log('💓 Enviando ping para:', agendamentoId)
+        //console.log('Enviando ping para:', agendamentoId)
         await AtendenteApi.heartbeat(agendamentoId)
       } catch (e) {
         console.warn('Ping falhou:', e)

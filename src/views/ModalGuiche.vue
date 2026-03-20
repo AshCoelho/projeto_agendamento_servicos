@@ -235,7 +235,12 @@ export default {
     async buscarGuichesDoSetor(setorId) {
       this.carregandoGuiches = true;
       try {
-        const response = await api.get(`/guiches/setor/${setorId}`);
+        const token = localStorage.getItem('token'); 
+        const response = await api.get(`/guiches/setor/${setorId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
 
         if (Array.isArray(response.data)) {
           this.guiches = response.data.map((g) => {
