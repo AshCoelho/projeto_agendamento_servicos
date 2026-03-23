@@ -132,7 +132,7 @@
                 />
               </div>
 
-              <div class="col-span-2">
+              <div>
                 <label class="block text-[10px] font-black text-gray-400 uppercase mb-2"
                   >Complemento</label
                 >
@@ -209,6 +209,32 @@
                   required
                 />
               </div>
+
+              <div>
+                <label
+                  class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"
+                  >Latidude</label
+                >
+                <input
+                  v-model="form.latitude"
+                  type="number"
+                  class="w-full bg-gray-5 border rounded-[6px] p-3 text-sm outline-none focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label
+                  class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"
+                  >Longetude</label
+                >
+                <input
+                  v-model="form.latidute"
+                  type="number"
+                  class="w-full bg-gray-5 border rounded-[6px] p-3 text-sm outline-none focus:ring-blue-500"
+                  required
+                />
+              </div>
             </div>
           </div>
 
@@ -223,7 +249,7 @@
               @click="save"
               class="bg-[#2563eb] text-white px-8 py-3 rounded-[5px] font-semibold text-[13px] shadow-lg shadow-blue-200 hover:scale-105 active:scale-95 transition-all"
             >
-              Salvar Endereço
+              Salvar
             </button>
           </div>
         </div>
@@ -236,6 +262,7 @@
 import AdminConfig from '@/components/AdminConfig.vue'
 import 'primeicons/primeicons.css'
 import axios from 'axios'
+import { computed } from 'vue'
 
 export default {
   components: { AdminConfig },
@@ -244,6 +271,11 @@ export default {
     return {
       showModal: false,
       lista: [],
+      relogio: '--:--:--',
+      horaAtual: new Date(),
+      usuario: null,
+      setorTrabalhoId: null,
+      secretariaTrabalhoId: null,
 
       form: {
         id: null,
@@ -254,6 +286,8 @@ export default {
         cidade: '',
         uf: '',
         complemento: '',
+        latitude: '',
+        longitude: '',
       },
     }
   },
@@ -271,6 +305,60 @@ export default {
         console.error('Erro ao carregar endereços', err)
       }
     },
+    atualizarRelogioLocal() {
+      this.horaAtual = new Date()
+      this.relogio = this.horaAtual.toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      })
+    },
+
+    formatarDataHora(data) {
+      if (!data) return ''
+      return new Date(data).toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    },
+    async getUsuarioLogado() {
+      try {
+        const token = localStorage.getItem('token')
+        this.setorTrabalhoId = localStorage.getItem('setorTrabalhoId')
+        this.secretariaTrabalhoId = localStorage.getItem('secretariaTrabalhoId')
+
+        if (!token || !this.setorTrabalhoId) return this.$router.push({ name: 'login' })
+
+        const { data } = await AtendenteApi.getUsuarioLogado()
+        this.usuario = data
+
+        if (data.id) {
+          localStorage.setItem('usuarioId', data.id)
+        }
+      } catch (error) {
+        localStorage.clear()
+        this.$router.push({ name: 'login' })
+      }
+    },
+
+    computed: {
+      labelLocalTrabalho() {
+        const secretariaNome = localStorage.getItem('secretariaNomeAtiva')?.toUpperCase() || ''
+        const perfil = this.usuario?.perfil?.toUpperCase()
+
+        // Se for saúde, usamos um termo mais genérico para o cabeçalho
+        if (secretariaNome.includes('SAÚDE') || secretariaNome.includes('SAUDE')) {
+          return 'Local de Atendimento'
+        }
+
+        if (perfil === 'MEDICO') return 'Consultório'
+        if (perfil === 'TRIAGEM') return 'Sala'
+        return 'Guichê'
+      },
+    },
 
     openModal(item = null) {
       if (item) {
@@ -282,6 +370,8 @@ export default {
         this.form.cidade = item.cidade || ''
         this.form.uf = item.uf || ''
         this.form.complemento = item.complemento || ''
+        this.form.complemento = item.latidute || ''
+        this.form.complemento = item.longitude || ''
       } else {
         this.form.id = null
         this.form.logradouro = ''
@@ -291,6 +381,8 @@ export default {
         this.form.cidade = ''
         this.form.uf = ''
         this.form.complemento = ''
+        this.form.latidude = ''
+        this.form.longitude = ''
       }
 
       this.showModal = true
@@ -306,6 +398,8 @@ export default {
           uf: this.form.uf,
           cep: this.form.cep,
           complemento: this.form.complemento,
+          latidude: this.form.latidude,
+          longitude: this.form.longitude,
         }
 
         if (this.form.id) {

@@ -53,17 +53,6 @@
         <span v-if="sidebarAberta" class="text-sm font-bold whitespace-nowrap">Métricas</span>
       </router-link>
     </nav>
-
-    <div class="mt-auto w-full px-4 pb-4">
-      <button
-        @click="$emit('logout')"
-        :class="[sidebarAberta ? 'justify-start px-2' : 'justify-center px-0']"
-        class="flex items-center gap-2 w-full text-red-500 font-bold text-xs uppercase tracking-tight transition-all duration-300"
-      >
-        <i class="pi pi-sign-out"></i>
-        <span v-if="sidebarAberta">Sair</span>
-      </button>
-    </div>
   </aside>
 </template>
 
@@ -74,6 +63,6 @@ export default {
     sidebarAberta: Boolean,
     usuario: Object,
   },
-  emits: ['update:sidebarAberta', 'logout'],
+  emits: ['update:sidebarAberta'],
 }
 </script>

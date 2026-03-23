@@ -182,6 +182,23 @@
                 <input
                   v-model="form.email"
                   type="email"
+                  autocomplete="off"
+                  placeholder="email@dominio.com"
+                  class="w-full bg-gray-5 border rounded-[6px] p-3 text-sm focus:ring-blue-500 outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label
+                  class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"
+                >
+                  Senha
+                </label>
+                <input
+                  v-model="form.senha"
+                  type="password"
+                  placeholder="••••••••"
+                  autocomplete="new-password"
                   class="w-full bg-gray-5 border rounded-[6px] p-3 text-sm focus:ring-blue-500 outline-none transition-all"
                 />
               </div>
@@ -239,7 +256,7 @@
               @click="save"
               class="bg-[#2563eb] text-white px-8 py-3 rounded-[5px] font-semibold text-[13px] shadow-lg shadow-blue-200 hover:scale-105 active:scale-95 transition-all"
             >
-              Salvar Endereço
+              Salvar
             </button>
           </div>
         </div>
@@ -250,97 +267,117 @@
 
 <script>
 import AdminConfig from '@/components/AdminConfig.vue'
-import 'primeicons/primeicons.css'
-import axios from 'axios'
+import api from '@/services/api' // seu axios configurado
 
 export default {
-  components: {
-    AdminConfig,
+  name: 'GestaoAtendentes',
+  components: { AdminConfig },
+
+  data() {
+    return {
+      lista: [],
+      showModal: false,
+      usuarioLogadoPerfil: localStorage.getItem('perfil') || '',
+      form: {
+        id: null,
+        usuario: '',
+        cpf: '',
+        contato: '',
+        email: '',
+        senha: '',
+        perfil: 'ATENDENTE',
+        status: 'Ativo',
+      },
+    }
   },
 
-  data: () => ({
-    showModal: false,
-    lista: [],
-    usuarioLogadoPerfil: '', // Armazenar o perfil de quem está logado
-    form: {
-      id: null,
-      usuario: '',
-      email: '',
-      perfil: 'ATENDENTE', // Adicionei perfil aqui
-      status: 'Ativo',
-    },
-  }),
-
-  computed: {},
+  mounted() {
+    this.carregar()
+  },
 
   methods: {
-    formatarData(data) {
-      if (!data) return '-'
-
-      return new Date(data).toLocaleString('pt-BR')
-    },
-
-    async carregarUsuarios() {
+    async carregar() {
       try {
-        const token = localStorage.getItem('token')
-
-        const userRes = await axios.get('http://localhost:8080/gerenciador/usuario-logado', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
-
-        const usuario = userRes.data
-        this.usuarioLogadoPerfil = usuario.perfil
-        const secretariaId = usuario.secretarias[0]?.id
-        const res = await axios.get(
-          `http://localhost:8080/gerenciador/secretaria/${secretariaId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        )
-
+        const res = await api.get('/gerenciador')
         this.lista = res.data
-      } catch (error) {
-        console.error('Erro:', error)
+      } catch (e) {
+        console.error('Erro ao carregar:', e)
       }
     },
 
     openModal(item = null) {
       if (item) {
-        this.form = { ...item }
+        // ✅ Editar — preenche com os dados do item
+        this.form = {
+          id: item.id,
+          usuario: item.nome,
+          cpf: item.cpf,
+          contato: item.contato || '',
+          email: item.email,
+          senha: '',
+          perfil: item.perfil,
+          status: item.status || 'Ativo',
+        }
       } else {
-        this.form = { id: null, usuario: '', email: '', status: 'Ativo' }
+        // ✅ Novo — form completamente vazio
+        this.form = {
+          id: null,
+          usuario: '',
+          cpf: '',
+          contato: '',
+          email: '',
+          senha: '', // 👈 estava faltando no seu else
+          perfil: 'ATENDENTE',
+          status: 'Ativo',
+        }
       }
       this.showModal = true
     },
 
-    save() {
-      console.log('Salvando dados:', this.form)
-      // Aqui você integraria com sua API (ex: AtendenteApi.salvar(this.form))
-      this.showModal = false
-    },
+    async save() {
+      try {
+        const payload = {
+          nome: this.form.usuario,
+          cpf: this.form.cpf,
+          contato: this.form.contato,
+          email: this.form.email,
+          senha: this.form.senha,
+          perfil: this.form.perfil,
+          status: this.form.status,
+        }
+        if (this.form.senha) {
+          payload.senha = this.form.senha
+        }
+        if (this.form.id) {
+          // PUT /gerenciador/{id} — Editar
+          await api.put(`/gerenciador/${this.form.id}`, payload)
+        } else {
+          // POST /gerenciador — Criar
+          await api.post('/gerenciador', payload)
+        }
 
-    chamar(id) {
-      alert(`Chamando usuário ID: ${id}`)
-    },
-
-    getStatusClass(status) {
-      switch (status) {
-        case 'Desativado':
-          return 'bg-emerald-50 text-emerald-600 border-emerald-100'
-        case 'Ativo':
-          return 'bg-red-50 text-red-600 border-red-100'
-        default:
-          return 'bg-gray-50 text-gray-600 border-gray-200'
+        this.showModal = false
+        await this.carregar()
+      } catch (e) {
+        console.error('Erro ao salvar:', e.response?.data || e.message)
+        alert(e.response?.data?.mensagem || 'Erro ao salvar!')
       }
     },
-  },
 
-  mounted() {
-    this.carregarUsuarios()
+    async excluir(id) {
+      if (!confirm('Deseja excluir este registro?')) return
+      try {
+        await api.delete(`/gerenciador/${id}`)
+        await this.carregar()
+      } catch (e) {
+        console.error('Erro ao excluir:', e)
+      }
+    },
+
+    formatarData(data) {
+      if (!data) return '—'
+      return new Date(data).toLocaleString('pt-BR')
+    },
   },
 }
 </script>

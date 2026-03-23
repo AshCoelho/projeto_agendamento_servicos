@@ -58,7 +58,7 @@
           </div>
 
           <button
-            @click="$emit('logout')"
+            @click="handleLogout"
             class="flex items-center gap-2 px-3 py-2 text-red-500 hover:text-gray-400 font-bold text-[11px] uppercase tracking-tighter transition-all"
           >
             <span>Sair</span>
@@ -415,8 +415,6 @@
                   <th class="px-6 py-4 text-left">Data/Hora</th>
                   <th class="px-6 py-4 text-left">Tempo de Espera</th>
 
-                  <th v-if="podeVerObservacao" class="px-6 py-4 text-left">Observação</th>
-
                   <th class="px-6 py-4 text-right pr-10">Ações</th>
                 </tr>
               </thead>
@@ -494,10 +492,6 @@
                       <i class="pi pi-clock text-[10px]"></i>
                       {{ calcularTempoEspera(item.horaAgendamento, item.situacao) }}
                     </span>
-                  </td>
-
-                  <td v-if="podeVerObservacao" class="px-6 text-xs text-gray-500 italic">
-                    {{ item.observacoes ? item.observacoes : 'Chave não encontrada no JSON' }}
                   </td>
 
                   <td class="px-6 text-right pr-6 py-2 flex gap-2 justify-end"></td>
@@ -595,43 +589,42 @@ export default {
 
   computed: {
     labelLocalTrabalho() {
-      const secretariaNome = localStorage.getItem('secretariaNomeAtiva')?.toUpperCase() || '';
-      const perfil = this.usuario?.perfil?.toUpperCase();
+      const secretariaNome = localStorage.getItem('secretariaNomeAtiva')?.toUpperCase() || ''
+      const perfil = this.usuario?.perfil?.toUpperCase()
 
       // Se for saúde, usamos um termo mais genérico para o cabeçalho
-      if (secretariaNome.includes("SAÚDE") || secretariaNome.includes("SAUDE")) {
-        return 'Local de Atendimento';
+      if (secretariaNome.includes('SAÚDE') || secretariaNome.includes('SAUDE')) {
+        return 'Local de Atendimento'
       }
 
-      if (perfil === 'MEDICO') return 'Consultório';
-      if (perfil === 'TRIAGEM') return 'Sala';
-      return 'Guichê';
+      if (perfil === 'MEDICO') return 'Consultório'
+      if (perfil === 'TRIAGEM') return 'Sala'
+      return 'Guichê'
     },
 
-    // 🟢 Nova computada para formatar o número do guichê/sala
     displayLocalAtendimento() {
-      const numero = Number(this.usuario?.guiche || '1');
-      const secretariaNome = localStorage.getItem('secretariaNomeAtiva')?.toUpperCase() || '';
+      const numero = Number(this.usuario?.guiche || '1')
+      const secretariaNome = localStorage.getItem('secretariaNomeAtiva')?.toUpperCase() || ''
 
-      if (secretariaNome.includes("SAÚDE") || secretariaNome.includes("SAUDE")) {
+      if (secretariaNome.includes('SAÚDE') || secretariaNome.includes('SAUDE')) {
         // 🛡️ MAPEAMENTO MANUAL (DE-PARA)
         // O número da esquerda é o que está no BANCO (coluna 'numero')
         // O texto da direita é o que o usuário vai LER na tela
         const mapaSaude = {
-          1: "Classificação 01",
-          2: "Classificação 02",
-          3: "Recepção",
-          4: "Consultório 01", // No banco é 4, na tela é 01
-          5: "Consultório 02", // No banco é 5, na tela é 02
+          1: 'Classificação 01',
+          2: 'Classificação 02',
+          3: 'Recepção',
+          4: 'Consultório 01', // No banco é 4, na tela é 01
+          5: 'Consultório 02', // No banco é 5, na tela é 02
           // Adicione aqui conforme a bagunça do banco:
-          // 10: "Consultório 03", 
-        };
+          // 10: "Consultório 03",
+        }
 
-        return mapaSaude[numero] || `Atendimento ${numero}`;
+        return mapaSaude[numero] || `Atendimento ${numero}`
       }
 
       // Padrão para outras secretarias (apenas o número com zero à esquerda)
-      return String(numero).padStart(2, '0');
+      return String(numero).padStart(2, '0')
     },
     podeVerObservacao() {
       const perfil = this.usuario?.perfil?.toUpperCase()
@@ -729,14 +722,19 @@ export default {
   },
 
   methods: {
-
     formatarLocalAtendimento(numero) {
-      const secretariaNome = localStorage.getItem('secretariaNomeAtiva')?.toUpperCase() || '';
-      if (secretariaNome.includes("SAÚDE")) {
-          const nomes = { 1: "Classificação 01", 2: "Classificação 02", 3: "Recepção", 4: "Consultório 01", 5: "Consultório 02" };
-          return nomes[Number(numero)] || `Sala ${numero}`;
+      const secretariaNome = localStorage.getItem('secretariaNomeAtiva')?.toUpperCase() || ''
+      if (secretariaNome.includes('SAÚDE')) {
+        const nomes = {
+          1: 'Classificação 01',
+          2: 'Classificação 02',
+          3: 'Recepção',
+          4: 'Consultório 01',
+          5: 'Consultório 02',
+        }
+        return nomes[Number(numero)] || `Sala ${numero}`
       }
-      return `Guichê ${numero}`;
+      return `Guichê ${numero}`
     },
 
     async enviarPing() {
@@ -797,9 +795,7 @@ export default {
     mudarAba(novaAba) {
       this.abaAtiva = novaAba
     },
-    handleEsc(e) {
-      if (e.key === 'Escape') this.mostrarModalEspontaneo = false
-    },
+
     agendamentoSelecionado(item) {
       this.selectedItem = item
       this.mostrarModalEdicao = true
@@ -862,7 +858,6 @@ export default {
         localStorage.clear()
         this.usuario = null
 
-        // 🟢 USE ISSO: Faz o papel de um "F5" e manda pro login com a memória limpa!
         window.location.href = '/'
       }
     },
@@ -921,7 +916,6 @@ export default {
 
         if (res.status === 200) {
           if (itemClicado) {
-            // 🟢 Atualização Otimista Direta
             this.idsChamadosManualmente.push(itemClicado.agendamentoId || itemClicado.id)
             itemClicado.situacao = 'CHAMADO'
             itemClicado.gerenciadorId = meuId
@@ -948,7 +942,6 @@ export default {
           this.agendamentosPorSetor[index].situacao = 'FALTOU'
         }
 
-        // Volta pra Fila Geral na hora
         this.abaAtiva = 'AGUARDANDO'
       } catch (e) {
         alert('Erro ao cancelar.')
@@ -979,7 +972,7 @@ export default {
 
     async salvarEspontaneo() {
       // 1. Bloqueio de segurança contra duplicidade
-      if (this.isSalvando) return;
+      if (this.isSalvando) return
 
       try {
         if (!this.novoAgendamento.nomeCidadao || this.novoAgendamento.nomeCidadao.trim() === '') {
@@ -993,7 +986,7 @@ export default {
         }
 
         // Ativa o estado de carregamento
-        this.isSalvando = true;
+        this.isSalvando = true
 
         const payload = {
           nomeCidadao: this.novoAgendamento.nomeCidadao,
@@ -1003,14 +996,19 @@ export default {
           situacao: 'AGENDADO',
           observacao: this.novoAgendamento.observacoes, // Note: Ajustei para 'observacao' (singular) conforme sua entidade
         }
-        console.log(payload);
+        console.log(payload)
 
         const res = await AtendenteApi.salvarEspontaneo(this.secretariaTrabalhoId, payload)
 
         if (res.status === 200 || res.status === 201) {
           // Sucesso: fecha modal e limpa campos
           this.mostrarModalEspontaneo = false
-          this.novoAgendamento = { nomeCidadao: '', servico: null, tipoAtendimentoId: null, observacoes: '' }
+          this.novoAgendamento = {
+            nomeCidadao: '',
+            servico: null,
+            tipoAtendimentoId: null,
+            observacoes: '',
+          }
 
           await this.buscarAgendamentos()
           await this.carregarTiposAtendimento()
@@ -1021,7 +1019,7 @@ export default {
         alert('Erro: ' + msgErro)
       } finally {
         // 2. Libera o botão independente de dar erro ou sucesso
-        this.isSalvando = false;
+        this.isSalvando = false
       }
     },
 

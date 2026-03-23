@@ -154,7 +154,7 @@
               @click="save"
               class="bg-[#2563eb] text-white px-8 py-3 rounded-[5px] font-semibold text-[13px] shadow-lg shadow-blue-200 hover:scale-105 active:scale-95 transition-all"
             >
-              Salvar Endereço
+              Salvar 
             </button>
           </div>
         </div>
