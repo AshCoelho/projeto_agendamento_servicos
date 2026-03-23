@@ -603,28 +603,18 @@ export default {
     },
 
     displayLocalAtendimento() {
-      const numero = Number(this.usuario?.guiche || '1')
-      const secretariaNome = localStorage.getItem('secretariaNomeAtiva')?.toUpperCase() || ''
+      // 1. Pegamos os dados que agora vêm no DTO do usuário (ajustados no Java anteriormente)
+      const descricao = this.usuario?.descricaoPonto
+      const numero = this.usuario?.numeroPonto
 
-      if (secretariaNome.includes('SAÚDE') || secretariaNome.includes('SAUDE')) {
-        // 🛡️ MAPEAMENTO MANUAL (DE-PARA)
-        // O número da esquerda é o que está no BANCO (coluna 'numero')
-        // O texto da direita é o que o usuário vai LER na tela
-        const mapaSaude = {
-          1: 'Classificação 01',
-          2: 'Classificação 02',
-          3: 'Recepção',
-          4: 'Consultório 01', // No banco é 4, na tela é 01
-          5: 'Consultório 02', // No banco é 5, na tela é 02
-          // Adicione aqui conforme a bagunça do banco:
-          // 10: "Consultório 03",
-        }
-
-        return mapaSaude[numero] || `Atendimento ${numero}`
+      // 2. Se o usuário tiver um ponto vinculado, montamos a string dinâmica
+      if (descricao && numero !== undefined && numero !== null) {
+        // Exemplo: "Consultório 01", "Classificação 02", "Guichê 03"
+        return `${descricao} ${String(numero).padStart(2, '0')}`
       }
 
-      // Padrão para outras secretarias (apenas o número com zero à esquerda)
-      return String(numero).padStart(2, '0')
+      // 3. Fallback caso ele ainda não tenha selecionado um local (ex: recém logado)
+      return 'Selecione o Local'
     },
     podeVerObservacao() {
       const perfil = this.usuario?.perfil?.toUpperCase()
@@ -722,19 +712,16 @@ export default {
   },
 
   methods: {
-    formatarLocalAtendimento(numero) {
-      const secretariaNome = localStorage.getItem('secretariaNomeAtiva')?.toUpperCase() || ''
-      if (secretariaNome.includes('SAÚDE')) {
-        const nomes = {
-          1: 'Classificação 01',
-          2: 'Classificação 02',
-          3: 'Recepção',
-          4: 'Consultório 01',
-          5: 'Consultório 02',
-        }
-        return nomes[Number(numero)] || `Sala ${numero}`
+    formatarLocalAtendimento() {
+      // Tenta pegar a descrição amigável que salvamos na tela de seleção
+      const localAtivo = localStorage.getItem('guicheDescricaoAtiva');
+      
+      if (localAtivo) {
+        return localAtivo;
       }
-      return `Guichê ${numero}`
+
+      // Fallback de segurança caso o storage esteja vazio
+      return "Ponto de Atendimento";
     },
 
     async enviarPing() {
@@ -970,6 +957,49 @@ export default {
       }
     },
 
+    async imprimirTicketWebUSB(senha, dataHora) {
+      try {
+        // 1. Solicita acesso ao dispositivo USB
+        const device = await navigator.usb.requestDevice({ filters: [] });
+        await device.open();
+        await device.selectConfiguration(1);
+        await device.claimInterface(0);
+
+        const encoder = new TextEncoder();
+        
+        // Comandos ESC/POS (Hexadecimais comuns)
+        const init = '\x1b\x40';      // Inicializa
+        const center = '\x1b\x61\x01'; // Centraliza
+        const boldOn = '\x1b\x45\x01'; // Negrito ON
+        const bigFont = '\x1d\x21\x11'; // Fonte Dobrada
+        const reset = '\x1b\x21\x00';  // Fonte Normal
+        const cut = '\x1d\x56\x42\x00'; // Corte de papel
+
+        const conteudo = 
+          init + center +
+          "PREFEITURA DE SAO LUIS\n" +
+          "==============================\n" +
+          "EMISSAO: " + dataHora + "\n" +
+          "------------------------------\n\n" +
+          "SUA SENHA:\n\n" +
+          boldOn + bigFont + senha + "\n\n" +
+          reset + center +
+          "------------------------------\n" +
+          "AGUARDE SUA CHAMADA\n" +
+          "==============================\n" +
+          "\n\n\n" + cut;
+
+        // Envia os dados para o Endpoint de saída (geralmente 1 ou 2)
+        await device.transferOut(1, encoder.encode(conteudo));
+        await device.close();
+        
+        console.log("Ticket impresso via WebUSB");
+      } catch (err) {
+        console.error("Erro ao acessar impressora USB:", err);
+        throw new Error("Verifique a conexão da impressora USB.");
+      }
+    },
+
     async salvarEspontaneo() {
       // 1. Bloqueio de segurança contra duplicidade
       if (this.isSalvando) return
@@ -994,14 +1024,26 @@ export default {
           servicoId: Number(this.novoAgendamento.servico),
           setorId: Number(this.setorTrabalhoId),
           situacao: 'AGENDADO',
-          observacao: this.novoAgendamento.observacoes, // Note: Ajustei para 'observacao' (singular) conforme sua entidade
+          observacao: this.novoAgendamento.observacoes,
         }
-        console.log(payload)
 
+        // Grava todos os dados no Banco de Dados (Spring/PHP)
         const res = await AtendenteApi.salvarEspontaneo(this.secretariaTrabalhoId, payload)
 
         if (res.status === 200 || res.status === 201) {
-          // Sucesso: fecha modal e limpa campos
+          
+          // --- IMPRESSÃO DIRETA USB ---
+          try {
+            const senha = res.data.codigo || res.data.senha || '---'
+            const dataHora = new Date().toLocaleString('pt-BR')
+            
+            await this.imprimirTicketWebUSB(senha, dataHora)
+          } catch (printError) {
+            // Apenas aviso, pois o dado já foi salvo no banco com sucesso
+            console.warn('Erro de hardware na impressão:', printError.message)
+          }
+          // ----------------------------
+
           this.mostrarModalEspontaneo = false
           this.novoAgendamento = {
             nomeCidadao: '',
@@ -1018,7 +1060,6 @@ export default {
         const msgErro = e.response?.data?.mensagem || e.message || 'Erro de comunicação'
         alert('Erro: ' + msgErro)
       } finally {
-        // 2. Libera o botão independente de dar erro ou sucesso
         this.isSalvando = false
       }
     },

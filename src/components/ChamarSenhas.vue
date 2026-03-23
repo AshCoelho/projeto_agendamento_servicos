@@ -252,7 +252,7 @@ export default {
         }
 
         await AtendenteApi.heartbeat(agendamentoId);
-        console.log('💓 Heartbeat enviado para ID:', agendamentoId);
+        console.log('Heartbeat enviado para ID:', agendamentoId);
       } catch (e) {
         console.warn('Falha no ping:', e);
       }
