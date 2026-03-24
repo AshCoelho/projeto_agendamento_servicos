@@ -72,7 +72,7 @@
 
           <div class="flex flex-col items-center justify-center">
             <span class="text-[#8e8e8e] text-2xl md:text-6xl font-bold uppercase tracking-widest"
-              >GUICHÊ</span
+              >{{ localFormatado }}</span
             >
             <h1 class="text-[18vw] md:text-[14vw] leading-[0.8] font-black text-[#1A237E]">
               {{ guicheFormatado }}
@@ -119,12 +119,12 @@
             <div class="flex flex-col text-right leading-none">
               <span
                 class="text-[10px] md:text-[13px] text-gray-400 font-bold uppercase mb-1 tracking-wider"
-                >Guichê</span
+                >{{ item.localNome }}</span
               >
               <span
                 class="text-3xl md:text-5xl lg:text-6xl font-black text-[#0056B3] tracking-tighter"
               >
-                {{ String(item.guiche ?? '01').padStart(2, '0') }}
+                {{ item.localNumero }}
               </span>
             </div>
           </div>
@@ -245,7 +245,16 @@ const qrSrc = computed(() => {
 
 const guicheFormatado = computed(() => {
   const g = senhaAtual.value?.guiche
-  return g == null || g === '' || g === '--' ? '--' : String(g).padStart(2, '0')
+  if (g == null || g === '' || g === '--') return '--'
+
+  // 1. Remove tudo que NÃO for número
+  const apenasNumeros = String(g).replace(/\D/g, '')
+
+  // 2. Se restou algum número, formata com zero à esquerda (ex: "3" vira "03")
+  // Se não houver número (ex: "Recepção"), retorna o valor original ou um padrão
+  return apenasNumeros 
+    ? apenasNumeros.padStart(2, '0') 
+    : String(g).toUpperCase()
 })
 
 const localFormatado = computed(() => {
@@ -359,6 +368,20 @@ const buscarInfoSetor = async () => {
   }
 }
 
+const formatarSomenteNumero = (valor) => {
+  if (!valor || valor === '--') return '--'
+  const apenasNumeros = String(valor).replace(/\D/g, '')
+  return apenasNumeros ? apenasNumeros.padStart(2, '0') : String(valor).toUpperCase()
+}
+
+const formatarSomenteTexto = (valor) => {
+  if (!valor || valor === '--') return 'LOCAL'
+  if (String(valor).includes(' ')) {
+    return String(valor).split(' ')[0].toUpperCase()
+  }
+  return String(valor).replace(/[0-9]/g, '').trim().toUpperCase() || 'LOCAL'
+}
+
 /** ======= ESTADO GLOBAL (fora do método) ======= **/
 // Usamos um Set para guardar os IDs que já passaram pela voz nesta sessão
 const idsProcessados = new Set();
@@ -377,11 +400,17 @@ const buscarChamadas = async () => {
     if (!lista.length) return;
 
     // 1. Atualiza o histórico lateral sempre
-    historico.value = lista.map((item) => ({
+    historico.value = lista.map((item) => {
+    const guicheRaw = pegarCampo(item, ['guiche']) ?? '--';
+    
+    return {
       numero: pegarCampo(item, ['senha']) || '---',
-      guiche: pegarCampo(item, ['guiche']) ?? '--',
+      // Criamos sub-campos para facilitar no HTML
+      localNome: formatarSomenteTexto(guicheRaw),
+      localNumero: formatarSomenteNumero(guicheRaw),
       cidadao: pegarCampo(item, ['nomeCidadao', 'usuarioNome']) || 'Cidadão',
-    }));
+    };
+  });
 
     // 2. A CHAVE ÚNICA REAL: Usamos o ID do Agendamento + a Hora da Chamada
     // Garantimos que seja uma String limpa para o Set
