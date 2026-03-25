@@ -228,7 +228,7 @@
                         >Tipo de Atendimento</label
                       >
                       <v-select
-                        v-model="novoAgendamento.tipoAtendimentoId"
+                        v-model="selectedItem.tipoAtendimentoId"
                         :items="tiposAtendimento"
                         item-title="nome"
                         item-value="id"
@@ -262,7 +262,7 @@
                         >Observação</label
                       >
                       <v-textarea
-                        v-model="novoAgendamento.observacoes"
+                        v-model="selectedItem.observacoes"
                         density="compact"
                         rounded-2xl
                         variant="outlined"
@@ -364,6 +364,7 @@
                       >
                       <v-textarea
                         v-model="novoAgendamento.observacoes"
+                        :items="observacoes"
                         density="compact"
                         rounded-2xl
                         variant="outlined"
@@ -714,14 +715,14 @@ export default {
   methods: {
     formatarLocalAtendimento() {
       // Tenta pegar a descrição amigável que salvamos na tela de seleção
-      const localAtivo = localStorage.getItem('guicheDescricaoAtiva');
-      
+      const localAtivo = localStorage.getItem('guicheDescricaoAtiva')
+
       if (localAtivo) {
-        return localAtivo;
+        return localAtivo
       }
 
       // Fallback de segurança caso o storage esteja vazio
-      return "Ponto de Atendimento";
+      return 'Ponto de Atendimento'
     },
 
     async enviarPing() {
@@ -960,43 +961,51 @@ export default {
     async imprimirTicketWebUSB(senha, dataHora) {
       try {
         // 1. Solicita acesso ao dispositivo USB
-        const device = await navigator.usb.requestDevice({ filters: [] });
-        await device.open();
-        await device.selectConfiguration(1);
-        await device.claimInterface(0);
+        const device = await navigator.usb.requestDevice({ filters: [] })
+        await device.open()
+        await device.selectConfiguration(1)
+        await device.claimInterface(0)
 
-        const encoder = new TextEncoder();
-        
+        const encoder = new TextEncoder()
+
         // Comandos ESC/POS (Hexadecimais comuns)
-        const init = '\x1b\x40';      // Inicializa
-        const center = '\x1b\x61\x01'; // Centraliza
-        const boldOn = '\x1b\x45\x01'; // Negrito ON
-        const bigFont = '\x1d\x21\x11'; // Fonte Dobrada
-        const reset = '\x1b\x21\x00';  // Fonte Normal
-        const cut = '\x1d\x56\x42\x00'; // Corte de papel
+        const init = '\x1b\x40' // Inicializa
+        const center = '\x1b\x61\x01' // Centraliza
+        const boldOn = '\x1b\x45\x01' // Negrito ON
+        const bigFont = '\x1d\x21\x11' // Fonte Dobrada
+        const reset = '\x1b\x21\x00' // Fonte Normal
+        const cut = '\x1d\x56\x42\x00' // Corte de papel
 
-        const conteudo = 
-          init + center +
-          "PREFEITURA DE SAO LUIS\n" +
-          "==============================\n" +
-          "EMISSAO: " + dataHora + "\n" +
-          "------------------------------\n\n" +
-          "SUA SENHA:\n\n" +
-          boldOn + bigFont + senha + "\n\n" +
-          reset + center +
-          "------------------------------\n" +
-          "AGUARDE SUA CHAMADA\n" +
-          "==============================\n" +
-          "\n\n\n" + cut;
+        const conteudo =
+          init +
+          center +
+          'PREFEITURA DE SAO LUIS\n' +
+          '==============================\n' +
+          'EMISSAO: ' +
+          dataHora +
+          '\n' +
+          '------------------------------\n\n' +
+          'SUA SENHA:\n\n' +
+          boldOn +
+          bigFont +
+          senha +
+          '\n\n' +
+          reset +
+          center +
+          '------------------------------\n' +
+          'AGUARDE SUA CHAMADA\n' +
+          '==============================\n' +
+          '\n\n\n' +
+          cut
 
         // Envia os dados para o Endpoint de saída (geralmente 1 ou 2)
-        await device.transferOut(1, encoder.encode(conteudo));
-        await device.close();
-        
-        console.log("Ticket impresso via WebUSB");
+        await device.transferOut(1, encoder.encode(conteudo))
+        await device.close()
+
+        console.log('Ticket impresso via WebUSB')
       } catch (err) {
-        console.error("Erro ao acessar impressora USB:", err);
-        throw new Error("Verifique a conexão da impressora USB.");
+        console.error('Erro ao acessar impressora USB:', err)
+        throw new Error('Verifique a conexão da impressora USB.')
       }
     },
 
@@ -1031,12 +1040,11 @@ export default {
         const res = await AtendenteApi.salvarEspontaneo(this.secretariaTrabalhoId, payload)
 
         if (res.status === 200 || res.status === 201) {
-          
           // --- IMPRESSÃO DIRETA USB ---
           try {
             const senha = res.data.codigo || res.data.senha || '---'
             const dataHora = new Date().toLocaleString('pt-BR')
-            
+
             await this.imprimirTicketWebUSB(senha, dataHora)
           } catch (printError) {
             // Apenas aviso, pois o dado já foi salvo no banco com sucesso
@@ -1067,7 +1075,15 @@ export default {
     async atualizarEspontaneo() {
       try {
         const idServico = this.selectedItem.servicoId || this.selectedItem.servico?.id
-        const payload = { nomeCidadao: this.selectedItem.usuarioNome, servicoId: Number(idServico) }
+        const payload = {
+          nomeCidadao: this.selectedItem.usuarioNome,
+          servicoId: Number(idServico),
+          tipoAtendimentoId: Number(this.selectedItem.tipoAtendimentoId),
+          observacao: this.selectedItem.observacoes ?? '',
+        }
+
+        console.log('payload enviado:', payload)
+
         const token = localStorage.getItem('token')
         await AtendenteApi.atualizarEspontaneo(this.selectedItem.agendamentoId, payload, token)
         this.mostrarModalEdicao = false

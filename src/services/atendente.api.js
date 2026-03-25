@@ -4,56 +4,56 @@ export const AtendenteApi = {
   // ✅ Alterado: Agora busca agendamentos por SETOR
   async buscarAgendamentosPorSetor(setorId) {
     // Certifique-se de que a URL no Backend é exatamente esta:
-    const res = await api.get(`/agendamentos/setor/${setorId}`) 
+    const res = await api.get(`api/agendamentos/setor/${setorId}`) 
     return Array.isArray(res.data) ? res.data : []
   },
   
   async chamarPorSenha(senha, gerenciadorId, setorId) {
-    return await api.post(`/agendamentos/chamar/por-senha/${encodeURIComponent(senha)}/${gerenciadorId}/${setorId}`)
+    return await api.post(`api/agendamentos/chamar/por-senha/${encodeURIComponent(senha)}/${gerenciadorId}/${setorId}`)
   },
 
   // ✅ Alterado: Chamar Próximo Normal por SETOR
   async chamarNormal(setorId, gerenciadorId) {
-    return await api.post(`/agendamentos/chamar/normal/${setorId}/${gerenciadorId}`)
+    return await api.post(`api/agendamentos/chamar/normal/${setorId}/${gerenciadorId}`)
   },
 
   // ✅ Alterado: Chamar Próximo Prioridade por SETOR
   async chamarPrioridade(setorId, gerenciadorId) {
-    return await api.post(`/agendamentos/chamar/prioridade/${setorId}/${gerenciadorId}`)
+    return await api.post(`api/agendamentos/chamar/prioridade/${setorId}/${gerenciadorId}`)
   },
 
   async cancelarAtendimento(id, token) {
-    return await api.put(`/agendamentos/cancelar/${id}`, {}, {
+    return await api.put(`api/agendamentos/cancelar/${id}`, {}, {
       headers: { Authorization: `Bearer ${token}` }
     })
   },
 
   async finalizarAtendimento(id) {
-    return await api.put(`/agendamentos/finalizar/${id}`)
+    return await api.put(`api/agendamentos/finalizar/${id}`)
   },
 
   async salvarEspontaneo(secretariaId, payload) {
     // payload agora deve conter o setorId em vez de enderecoId
-    return await api.post(`/agendamentos/espontaneo/${secretariaId}`, payload)
+    return await api.post(`api/agendamentos/espontaneo/${secretariaId}`, payload)
   },
 
   async carregarTiposAtendimento(secretariaId) {
-    return await api.get(`/tipos-atendimento/secretaria/${secretariaId}/ativos`);
+    return await api.get(`api/tipos-atendimento/secretaria/${secretariaId}/ativos`);
   },
 
   async atualizarEspontaneo(id, payload, token) {
-    return await api.put(`/agendamentos/atualizar-espontaneo/${id}`, payload, {
+    return await api.put(`api/agendamentos/atualizar-espontaneo/${id}`, payload, {
       headers: { Authorization: `Bearer ${token}` }
     })
   },
 
   async getUsuarioLogado() {
-    return await api.get('/gerenciador/usuario-logado')
+    return await api.get('api/gerenciador/usuario-logado')
   },
 
   async carregarServicosPorSetor(setorId) {
     console.log(setorId);
-      const response = await api.get(`/agendamento/api/servico/setor/${setorId}`);
+      const response = await api.get(`api/agendamento/api/servico/setor/${setorId}`);
       console.log(response);
       return response.data; // já vem a lista de ServicoResponseDTO
   },
@@ -61,10 +61,10 @@ export const AtendenteApi = {
   async deslogarGuiche(gerenciadorId) {
     // Adicionamos um log aqui para você ver se o método é chamado
     console.log("API: Chamando logout-guiche para ID", gerenciadorId);
-    return await api.post(`/gerenciador/${gerenciadorId}/logout-guiche`);
+    return await api.post(`api/gerenciador/${gerenciadorId}/logout-guiche`);
   },
 
   async heartbeat(agendamentoId) {
-    return await api.put(`/agendamentos/heartbeat/${agendamentoId}`)
+    return await api.put(`api/agendamentos/heartbeat/${agendamentoId}`)
   },
 }

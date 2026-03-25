@@ -71,9 +71,9 @@
           <div class="h-[2px] w-full md:h-[60%] md:w-[2px] bg-gray-100 my-2 md:my-0"></div>
 
           <div class="flex flex-col items-center justify-center">
-            <span class="text-[#8e8e8e] text-2xl md:text-6xl font-bold uppercase tracking-widest"
-              >{{ localFormatado }}</span
-            >
+            <span class="text-[#8e8e8e] text-2xl md:text-6xl font-bold uppercase tracking-widest">{{
+              localFormatado
+            }}</span>
             <h1 class="text-[18vw] md:text-[14vw] leading-[0.8] font-black text-[#1A237E]">
               {{ guicheFormatado }}
             </h1>
@@ -178,7 +178,6 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 
-
 /** ======= ROTAS E ESTADOS ======= **/
 const route = useRoute()
 const setorId = computed(() => Number(route.params.setorId || 0))
@@ -237,7 +236,7 @@ const atualizarRelogio = () => {
 }
 
 const qrSrc = computed(() => {
-  const urlPublica = `https://agendamento.saoluis.ma.gov.br/tv/${setorId.value}`
+  const urlPublica = `http://localhost/tv/${setorId.value}`
   return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
     urlPublica,
   )}`
@@ -252,21 +251,19 @@ const guicheFormatado = computed(() => {
 
   // 2. Se restou algum número, formata com zero à esquerda (ex: "3" vira "03")
   // Se não houver número (ex: "Recepção"), retorna o valor original ou um padrão
-  return apenasNumeros 
-    ? apenasNumeros.padStart(2, '0') 
-    : String(g).toUpperCase()
+  return apenasNumeros ? apenasNumeros.padStart(2, '0') : String(g).toUpperCase()
 })
 
 const localFormatado = computed(() => {
   const g = senhaAtual.value?.guiche
   if (!g || g === '--') return '--'
-  
+
   // 🟢 Lógica: Se houver um espaço (ex: "SALA 03"), pegamos só o que vem antes do espaço.
   // Se não houver espaço, retorna a string intera.
   if (String(g).includes(' ')) {
     return String(g).split(' ')[0].toUpperCase()
   }
-  
+
   // Fallback: remove números caso venham grudados ou em outro formato
   return String(g).replace(/[0-9]/g, '').trim().toUpperCase()
 })
@@ -288,7 +285,31 @@ const processarFila = () => {
 
   mostrarSenha.value = true // Traz a tela pra frente da câmera
 
-  const texto = `Senha ${chamada.senha}, ${chamada.nome}, comparecer ao guichê ${chamada.guiche}`
+  const normalizar = (str) =>
+    str
+      ?.trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+
+  const locaisFemininos = [
+    'recepção',
+    'triagem 01',
+    'triagem 02',
+    'sala',
+    'classificação 01',
+    'classificação 02',
+  ]
+
+  const guicheNormalizado = normalizar(chamada.guiche)
+
+  const preposicao = locaisFemininos.some((local) =>
+    guicheNormalizado.startsWith(normalizar(local)),
+  )
+    ? 'à'
+    : 'ao'
+
+  const texto = `Senha ${chamada.senha}, ${chamada.nome}, comparecer ${preposicao} ${chamada.guiche}`
 
   // 🟢 Função isolada para fechar a tela e chamar a próxima
   const finalizarChamada = () => {
@@ -384,104 +405,103 @@ const formatarSomenteTexto = (valor) => {
 
 /** ======= ESTADO GLOBAL (fora do método) ======= **/
 // Usamos um Set para guardar os IDs que já passaram pela voz nesta sessão
-const idsProcessados = new Set();
+const idsProcessados = new Set()
 
 /** ======= BUSCAR CHAMADAS ======= **/
 const buscarChamadas = async () => {
-  if (!setorId.value || fetching.value) return;
-  fetching.value = true;
+  if (!setorId.value || fetching.value) return
+  fetching.value = true
 
   try {
     const res = await apiPublico.get(
-      `/agendamentos/ultimas-chamadas/${setorId.value}?t=${Date.now()}`
-    );
+      `api/agendamentos/ultimas-chamadas/${setorId.value}?t=${Date.now()}`,
+    )
 
-    const lista = extrairLista(res.data);
-    if (!lista.length) return;
+    const lista = extrairLista(res.data)
+    if (!lista.length) return
 
     // 1. Atualiza o histórico lateral sempre
     historico.value = lista.map((item) => {
-    const guicheRaw = pegarCampo(item, ['guiche']) ?? '--';
-    
-    return {
-      numero: pegarCampo(item, ['senha']) || '---',
-      // Criamos sub-campos para facilitar no HTML
-      localNome: formatarSomenteTexto(guicheRaw),
-      localNumero: formatarSomenteNumero(guicheRaw),
-      cidadao: pegarCampo(item, ['nomeCidadao', 'usuarioNome']) || 'Cidadão',
-    };
-  });
+      const guicheRaw = pegarCampo(item, ['guiche']) ?? '--'
+
+      return {
+        numero: pegarCampo(item, ['senha']) || '---',
+        // Criamos sub-campos para facilitar no HTML
+        localNome: formatarSomenteTexto(guicheRaw),
+        localNumero: formatarSomenteNumero(guicheRaw),
+        cidadao: pegarCampo(item, ['nomeCidadao', 'usuarioNome']) || 'Cidadão',
+      }
+    })
 
     // 2. A CHAVE ÚNICA REAL: Usamos o ID do Agendamento + a Hora da Chamada
     // Garantimos que seja uma String limpa para o Set
     const gerarChaveUnica = (item) => {
-      const id = pegarCampo(item, ['agendamentoId', 'id']) ?? '';
-      const hora = pegarCampo(item, ['horaChamada', 'data_chamada']) ?? '';
-      return `${id}_${hora}`;
-    };
+      const id = pegarCampo(item, ['agendamentoId', 'id']) ?? ''
+      const hora = pegarCampo(item, ['horaChamada', 'data_chamada']) ?? ''
+      return `${id}_${hora}`
+    }
 
     // 🟢 3. PRIMEIRA EXECUÇÃO (Carga Inicial)
     if (lastKey.value === null) {
       // No primeiro load, apenas marcamos todos os atuais como "já processados"
       // para que a TV não saia gritando 5 nomes ao ligar.
-      lista.forEach(item => idsProcessados.add(gerarChaveUnica(item)));
-      
+      lista.forEach((item) => idsProcessados.add(gerarChaveUnica(item)))
+
       // Define a última chave apenas para controle de fluxo
-      lastKey.value = gerarChaveUnica(lista[0]);
-      
+      lastKey.value = gerarChaveUnica(lista[0])
+
       // Opcional: Mostrar a última senha na tela sem falar
-      const ultima = lista[0];
+      const ultima = lista[0]
       senhaAtual.value = {
         numero: String(pegarCampo(ultima, ['senha'])),
         guiche: String(pegarCampo(ultima, ['guiche'])),
         cidadao: String(pegarCampo(ultima, ['nomeCidadao', 'usuarioNome'])),
-      };
-      return;
+      }
+      return
     }
 
     // 🟢 4. PROCESSAR NOVAS CHAMADAS
-    const novasChamadas = [];
+    const novasChamadas = []
 
     // Varre a lista (do mais recente para o mais antigo)
     for (const item of lista) {
-      const chave = gerarChaveUnica(item);
+      const chave = gerarChaveUnica(item)
 
       // Se essa chave já está no nosso Set, ignoramos
-      if (idsProcessados.has(chave)) continue;
+      if (idsProcessados.has(chave)) continue
 
-      // Se chegou aqui, é uma senha nova! 
-      novasChamadas.unshift(item); // Coloca no início para manter a ordem cronológica
-      idsProcessados.add(chave);    // Marca como processada para nunca mais repetir
+      // Se chegou aqui, é uma senha nova!
+      novasChamadas.unshift(item) // Coloca no início para manter a ordem cronológica
+      idsProcessados.add(chave) // Marca como processada para nunca mais repetir
     }
 
     // 5. Atualiza a lastKey apenas para fins de depuração
     if (novasChamadas.length > 0) {
-      lastKey.value = gerarChaveUnica(novasChamadas[novasChamadas.length - 1]);
-      
+      lastKey.value = gerarChaveUnica(novasChamadas[novasChamadas.length - 1])
+
       // 6. Manda para a fila de voz
       for (const nova of novasChamadas) {
-        const senha = pegarCampo(nova, ['senha']) || '---';
-        const guiche = pegarCampo(nova, ['guiche']) ?? '--';
-        const cidadao = pegarCampo(nova, ['nomeCidadao', 'usuarioNome']) || 'Cidadão';
+        const senha = pegarCampo(nova, ['senha']) || '---'
+        const guiche = pegarCampo(nova, ['guiche']) ?? '--'
+        const cidadao = pegarCampo(nova, ['nomeCidadao', 'usuarioNome']) || 'Cidadão'
 
-        falarChamada(String(cidadao), String(senha), String(guiche));
+        falarChamada(String(cidadao), String(senha), String(guiche))
       }
     }
 
     // 7. Limpeza opcional do Set (evita que o Set cresça infinitamente se a TV ficar ligada meses)
     if (idsProcessados.size > 100) {
       // Mantém apenas os últimos 20 processados para referência
-      const arrayIds = Array.from(idsProcessados);
-      idsProcessados.clear();
-      arrayIds.slice(-20).forEach(id => idsProcessados.add(id));
+      const arrayIds = Array.from(idsProcessados)
+      idsProcessados.clear()
+      arrayIds.slice(-20).forEach((id) => idsProcessados.add(id))
     }
-
   } catch (error) {
-    console.error('Erro ao buscar chamadas:', error);
+    console.error('Erro ao buscar chamadas:', error)
   } finally {
-    fetching.value = false;
+    fetching.value = false
   }
-};
+}
 
 /** ======= ATIVAR SOM ======= **/
 const ativarAudio = () => {
