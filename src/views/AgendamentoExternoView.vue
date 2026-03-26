@@ -66,7 +66,7 @@ import 'primeicons/primeicons.css'
 import AgendamentoExt from '@/components/AgendamentoExt.vue'
 
 const etapa = ref(1)
-const API_BASE = 'http://192.168.200.29:8080'
+const API_BASE = 'http://192.168.200.63:8080'
 
 const secretarias = ref([])
 

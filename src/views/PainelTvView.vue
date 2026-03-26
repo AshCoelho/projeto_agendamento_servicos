@@ -414,7 +414,7 @@ const buscarChamadas = async () => {
 
   try {
     const res = await apiPublico.get(
-      `api/agendamentos/ultimas-chamadas/${setorId.value}?t=${Date.now()}`,
+      `/agendamentos/ultimas-chamadas/${setorId.value}?t=${Date.now()}`,
     )
 
     const lista = extrairLista(res.data)

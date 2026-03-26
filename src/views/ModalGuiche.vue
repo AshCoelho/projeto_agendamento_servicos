@@ -176,7 +176,7 @@ export default {
         const payload = { guicheId: this.selectedGuiche }
 
         // Chamada para a rota que você criou no Java
-        await api.patch(`api/gerenciador/${this.usuario.id}/guiche`, payload)
+        await api.patch(`/gerenciador/${this.usuario.id}/guiche`, payload)
 
         localStorage.setItem('setorTrabalhoId', this.selectedSetor)
         localStorage.setItem('secretariaTrabalhoId', this.selectedSecretaria)
@@ -230,7 +230,7 @@ export default {
     async buscarGuichesDoSetor(setorId) {
       this.carregandoGuiches = true
       try {
-        const response = await api.get(`api/pontos-atendimento/setor/${setorId}`)
+        const response = await api.get(`/pontos-atendimento/setor/${setorId}`)
 
         if (Array.isArray(response.data)) {
           this.guiches = response.data.map((g) => ({

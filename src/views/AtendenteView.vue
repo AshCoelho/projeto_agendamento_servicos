@@ -228,7 +228,7 @@
                         >Tipo de Atendimento</label
                       >
                       <v-select
-                        v-model="selectedItem.tipoAtendimentoId"
+                        v-model="novoAgendamento.tipoAtendimentoId"
                         :items="tiposAtendimento"
                         item-title="nome"
                         item-value="id"
@@ -262,7 +262,7 @@
                         >Observação</label
                       >
                       <v-textarea
-                        v-model="selectedItem.observacoes"
+                        v-model="novoAgendamento.observacoes"
                         density="compact"
                         rounded-2xl
                         variant="outlined"
@@ -333,7 +333,7 @@
                         >Tipo de Atendimento</label
                       >
                       <v-select
-                        v-model="novoAgendamento.tipoAtendimentoId"
+                        v-model="selectedItem.tipoAtendimentoId"
                         :items="tiposAtendimento"
                         item-title="nome"
                         item-value="id"
@@ -363,7 +363,7 @@
                         >Observação</label
                       >
                       <v-textarea
-                        v-model="novoAgendamento.observacoes"
+                        v-model="selectedItem.observacao"
                         :items="observacoes"
                         density="compact"
                         rounded-2xl
@@ -678,6 +678,7 @@ export default {
 
     agendamentosFinalizados() {
       const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'))
+      
       return this.agendamentosPorSetor.filter(
         (a) => a.situacao === 'ATENDIDO' && Number(a.gerenciadorId || a.usuarioId) === meuId,
       ).length
@@ -785,7 +786,7 @@ export default {
     },
 
     agendamentoSelecionado(item) {
-      this.selectedItem = item
+      this.selectedItem = { ...item }
       this.mostrarModalEdicao = true
     },
 
@@ -875,6 +876,7 @@ export default {
         if (!this.usuario?.id) await this.getUsuarioLogado()
         if (this.setorTrabalhoId) {
           const data = await AtendenteApi.buscarAgendamentosPorSetor(this.setorTrabalhoId)
+
           this.agendamentosPorSetor = [...data]
         }
       } catch (e) {
@@ -1079,7 +1081,7 @@ export default {
           nomeCidadao: this.selectedItem.usuarioNome,
           servicoId: Number(idServico),
           tipoAtendimentoId: Number(this.selectedItem.tipoAtendimentoId),
-          observacao: this.selectedItem.observacoes ?? '',
+          observacao: this.selectedItem.observacao ?? '',
         }
 
         console.log('payload enviado:', payload)
