@@ -275,13 +275,15 @@
 
                     <div class="col-span-1 md:col-span-2 flex justify-end items-center gap-3 mt-4">
                       <button
-                        @click="showModal = false"
+                        type="button"
+                        @click="mostrarModalEspontaneo = false"
                         class="text-gray-400 font-black text-[13px] px-6 py-2 hover:text-gray-600 transition-colors"
                       >
                         Cancelar
                       </button>
+
                       <button
-                        @click="salvarEspontaneo"
+                        type="submit"
                         class="bg-[#2563eb] text-white px-8 py-3 rounded-[5px] font-semibold text-[13px] shadow-lg shadow-blue-200 hover:scale-110 active:scale-95 transition-all"
                       >
                         Cadastrar
@@ -978,27 +980,28 @@ export default {
         const reset = '\x1b\x21\x00' // Fonte Normal
         const cut = '\x1d\x56\x42\x00' // Corte de papel
 
-        const conteudo =
-          init +
-          center +
-          'PREFEITURA DE SAO LUIS\n' +
-          '==============================\n' +
-          'EMISSAO: ' +
-          dataHora +
-          '\n' +
-          '------------------------------\n\n' +
-          'SUA SENHA:\n\n' +
-          boldOn +
-          bigFont +
-          senha +
-          '\n\n' +
-          reset +
-          center +
-          '------------------------------\n' +
-          'AGUARDE SUA CHAMADA\n' +
-          '==============================\n' +
-          '\n\n\n' +
-          cut
+const 
+conteudo =
+init +
+center +
+'PREFEITURA DE SAO LUIS\n' +
+'==============================\n' +
+'EMISSAO: ' +
+dataHora +
+'\n' +
+'------------------------------\n\n' +
+'SUA SENHA:\n\n' +
+boldOn +
+bigFont +
+senha +
+'\n\n' +
+reset +
+center +
+'------------------------------\n' +
+'AGUARDE SUA CHAMADA\n' +
+'==============================\n' +
+'\n\n\n' +
+cut
 
         // Envia os dados para o Endpoint de saída (geralmente 1 ou 2)
         await device.transferOut(1, encoder.encode(conteudo))

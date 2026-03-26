@@ -460,7 +460,7 @@ const buscarChamadas = async () => {
       return
     }
 
-    // 🟢 4. PROCESSAR NOVAS CHAMADAS
+    // 4. PROCESSAR NOVAS CHAMADAS
     const novasChamadas = []
 
     // Varre a lista (do mais recente para o mais antigo)
