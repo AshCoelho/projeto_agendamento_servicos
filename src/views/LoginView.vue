@@ -77,9 +77,13 @@
         </div>
 
         <div class="flex justify-end px-1">
-          <a href="#" class="text-[10px] font-bold text-blue-600 uppercase hover:underline">
+          <button
+            type="button"
+            @click="mostrarModalSenha = true"
+            class="text-[10px] font-bold text-blue uppercase underline"
+          >
             Esqueci a senha
-          </a>
+          </button>
         </div>
 
         <button
@@ -100,6 +104,64 @@
       </div>
     </div>
   </div>
+
+  <Transition name="fade">
+    <div
+      v-if="mostrarModalSenha"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
+      @click.self="mostrarModalSenha = false"
+    >
+      <Transition name="scale">
+        <div
+          v-if="mostrarModalSenha"
+          class="bg-white w-full max-w-sm rounded-[28px] shadow-2xl shadow-blue-200 p-8 relative"
+        >
+          <button
+            @click="mostrarModalSenha = false"
+            class="absolute top-4 right-4 text-gray-300 hover:text-gray-500 transition-colors"
+          >
+            <i class="pi pi-times text-sm"></i>
+          </button>
+
+          <div class="flex justify-center mb-5">
+            <div
+              class="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center shadow-inner"
+            >
+              <i class="pi pi-lock text-2xl text-amber-400"></i>
+            </div>
+          </div>
+
+          <h3 class="text-center text-base font-black text-[#1e3a8a] uppercase tracking-tight mb-2">
+            Recuperação de Senha
+          </h3>
+
+          <div class="h-0.5 w-8 bg-blue-600 rounded-full mx-auto mb-5"></div>
+
+          <p class="text-center text-xs text-gray-500 leading-relaxed mb-5">
+            Para redefinir sua senha, entre em contato com a
+          </p>
+
+          <div class="bg-blue-50 border border-blue-100 rounded-2xl px-5 py-4 mb-5 text-center">
+            <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">
+              Superintendência da Área de Sistemas
+            </p>
+            <p class="text-lg font-black text-[#1e3a8a] tracking-tight">SUAS - SEMIT</p>
+          </div>
+
+          <p class="text-center text-[10px] text-gray-400 leading-relaxed mb-6">
+            Um responsável irá verificar seus dados e providenciar o acesso.
+          </p>
+
+          <button
+            @click="mostrarModalSenha = false"
+            class="w-full bg-gradient-to-r from-[#1d4ed8] to-[#2563eb] text-white py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-blue-200 hover:scale-[1.02] active:scale-95 transition-all"
+          >
+            Entendido
+          </button>
+        </div>
+      </Transition>
+    </div>
+  </Transition>
 </template>
 
 <script>
@@ -114,6 +176,7 @@ export default {
         senha: '',
       },
       mostrarSenha: false,
+      mostrarModalSenha: false,
       carregando: false,
     }
   },
