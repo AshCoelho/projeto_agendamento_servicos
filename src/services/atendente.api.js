@@ -61,7 +61,7 @@ export const AtendenteApi = {
   async deslogarGuiche(gerenciadorId) {
     // Adicionamos um log aqui para você ver se o método é chamado
     console.log("API: Chamando logout-guiche para ID", gerenciadorId);
-    return await api.post(`api/gerenciador/${gerenciadorId}/logout-guiche`);
+    return await api.post(`/gerenciador/${gerenciadorId}/logout-guiche`);
   },
 
   async heartbeat(agendamentoId) {
