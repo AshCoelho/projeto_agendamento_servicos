@@ -1004,15 +1004,21 @@ center +
 cut
 
         // Envia os dados para o Endpoint de saída (geralmente 1 ou 2)
-        await device.transferOut(1, encoder.encode(conteudo))
-        await device.close()
+         await device.transferOut(1, encoder.encode(conteudo));
+          await device.close();
 
-        console.log('Ticket impresso via WebUSB')
-      } catch (err) {
-        console.error('Erro ao acessar impressora USB:', err)
-        throw new Error('Verifique a conexão da impressora USB.')
-      }
-    },
+          console.log("Ticket impresso via WebUSB");
+        } catch (err) {
+          // 🔥 IGNORA cancelamento do usuário
+          if (err.name === 'NotFoundError') {
+            console.warn("Usuário cancelou a seleção da impressora.");
+            return;
+          }
+
+          console.error("Erro ao acessar impressora USB:", err);
+          throw new Error("Verifique a conexão da impressora USB.");
+        }
+      },
 
     async salvarEspontaneo() {
       // 1. Bloqueio de segurança contra duplicidade
