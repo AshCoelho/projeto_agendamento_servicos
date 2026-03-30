@@ -29,8 +29,7 @@ export const AgendamentoService = {
       },
 
       'CANCELADOS': (a) => {
-        const idNoBanco = Number(a.gerenciadorId);
-        return a.situacao === 'FALTOU' && idNoBanco === Number(meuUsuarioId);
+        return a.situacao === 'FALTOU';
       },
 
       'FINALIZADOS': (a) => {

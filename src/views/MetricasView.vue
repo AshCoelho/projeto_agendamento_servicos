@@ -121,11 +121,11 @@ export default {
   }),
 
   computed: {
-    // 🟢 1. CRIAMOS UM FILTRO MESTRE BLINDADO
+    // 1. CRIAMOS UM FILTRO MESTRE BLINDADO
     meusAgendamentos() {
       const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'))
 
-      // 🐛 INÍCIO DO DEBUG
+      // INÍCIO DO DEBUG
       console.group('🔍 DEBUG: Meus Agendamentos')
       console.log('👤 Meu ID (Guichê Logado):', meuId)
       console.log('📦 Total no Setor (Cru do Banco):', this.agendamentosPorSetor.length)
@@ -141,7 +141,7 @@ export default {
       })
     },
 
-    // 🟢 2. PAINEL "ATENDIMENTOS HOJE": (Agora é 100% a sua produtividade)
+    // 2. PAINEL "ATENDIMENTOS HOJE": (Agora é 100% a sua produtividade)
     totalRegistradosHoje() {
       return this.meusAgendamentos.filter((a) => a.situacao === 'ATENDIDO').length
     },
@@ -152,7 +152,7 @@ export default {
       return this.meusAgendamentos.filter((a) => a.tipoAtendimento.includes('PRIORIDADE')).length
     },
 
-    // 🟢 3. PAINÉIS DE RESULTADO: Apenas os seus atendidos e ausentes
+    // 3. PAINÉIS DE RESULTADO: Apenas os seus atendidos e ausentes
     agendamentosFinalizados() {
       return this.meusAgendamentos.filter((a) => a.situacao === 'ATENDIDO').length
     },
@@ -160,7 +160,7 @@ export default {
       return this.meusAgendamentos.filter((a) => a.situacao === 'FALTOU').length
     },
 
-    // 🌎 4. PAINEL "PESSOAS NA FILA": Fila geral de quem está aguardando lá fora
+    // 4. PAINEL "PESSOAS NA FILA": Fila geral de quem está aguardando lá fora
     agendamentosAguardando() {
       return this.agendamentosPorSetor.filter(
         (a) => a.situacao === 'AGENDADO' && ['AGENDADO', 'ESPONTANEO'].includes(a.tipoAgendamento),
@@ -185,7 +185,7 @@ export default {
     },
 
     atualizarRelogioLocal() {
-      this.horaAtual = new Date() // 🟢 Mantemos um objeto Date fresco
+      this.horaAtual = new Date() // Mantemos um objeto Date fresco
       this.relogio = this.horaAtual.toLocaleTimeString('pt-BR', {
         hour: '2-digit',
         minute: '2-digit',
@@ -254,7 +254,7 @@ export default {
           const data = await AtendenteApi.buscarAgendamentosPorSetor(this.setorTrabalhoId)
           this.agendamentosPorSetor = [...data]
 
-          // 🔍 LINHA PARA DEBUG SEGURO
+          // LINHA PARA DEBUG
           console.log('MEU ID:', this.usuario.id)
           console.log(
             'LISTA DO BANCO:',

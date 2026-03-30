@@ -687,11 +687,11 @@ export default {
     },
 
     agendamentosCancelados() {
-      const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'))
       return this.agendamentosPorSetor.filter(
-        (a) => a.situacao === 'FALTOU' && Number(a.gerenciadorId || a.usuarioId) === meuId,
+        (a) => a.situacao === 'FALTOU'
       ).length
     },
+    
     totalNormalFila() {
       return this.agendamentosPorSetor.filter(
         (a) => a.situacao === 'AGENDADO' && a.tipoAtendimento === 'NORMAL',
