@@ -877,7 +877,12 @@ export default {
       try {
         if (!this.usuario?.id) await this.getUsuarioLogado()
         if (this.setorTrabalhoId) {
-          const data = await AtendenteApi.buscarAgendamentosPorSetor(this.setorTrabalhoId)
+          const meuId = this.usuario?.id || localStorage.getItem('usuarioId')
+
+          const data = await AtendenteApi.buscarAgendamentosPorSetor(
+            this.setorTrabalhoId,
+            meuId
+          )
 
           this.agendamentosPorSetor = [...data]
         }
@@ -1105,8 +1110,14 @@ cut
 
     async carregarServicos() {
       try {
-        const servicos = await AtendenteApi.carregarServicosPorSetor(this.setorTrabalhoId)
-        this.servicos = servicos // já é a lista correta
+        const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'))
+
+        const servicos = await AtendenteApi.carregarServicosPorSetor(
+          this.setorTrabalhoId,
+          !isNaN(meuId) ? meuId : null
+        )
+
+        this.servicos = servicos
       } catch (e) {
         console.error(e)
       }

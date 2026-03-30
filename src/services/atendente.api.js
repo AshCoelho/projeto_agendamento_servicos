@@ -51,11 +51,18 @@ export const AtendenteApi = {
     return await api.get('/gerenciador/usuario-logado')
   },
 
-  async carregarServicosPorSetor(setorId) {
-    console.log(setorId);
-      const response = await api.get(`/agendamento/api/servico/setor/${setorId}`);
-      console.log(response);
-      return response.data; // já vem a lista de ServicoResponseDTO
+  async carregarServicosPorSetor(setorId, gerenciadorId = null) {
+    let url = `/agendamento/api/servico/setor/${setorId}`
+
+    // 🔒 só adiciona se válido
+    if (gerenciadorId && !isNaN(gerenciadorId)) {
+      url += `?gerenciadorId=${gerenciadorId}`
+    }
+
+    console.log("URL FINAL:", url)
+
+    const response = await api.get(url)
+    return response.data
   },
 
   async deslogarGuiche(gerenciadorId) {
