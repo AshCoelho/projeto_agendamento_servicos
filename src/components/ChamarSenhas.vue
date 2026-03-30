@@ -515,15 +515,6 @@ export default {
       }
     },
 
-    async carregarServicos() {
-      try {
-        const res = await AtendenteApi.carregarServicos(this.secretariaTrabalhoId)
-        this.servicos = res.data
-      } catch (e) {
-        console.error(e)
-      }
-    },
-
     async carregarTiposAtendimento() {
       try {
         const { data } = await AtendenteApi.carregarTiposAtendimento(this.secretariaTrabalhoId)
@@ -546,7 +537,6 @@ export default {
     setInterval(() => {
       this.buscarAgendamentos()
     }, 2000)
-    this.carregarServicos()
     this.carregarTiposAtendimento()
     this.atualizarRelogioLocal()
     setInterval(this.atualizarRelogioLocal, 1000)

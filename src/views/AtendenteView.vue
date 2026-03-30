@@ -1015,8 +1015,8 @@ cut
             return;
           }
 
-          console.error("Erro ao acessar impressora USB:", err);
-          throw new Error("Verifique a conexão da impressora USB.");
+          console.warn("Erro na impressão:", err);
+          return;
         }
       },
 
@@ -1047,8 +1047,7 @@ cut
           observacao: this.novoAgendamento.observacoes,
         }
 
-        // Grava todos os dados no Banco de Dados (Spring/PHP)
-        const res = await AtendenteApi.salvarEspontaneo(this.secretariaTrabalhoId, payload)
+        const res = await AtendenteApi.salvarEspontaneo(this.secretariaTrabalhoId, payload);
 
         if (res.status === 200 || res.status === 201) {
           // --- IMPRESSÃO DIRETA USB ---
@@ -1056,7 +1055,7 @@ cut
             const senha = res.data.codigo || res.data.senha || '---'
             const dataHora = new Date().toLocaleString('pt-BR')
 
-            await this.imprimirTicketWebUSB(senha, dataHora)
+            this.imprimirTicketWebUSB(senha, dataHora)
           } catch (printError) {
             // Apenas aviso, pois o dado já foi salvo no banco com sucesso
             console.warn('Erro de hardware na impressão:', printError.message)
