@@ -1014,7 +1014,7 @@ cut
 
           console.log("Ticket impresso via WebUSB");
         } catch (err) {
-          // 🔥 IGNORA cancelamento do usuário
+          // IGNORA cancelamento do usuário
           if (err.name === 'NotFoundError') {
             console.warn("Usuário cancelou a seleção da impressora.");
             return;
