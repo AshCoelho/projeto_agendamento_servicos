@@ -120,7 +120,7 @@ export default {
   }),
 
   methods: {
-    // 🟢 Agora a formatação é DINÂMICA baseada no banco de dados
+    // Agora a formatação é DINÂMICA baseada no banco de dados
     formatarExibicaoPonto(ponto) {
       if (!ponto.descricao) return `Ponto ${ponto.numero}`
       return `${ponto.descricao} ${String(ponto.numero).padStart(2, '0')}`
@@ -234,7 +234,7 @@ export default {
 
         if (Array.isArray(response.data)) {
           this.guiches = response.data.map((g) => ({
-            // 🟢 Aqui usamos a descrição que vem do banco (Classificação, Consultório, etc)
+            // Aqui usamos a descrição que vem do banco (Classificação, Consultório, etc)
             title: this.formatarExibicaoPonto(g),
             value: g.id,
           }))

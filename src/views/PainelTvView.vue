@@ -258,7 +258,7 @@ const localFormatado = computed(() => {
   const g = senhaAtual.value?.guiche
   if (!g || g === '--') return '--'
 
-  // 🟢 Lógica: Se houver um espaço (ex: "SALA 03"), pegamos só o que vem antes do espaço.
+  // Lógica: Se houver um espaço (ex: "SALA 03"), pegamos só o que vem antes do espaço.
   // Se não houver espaço, retorna a string intera.
   if (String(g).includes(' ')) {
     return String(g).split(' ')[0].toUpperCase()
@@ -276,7 +276,7 @@ const processarFila = () => {
 
   const chamada = filaChamadas.shift()
 
-  // 🟢 O SEGREDO 1: A tela só muda quando chega a vez EXATA dessa senha na fila de áudio
+  // O SEGREDO 1: A tela só muda quando chega a vez EXATA dessa senha na fila de áudio
   senhaAtual.value = {
     numero: String(chamada.senha),
     guiche: chamada.guiche != null ? String(chamada.guiche) : null,
@@ -311,9 +311,9 @@ const processarFila = () => {
 
   const texto = `Senha ${chamada.senha}, ${chamada.nome}, comparecer ${preposicao} ${chamada.guiche}`
 
-  // 🟢 Função isolada para fechar a tela e chamar a próxima
+  // Função isolada para fechar a tela e chamar a próxima
   const finalizarChamada = () => {
-    // 🟢 O SEGREDO 2: Dá 4 segundos para a pessoa ler a tela DEPOIS que a voz calar a boca
+    // O SEGREDO 2: Dá 4 segundos para a pessoa ler a tela DEPOIS que a voz calar a boca
     setTimeout(() => {
       falando.value = false // Libera a catraca para a próxima senha
 
@@ -363,7 +363,7 @@ const processarFila = () => {
 
 /** ======= ADICIONA NA FILA ======= **/
 const falarChamada = (nome, senha, guiche) => {
-  // 🔴 TRAVA REMOVIDA: A senha vai pra fila visual mesmo se o som estiver desligado!
+  // TRAVA REMOVIDA: A senha vai pra fila visual mesmo se o som estiver desligado!
   filaChamadas.push({
     nome,
     senha,
@@ -441,7 +441,7 @@ const buscarChamadas = async () => {
       return `${id}_${hora}`
     }
 
-    // 🟢 3. PRIMEIRA EXECUÇÃO (Carga Inicial)
+    // 3. PRIMEIRA EXECUÇÃO (Carga Inicial)
     if (lastKey.value === null) {
       // No primeiro load, apenas marcamos todos os atuais como "já processados"
       // para que a TV não saia gritando 5 nomes ao ligar.
