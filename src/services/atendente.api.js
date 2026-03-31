@@ -2,9 +2,17 @@ import api from '@/services/api'
 
 export const AtendenteApi = {
   // ✅ Alterado: Agora busca agendamentos por SETOR
-  async buscarAgendamentosPorSetor(setorId) {
-    // Certifique-se de que a URL no Backend é exatamente esta:
-    const res = await api.get(`/agendamentos/setor/${setorId}`) 
+  async buscarAgendamentosPorSetor(setorId, gerenciadorId = null) {
+    let url = `/agendamentos/setor/${setorId}`
+
+    // só envia se existir
+    if (gerenciadorId && !isNaN(gerenciadorId)) {
+      url += `?gerenciadorId=${gerenciadorId}`
+    }
+
+    console.log('URL FINAL:', url)
+
+    const res = await api.get(url)
     return Array.isArray(res.data) ? res.data : []
   },
   
