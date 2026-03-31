@@ -18,7 +18,6 @@
               Organização da Empresa
             </h2>
           </div>
-
           <button
             @click="openModal()"
             class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all shadow-sm flex items-center gap-2"
@@ -56,19 +55,14 @@
                   </button>
                 </td>
                 <td class="px-6 py-4">
-                  <div class="flex items-center gap-3">
-                    <div class="font-bold text-sm text-[#1e3a8a]">{{ setor.nome }}</div>
-                  </div>
+                  <div class="font-bold text-sm text-[#1e3a8a]">{{ setor.nome }}</div>
                 </td>
-
                 <td class="px-6 py-4 text-sm text-gray-500">
                   {{ setor.descricao || 'Sem descrição' }}
                 </td>
-
                 <td class="px-6 py-4 text-sm text-gray-500">
                   {{ setor.secretaria?.nome }}
                 </td>
-
                 <td class="px-6 py-4 text-right">
                   <button
                     @click="excluir(setor.id)"
@@ -79,7 +73,7 @@
                 </td>
               </tr>
               <tr v-if="lista.length === 0">
-                <td colspan="6" class="px-6 py-20 text-center">
+                <td colspan="5" class="px-6 py-20 text-center">
                   <i class="pi pi-briefcase text-4xl text-gray-100 mb-4 block"></i>
                   <p class="text-gray-400 text-sm font-bold uppercase">Nenhum setor cadastrado</p>
                 </td>
@@ -106,43 +100,69 @@
               <div>
                 <label
                   class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"
-                  >Nome do Setor</label
                 >
+                  Nome do Setor
+                </label>
                 <input
                   v-model="form.nome"
                   type="text"
                   placeholder="Ex: Recursos Humanos"
-                  class="w-full bg-gray-5 border rounded-[6px] p-3 text-sm focus:ring-blue-500 outline-none transition-all"
+                  class="w-full border rounded-[6px] p-3 text-sm focus:ring-blue-500 outline-none transition-all"
                 />
               </div>
+
               <div>
                 <label
                   class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"
                 >
                   Descrição
                 </label>
-
                 <input
                   v-model="form.descricao"
                   type="text"
                   placeholder="Descrição do setor"
-                  class="w-full bg-gray-5 border rounded-[6px] p-3 text-sm focus:ring-blue-500 outline-none transition-all"
+                  class="w-full border rounded-[6px] p-3 text-sm focus:ring-blue-500 outline-none transition-all"
                 />
               </div>
-              <div class="md:col-span-2">
+
+              <!-- ✅ Select de Secretaria com v-model e options -->
+              <div>
                 <label
                   class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"
-                  >Secretaria</label
                 >
-
+                  Secretaria
+                </label>
                 <select
-                  name=""
-                  id=""
-                  class="w-full bg-gray-5 border rounded-[6px] p-3 text-sm focus:ring-blue-500 outline-none transition-all"
-                ></select>
+                  v-model="form.secretariaId"
+                  class="w-full border rounded-[6px] p-3 text-sm focus:ring-blue-500 outline-none"
+                >
+                  <option value="" disabled>Selecione uma secretaria</option>
+                  <option v-for="sec in secretarias" :key="sec.id" :value="sec.id">
+                    {{ sec.nome }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- ✅ Select de Endereço com v-model e options -->
+              <div>
+                <label
+                  class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"
+                >
+                  Endereço
+                </label>
+                <select
+                  v-model="form.enderecoId"
+                  class="w-full border rounded-[6px] p-3 text-sm focus:ring-blue-500 outline-none transition-all"
+                >
+                  <option value="" disabled>Selecione um endereço</option>
+                  <option v-for="end in enderecos" :key="end.id" :value="end.id">
+                    {{ end.logradouro || end.nome }}
+                  </option>
+                </select>
               </div>
             </div>
           </div>
+
           <div class="p-6 flex justify-end gap-3">
             <button
               @click="showModal = false"
@@ -154,7 +174,7 @@
               @click="save"
               class="bg-[#2563eb] text-white px-8 py-3 rounded-[5px] font-semibold text-[13px] shadow-lg shadow-blue-200 hover:scale-105 active:scale-95 transition-all"
             >
-              Salvar 
+              Salvar
             </button>
           </div>
         </div>
@@ -174,9 +194,11 @@ const api = axios.create({
 
 export default {
   components: { AdminConfig },
+
   data: () => ({
-    secretariaId: null,
     lista: [],
+    secretarias: [], // ✅ lista para popular o select
+    enderecos: [], // ✅ lista para popular o select
     showModal: false,
     usuarioCompleto: null,
     form: {
@@ -184,16 +206,21 @@ export default {
       nome: '',
       descricao: '',
       secretariaId: null,
+      enderecoId: null,
     },
   }),
+
   methods: {
+    getToken() {
+      const storage = localStorage.getItem('usuario')
+      if (!storage) return null
+      return JSON.parse(storage).token
+    },
+
     async inicializar() {
       try {
-        const storage = localStorage.getItem('usuario')
-        if (!storage) return
-
-        const usuarioLocalStorage = JSON.parse(storage)
-        const token = usuarioLocalStorage.token
+        const token = this.getToken()
+        if (!token) return
 
         const resUser = await api.get('/gerenciador/usuario-logado', {
           headers: { Authorization: `Bearer ${token}` },
@@ -201,64 +228,94 @@ export default {
 
         this.usuarioCompleto = resUser.data
 
-        if (this.usuarioCompleto.secretarias && this.usuarioCompleto.secretarias.length > 0) {
-          const idSecretaria = this.usuarioCompleto.secretarias[0].id
-          console.log('ID da Secretaria encontrado:', idSecretaria)
+        // ✅ Popula o select de secretarias com as secretarias do usuário
+        this.secretarias = this.usuarioCompleto.secretarias ?? []
 
+        const idSecretaria = this.getSecretariaId()
+        if (idSecretaria) {
           await this.carregarSetores(idSecretaria)
+          // ajuste o endpoint conforme sua API
         } else {
-          console.warn(
-            "Este usuário não está vinculado a nenhuma secretaria no array 'secretarias'",
-          )
+          console.warn('Usuário sem secretaria vinculada.')
         }
       } catch (error) {
         console.error('Erro ao inicializar:', error)
       }
     },
 
-    async carregarSetores(idSecretaria) {
+    async carregarEnderecos() {
       try {
-        const res = await api.get(`/setores/por-secretaria/${idSecretaria}`)
-        this.lista = res.data
+        const res = await api.get(`/api/enderecos/listar-todos`)
+        this.enderecos = res.data
       } catch (error) {
-        console.error('Erro ao buscar setores da secretaria:', error)
+        console.warn('Erro ao carregar endereços:', error)
       }
     },
 
     openModal(item = null) {
       if (item) {
-        this.form = { ...item }
+        this.form = {
+          id: item.id,
+          nome: item.nome,
+          descricao: item.descricao,
+          secretariaId: item.secretaria?.id,
+          enderecoId: item.endereco?.id ?? null,
+        }
       } else {
         this.form = {
           id: null,
           nome: '',
           descricao: '',
-
-          secretariaId: this.usuarioCompleto?.secretarias[0]?.id,
+          secretariaId: '',
+          enderecoId: null,
         }
       }
+      ;(this, this.carregarSecretarias())
+      this.carregarEnderecos()
+
       this.showModal = true
+    },
+    async carregarSecretarias() {
+      try {
+        // Usando o endpoint base do seu SecretariaController
+        const res = await api.get('/api/secretarias')
+        this.secretarias = res.data
+      } catch (error) {
+        console.error('Erro ao carregar lista de secretarias:', error)
+      }
     },
 
     async save() {
       try {
-        if (this.form.id) {
-          await api.put(`/setores/${this.form.id}`, this.form)
-        } else {
-          await api.post('/setores', this.form)
-        }
-        this.showModal = false
+        this.form.secretariaId = this.getSecretariaId()
 
-        await this.carregarSetores(this.usuarioCompleto.secretariaId)
+        console.log('Enviando:', this.form)
+
+        if (this.form.id) {
+          await api.put(`/api/setores/${this.form.id}`, this.form)
+        } else {
+          await api.post('/api/setores', this.form)
+        }
+
+        this.showModal = false
+        await this.carregarSetores(this.getSecretariaId())
       } catch (error) {
+        console.error('Erro completo:', error.response?.data || error)
         alert('Erro ao salvar setor.')
       }
     },
 
     async excluir(id) {
       if (!confirm('Deseja realmente excluir?')) return
-      await api.delete(`/setores/${id}`)
-      await this.carregarSetores(this.usuarioCompleto.secretariaId)
+      try {
+        // ✅ Corrigido: prefixo /api
+        await api.delete(`/api/setores/${id}`)
+        // ✅ Corrigido: usa getSecretariaId()
+        await this.carregarSetores(this.getSecretariaId())
+      } catch (error) {
+        console.error('Erro ao excluir setor:', error)
+        alert('Erro ao excluir setor.')
+      }
     },
   },
 
