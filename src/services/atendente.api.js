@@ -3,7 +3,7 @@ import api from '@/services/api'
 export const AtendenteApi = {
   // ✅ Alterado: Agora busca agendamentos por SETOR
   async buscarAgendamentosPorSetor(setorId, gerenciadorId = null) {
-    let url = `api/agendamentos/setor/${setorId}`
+    let url = `/agendamentos/setor/${setorId}`
 
     // só envia se existir
     if (gerenciadorId && !isNaN(gerenciadorId)) {
