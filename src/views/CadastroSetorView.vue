@@ -37,6 +37,7 @@
                 <th class="px-6 py-5">Nome do Setor</th>
                 <th class="px-6 py-5">Descrição</th>
                 <th class="px-6 py-5">Secretaria</th>
+                <th class="px-6 py-5">Endereço</th>
                 <th class="px-6 py-5 text-right">Ações</th>
               </tr>
             </thead>
@@ -62,6 +63,9 @@
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-500">
                   {{ setor.secretaria?.nome }}
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-500">
+                  {{ formatarEndereco(setor.endereco) }}
                 </td>
                 <td class="px-6 py-4 text-right">
                   <button
@@ -217,18 +221,25 @@ export default {
       return JSON.parse(storage).token
     },
 
+    formatarEndereco(endereco) {
+      if (!endereco || typeof endereco !== 'object') {
+        return 'Sem endereço'
+      }
+
+      return `${endereco.logradouro ?? ''}, ${endereco.numero ?? ''} - ${endereco.bairro ?? ''}, ${endereco.cidade ?? ''} - ${endereco.uf ?? ''} | CEP: ${endereco.cep ?? ''}`
+    },
+
     async inicializar() {
       try {
         const token = this.getToken()
         if (!token) return
 
-        const resUser = await api.get('/gerenciador/usuario-logado', {
+        const resUser = await api.get('api/gerenciador/usuario-logado', {
           headers: { Authorization: `Bearer ${token}` },
         })
 
         this.usuarioCompleto = resUser.data
 
-        // ✅ Popula o select de secretarias com as secretarias do usuário
         this.secretarias = this.usuarioCompleto.secretarias ?? []
 
         const idSecretaria = this.getSecretariaId()
@@ -252,6 +263,15 @@ export default {
       }
     },
 
+    async carregarSetores(secretariaId) {
+      try {
+        const res = await api.get(`/api/setores/por-secretaria/${secretariaId}`)
+        this.lista = res.data
+      } catch (error) {
+        console.error('Erro ao carregar setores:', error)
+      }
+    },
+
     openModal(item = null) {
       if (item) {
         this.form = {
@@ -270,7 +290,7 @@ export default {
           enderecoId: null,
         }
       }
-      ;(this, this.carregarSecretarias())
+      this.carregarSecretarias()
       this.carregarEnderecos()
 
       this.showModal = true
@@ -280,9 +300,13 @@ export default {
         // Usando o endpoint base do seu SecretariaController
         const res = await api.get('/api/secretarias')
         this.secretarias = res.data
+        console.log(res)
       } catch (error) {
         console.error('Erro ao carregar lista de secretarias:', error)
       }
+    },
+    getSecretariaId() {
+      return this.usuarioCompleto?.secretarias?.[0]?.id || null
     },
 
     async save() {

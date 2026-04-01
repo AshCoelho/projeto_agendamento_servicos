@@ -141,6 +141,7 @@
                 <input
                   v-model="form.usuario"
                   type="text"
+                  placeholder="Nome completo"
                   class="w-full bg-gray-5 border rounded-[6px] p-3 text-sm focus:ring-blue-500 outline-none transition-all"
                 />
               </div>
@@ -232,6 +233,19 @@
                 <label
                   class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"
                 >
+                  Setor
+                </label>
+                <select>
+                  <option>
+                    deve aparecer os setores relacionado a secretaria do usuario logado
+                  </option>
+                </select>
+              </div>
+
+              <div>
+                <label
+                  class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"
+                >
                   Situação
                 </label>
                 <select
@@ -278,6 +292,7 @@ export default {
       lista: [],
       showModal: false,
       usuarioLogadoPerfil: localStorage.getItem('perfil') || '',
+      usuarioLogadoSecretariaId: localStorage.getItem('secretariaId'),
       form: {
         id: null,
         usuario: '',
@@ -287,15 +302,29 @@ export default {
         senha: '',
         perfil: 'ATENDENTE',
         status: 'Ativo',
+        setorId: null,
       },
     }
   },
 
   mounted() {
     this.carregar()
+    this
   },
 
   methods: {
+    async carregarSetores() {
+      if (!this.usuarioLogadoSecretariaId) return
+
+      try {
+        // Chamada para o endpoint que você mostrou no controller
+        const res = await api.get(`/secretarias/${this.usuarioLogadoSecretariaId}/setores`)
+        this.setoresDaSecretaria = res.data
+      } catch (e) {
+        console.error('Erro ao buscar setores da secretaria:', e)
+      }
+    },
+
     async carregar() {
       try {
         const res = await api.get('/gerenciador')
