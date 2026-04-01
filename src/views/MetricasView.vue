@@ -126,9 +126,9 @@ export default {
       const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'))
 
       // INÍCIO DO DEBUG
-      console.group('🔍 DEBUG: Meus Agendamentos')
-      console.log('👤 Meu ID (Guichê Logado):', meuId)
-      console.log('📦 Total no Setor (Cru do Banco):', this.agendamentosPorSetor.length)
+      // console.group('🔍 DEBUG: Meus Agendamentos')
+      // console.log('👤 Meu ID (Guichê Logado):', meuId)
+      // console.log('📦 Total no Setor (Cru do Banco):', this.agendamentosPorSetor.length)
 
       return this.agendamentosPorSetor.filter((a) => {
         const idAtendente = Number(a.gerenciadorId)
@@ -255,16 +255,16 @@ export default {
           this.agendamentosPorSetor = [...data]
 
           // LINHA PARA DEBUG
-          console.log('MEU ID:', this.usuario.id)
-          console.log(
-            'LISTA DO BANCO:',
-            this.agendamentosPorSetor.map((a) => ({
-              senha: a.senha,
-              status: a.situacao,
-              idAtendenteNoObjeto:
-                this.usuario.id || a.atendenteId || (a.usuario ? a.usuario.id : 'NULO'),
-            })),
-          )
+          //console.log('MEU ID:', this.usuario.id)
+          // console.log(
+          //   'LISTA DO BANCO:',
+          //   this.agendamentosPorSetor.map((a) => ({
+          //     senha: a.senha,
+          //     status: a.situacao,
+          //     idAtendenteNoObjeto:
+          //       this.usuario.id || a.atendenteId || (a.usuario ? a.usuario.id : 'NULO'),
+          //   })),
+          // )
         }
       } catch (e) {
         console.error('Erro ao buscar agendamentos:', e)

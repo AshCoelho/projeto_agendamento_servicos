@@ -1109,7 +1109,7 @@ export default {
           observacao: this.selectedItem.observacao ?? '',
         }
 
-        console.log('payload enviado:', payload)
+        //console.log('payload enviado:', payload)
 
         const token = localStorage.getItem('token')
         await AtendenteApi.atualizarEspontaneo(this.selectedItem.agendamentoId, payload, token)
