@@ -299,7 +299,13 @@ export default {
       try {
         if (!this.usuario?.id) await this.getUsuarioLogado()
         if (this.setorTrabalhoId) {
-          const data = await AtendenteApi.buscarAgendamentosPorSetor(this.setorTrabalhoId)
+          const meuId = this.usuario?.id || localStorage.getItem('usuarioId')
+
+          const data = await AtendenteApi.buscarAgendamentosPorSetor(
+            this.setorTrabalhoId,
+            meuId
+          )
+
           this.agendamentosPorSetor = [...data]
         }
       } catch (e) {

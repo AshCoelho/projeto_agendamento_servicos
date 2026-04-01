@@ -967,125 +967,137 @@ export default {
       }
     },
 
-    async imprimirTicketWebUSB(senha, dataHora) {
-      try {
-        // 1. Solicita acesso ao dispositivo USB
-        const device = await navigator.usb.requestDevice({ filters: [] })
-        await device.open()
-        await device.selectConfiguration(1)
-        await device.claimInterface(0)
+    async imprimirTicketWebUSB(device, senha, dataHora, nomeServico) {
+  try {
+    await device.open();
+    if (device.configuration === null) await device.selectConfiguration(1);
+    await device.claimInterface(0);
 
-        const encoder = new TextEncoder()
+    const outEndpoint = device.configuration.interfaces[0].alternate.endpoints
+      .find(e => e.direction === 'out');
 
-        // Comandos ESC/POS (Hexadecimais comuns)
-        const init = '\x1b\x40' // Inicializa
-        const center = '\x1b\x61\x01' // Centraliza
-        const boldOn = '\x1b\x45\x01' // Negrito ON
-        const bigFont = '\x1d\x21\x11' // Fonte Dobrada
-        const reset = '\x1b\x21\x00' // Fonte Normal
-        const cut = '\x1d\x56\x42\x00' // Corte de papel
+    if (!outEndpoint) throw new Error("Endpoint de saída não encontrado.");
 
-const 
-conteudo =
-init +
-center +
-'PREFEITURA DE SAO LUIS\n' +
-'==============================\n' +
-'EMISSAO: ' +
-dataHora +
-'\n' +
-'------------------------------\n\n' +
-'SUA SENHA:\n\n' +
-boldOn +
-bigFont +
-senha +
-'\n\n' +
-reset +
-center +
-'------------------------------\n' +
-'AGUARDE SUA CHAMADA\n' +
-'==============================\n' +
-'\n\n\n' +
-cut
+    const encoder = new TextEncoder();
+    
+    const commands = [
+      new Uint8Array([0x1b, 0x40]),           // Reset da impressora
+      new Uint8Array([0x1b, 0x61, 0x01]),     // Centralizar tudo
 
-        // Envia os dados para o Endpoint de saída (geralmente 1 ou 2)
-         await device.transferOut(1, encoder.encode(conteudo));
-          await device.close();
+      // 1. PREFEITURA DE SÃO LUÍS (Negrito)
+      new Uint8Array([0x1b, 0x45, 0x01]),     
+      encoder.encode('PREFEITURA DE SÃO LUIS\n\n'),
+      new Uint8Array([0x1b, 0x45, 0x00]),     
 
-          console.log("Ticket impresso via WebUSB");
-        } catch (err) {
-          // IGNORA cancelamento do usuário
-          if (err.name === 'NotFoundError') {
-            console.warn("Usuário cancelou a seleção da impressora.");
-            return;
-          }
+      // 2. SERVIÇO
+      encoder.encode('SERVICO:\n'),
+      encoder.encode(`${nomeServico.toUpperCase()}\n\n`),
 
-          console.warn("Erro na impressão:", err);
-          return;
-        }
-      },
+      // 3. SENHA (Grande e Negrito)
+      encoder.encode('SENHA:\n'),
+      new Uint8Array([0x1d, 0x21, 0x22]),     // (Tamanho Máximo: 4x)
+      new Uint8Array([0x1b, 0x45, 0x01]),     // Negrito ON
+      encoder.encode(`${senha}\n\n`),
+      new Uint8Array([0x1b, 0x45, 0x00]),     // Negrito OFF
+      new Uint8Array([0x1d, 0x21, 0x00]),     // Volta fonte normal
 
-    async salvarEspontaneo() {
-      // 1. Bloqueio de segurança contra duplicidade
-      if (this.isSalvando) return
+      // 4. AGUARDE SER CHAMADO
+      encoder.encode('AGUARDE SER CHAMADO\n\n'),
 
-      try {
-        if (!this.novoAgendamento.nomeCidadao || this.novoAgendamento.nomeCidadao.trim() === '') {
-          alert('Por favor, informe o nome do cidadão.')
-          return
-        }
+      // 5. EMISSÃO
+      encoder.encode(`EMISSÃO: ${dataHora}\n`),
 
-        if (!this.novoAgendamento.servico) {
-          alert('Por favor, selecione um serviço para o atendimento.')
-          return
-        }
+      // Espaço e Corte
+      encoder.encode('\n\n\n\n'),             
+      new Uint8Array([0x1d, 0x56, 0x42, 0x00]) // Comando de Corte
+    ];
 
-        // Ativa o estado de carregamento
-        this.isSalvando = true
+    const totalLength = commands.reduce((acc, cur) => acc + cur.length, 0);
+    const combinedData = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const cmd of commands) {
+      combinedData.set(cmd, offset);
+      offset += cmd.length;
+    }
 
-        const payload = {
-          nomeCidadao: this.novoAgendamento.nomeCidadao,
-          tipoAtendimentoId: Number(this.novoAgendamento.tipoAtendimentoId),
-          servicoId: Number(this.novoAgendamento.servico),
-          setorId: Number(this.setorTrabalhoId),
-          situacao: 'AGENDADO',
-          observacao: this.novoAgendamento.observacoes,
-        }
+    await device.transferOut(outEndpoint.endpointNumber, combinedData);
+    await new Promise(resolve => setTimeout(resolve, 800));
+    await device.close();
 
-        const res = await AtendenteApi.salvarEspontaneo(this.secretariaTrabalhoId, payload);
+    console.log("Ticket impresso com sucesso.");
+  } catch (err) {
+    console.error("Erro físico na impressora:", err);
+    try { if(device.opened) await device.close(); } catch(e) {}
+    alert("Atendimento salvo, mas houve erro na impressora: " + err.message);
+  }
+},
 
-        if (res.status === 200 || res.status === 201) {
-          // --- IMPRESSÃO DIRETA USB ---
-          try {
-            const senha = res.data.codigo || res.data.senha || '---'
-            const dataHora = new Date().toLocaleString('pt-BR')
+  async salvarEspontaneo() {
+    if (this.isSalvando) return;
 
-            this.imprimirTicketWebUSB(senha, dataHora)
-          } catch (printError) {
-            // Apenas aviso, pois o dado já foi salvo no banco com sucesso
-            console.warn('Erro de hardware na impressão:', printError.message)
-          }
-          // ----------------------------
+    if (!navigator.usb) {
+      alert("Acesso USB bloqueado. Verifique o HTTPS ou as Flags do Chrome.");
+      return;
+    }
 
-          this.mostrarModalEspontaneo = false
-          this.novoAgendamento = {
-            nomeCidadao: '',
-            servico: null,
-            tipoAtendimentoId: null,
-            observacoes: '',
-          }
-
-          await this.buscarAgendamentos()
-          await this.carregarTiposAtendimento()
-        }
-      } catch (e) {
-        console.error('Erro ao salvar:', e)
-        const msgErro = e.response?.data?.mensagem || e.message || 'Erro de comunicação'
-        alert('Erro: ' + msgErro)
-      } finally {
-        this.isSalvando = false
+    let device;
+    try {
+      // TENTA IMPRIMIR DIRETO: Verifica se já existe permissão prévia
+      const pairedDevices = await navigator.usb.getDevices();
+      
+      if (pairedDevices.length > 0) {
+        device = pairedDevices[0]; // Pega a primeira que já foi autorizada
+      } else {
+        // Se for a primeira vez ou cache limpo, abre o popup
+        device = await navigator.usb.requestDevice({ filters: [] });
       }
-    },
+    } catch (err) {
+      console.warn("Seleção cancelada.");
+      return;
+    }
+
+    try {
+      if (!this.novoAgendamento.nomeCidadao?.trim()) {
+        alert('Informe o nome do cidadão.');
+        return;
+      }
+
+      this.isSalvando = true;
+
+      const payload = {
+        nomeCidadao: this.novoAgendamento.nomeCidadao,
+        tipoAtendimentoId: Number(this.novoAgendamento.tipoAtendimentoId),
+        servicoId: Number(this.novoAgendamento.servico),
+        setorId: Number(this.setorTrabalhoId),
+        situacao: 'AGENDADO',
+        observacao: this.novoAgendamento.observacoes,
+      };
+
+      const res = await AtendenteApi.salvarEspontaneo(this.secretariaTrabalhoId, payload);
+
+      if (res.status === 200 || res.status === 201) {
+        const senha = res.data.codigo || res.data.senha || '---';
+        const dataHora = new Date().toLocaleString('pt-BR');
+
+        // Busca o nome amigável do serviço
+        const servicoObj = this.servicos.find(s => s.id == this.novoAgendamento.servico);
+        const nomeServico = servicoObj ? servicoObj.nome : 'GERAL';
+
+        // Dispara a impressão
+        await this.imprimirTicketWebUSB(device, senha, dataHora, nomeServico);
+
+        // Limpa e fecha
+        this.mostrarModalEspontaneo = false;
+        this.novoAgendamento = { nomeCidadao: '', servico: null, tipoAtendimentoId: null, observacoes: '' };
+        await this.buscarAgendamentos();
+      }
+    } catch (e) {
+      console.error('Erro geral:', e);
+      alert('Erro: ' + (e.response?.data?.mensagem || e.message));
+    } finally {
+      this.isSalvando = false;
+    }
+  },
 
     async atualizarEspontaneo() {
       try {
