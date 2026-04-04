@@ -1120,14 +1120,17 @@ export default {
       }
     },
 
-    async carregarServicos() {
+    async carregarServicos(apenasCadastro = false) {
       try {
         const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'))
 
+        const idParaEnviar = (apenasCadastro || isNaN(meuId)) ? null : meuId;
+
         const servicos = await AtendenteApi.carregarServicosPorSetor(
           this.setorTrabalhoId,
-          !isNaN(meuId) ? meuId : null
-        )
+          idParaEnviar,
+          apenasCadastro // 👈 IMPORTANTE: Passar como 3º parâmetro aqui!
+        );
 
         this.servicos = servicos
       } catch (e) {
@@ -1161,7 +1164,7 @@ export default {
       this.buscarAgendamentos()
     }, 2000)
 
-    this.carregarServicos()
+    this.carregarServicos(true)
     this.carregarTiposAtendimento()
     this.atualizarRelogioLocal()
     setInterval(this.atualizarRelogioLocal, 1000)
