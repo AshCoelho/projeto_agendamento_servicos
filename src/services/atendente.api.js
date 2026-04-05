@@ -59,18 +59,18 @@ export const AtendenteApi = {
     return await api.get('/gerenciador/usuario-logado')
   },
 
-  async carregarServicosPorSetor(setorId, gerenciadorId = null) {
-    let url = `/agendamento/api/servico/setor/${setorId}`
+  async carregarServicosPorSetor(setorId, gerenciadorId = null, apenasCadastro = false) {
+      let url = `/agendamento/api/servico/setor/${setorId}?cadastro=${apenasCadastro}`
 
-    // 🔒 só adiciona se válido
-    if (gerenciadorId && !isNaN(gerenciadorId)) {
-      url += `?gerenciadorId=${gerenciadorId}`
-    }
+      // 🔒 Adiciona o ID do gerenciador se ele existir (para especialistas/gerais)
+      if (gerenciadorId && !isNaN(gerenciadorId)) {
+        url += `&gerenciadorId=${gerenciadorId}`
+      }
 
-    console.log("URL FINAL:", url)
+      console.log("URL FINAL:", url)
 
-    const response = await api.get(url)
-    return response.data
+      const response = await api.get(url)
+      return response.data
   },
 
   async deslogarGuiche(gerenciadorId) {
