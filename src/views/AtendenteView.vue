@@ -620,18 +620,18 @@ export default {
   }),
 
   watch: {
-      mostrarModalEspontaneo(novoValor) {
-          const acao = novoValor ? 'addEventListener' : 'removeEventListener'
-          window[acao]('keydown', this.handleEsc)
+    mostrarModalEspontaneo(novoValor) {
+      const acao = novoValor ? 'addEventListener' : 'removeEventListener'
+      window[acao]('keydown', this.handleEsc)
 
-          // LÓGICA DE ATIVAÇÃO PERMANENTE:
-          // Se abriu o modal uma vez, vira 'true' e fica 'true'.
-          if (novoValor === true) {
-              this.jaAbriuModal = true;
-              // Força uma busca imediata com a visão liberada
-              this.buscarAgendamentos();
-          }
-      },
+      // LÓGICA DE ATIVAÇÃO PERMANENTE:
+      // Se abriu o modal uma vez, vira 'true' e fica 'true'.
+      if (novoValor === true) {
+        this.jaAbriuModal = true
+        // Força uma busca imediata com a visão liberada
+        this.buscarAgendamentos()
+      }
+    },
   },
 
   computed: {
@@ -920,30 +920,30 @@ export default {
     },
 
     async buscarAgendamentos() {
-        try {
-            // 1. Garante que o usuário e o perfil foram carregados
-            if (!this.usuario?.id) await this.getUsuarioLogado();
+      try {
+        // 1. Garante que o usuário e o perfil foram carregados
+        if (!this.usuario?.id) await this.getUsuarioLogado()
 
-            if (this.setorTrabalhoId) {
-                const meuId = this.usuario?.id || localStorage.getItem('usuarioId');
+        if (this.setorTrabalhoId) {
+          const meuId = this.usuario?.id || localStorage.getItem('usuarioId')
 
-                // 2. CAPTURA O PERFIL (Prioriza a variável do componente, depois o storage)
-                // Se o cara for 'CADASTRO', o SQL libera a fila toda do setor.
-                const perfilEnvio = this.perfil || localStorage.getItem('perfilUsuario') || 'ATENDENTE';
+          // 2. CAPTURA O PERFIL (Prioriza a variável do componente, depois o storage)
+          // Se o cara for 'CADASTRO', o SQL libera a fila toda do setor.
+          const perfilEnvio = this.perfil || localStorage.getItem('perfilUsuario') || 'ATENDENTE'
 
-                // 3. Chama a API passando a String do Perfil
-                const data = await AtendenteApi.buscarAgendamentosPorSetor(
-                    this.setorTrabalhoId,
-                    meuId,
-                    perfilEnvio
-                );
+          // 3. Chama a API passando a String do Perfil
+          const data = await AtendenteApi.buscarAgendamentosPorSetor(
+            this.setorTrabalhoId,
+            meuId,
+            perfilEnvio,
+          )
 
-                // 4. Atualiza a lista reativa
-                this.agendamentosPorSetor = [...data];
-            }
-        } catch (e) {
-            console.error('Erro ao buscar agendamentos:', e);
+          // 4. Atualiza a lista reativa
+          this.agendamentosPorSetor = [...data]
         }
+      } catch (e) {
+        console.error('Erro ao buscar agendamentos:', e)
+      }
     },
 
     async handleChamar(senha) {
@@ -1192,13 +1192,8 @@ export default {
         const servicos = await AtendenteApi.carregarServicosPorSetor(
           this.setorTrabalhoId,
           idParaEnviar,
-<<<<<<< HEAD
-          apenasCadastro, //IMPORTANTE: Passar como 3º parâmetro aqui!
+          apenasCadastro, // IMPORTANTE: Passar como 3º parâmetro aqui!
         )
-=======
-          apenasCadastro // IMPORTANTE: Passar como 3º parâmetro aqui!
-        );
->>>>>>> 71b4550722dadd7e420baf0efe8b8900c1cbcb34
 
         this.servicos = servicos
       } catch (e) {
