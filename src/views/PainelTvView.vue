@@ -37,14 +37,6 @@
       <div
         class="flex-[4] md:flex-[4] bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden relative"
       >
-        <!-- Iframe da câmera ocupando só esse card -->
-        <iframe
-          v-if="!mostrarSenha"
-          src="https://cameras.saoluis.ma.gov.br/cam1.html"
-          class="absolute inset-0 w-full h-full z-0 rounded-2xl"
-          frameborder="0"
-        ></iframe>
-
         <div
           class="w-full text-[20px] md:text-[2vw] flex justify-center items-center pt-10 md:pt-2 font-bold"
           :class="senhaAtual?.numero?.includes('P') ? 'text-red-600' : 'text-blue-600'"
@@ -53,7 +45,6 @@
         </div>
 
         <div
-          v-show="mostrarSenha"
           class="flex-1 flex flex-col md:flex-row items-center justify-around px-4 md:px-10 bg-white"
         >
           <div class="flex flex-col items-center justify-center">
@@ -192,7 +183,6 @@ const historico = ref([])
 
 const lastKey = ref(null)
 const fetching = ref(false)
-const mostrarSenha = ref(false)
 
 let intervalChamada = null
 let intervalRelogio = null
@@ -283,8 +273,6 @@ const processarFila = () => {
     cidadao: String(chamada.nome),
   }
 
-  mostrarSenha.value = true // Traz a tela pra frente da câmera
-
   const normalizar = (str) =>
     str
       ?.trim()
@@ -317,9 +305,7 @@ const processarFila = () => {
     setTimeout(() => {
       falando.value = false // Libera a catraca para a próxima senha
 
-      if (filaChamadas.length === 0) {
-        mostrarSenha.value = false // Fila vazia? Volta pra câmera
-      } else {
+      if (filaChamadas.length > 0) {
         processarFila() // Tem gente na fila? Puxa o próximo!
       }
     }, 4000)
