@@ -1,29 +1,34 @@
 <template>
-  <div class="px-8">
-    <div class="mb-6 bg-white p-6 rounded-[15px] shadow-sm border-b-4 border-transparent">
-      <h2 class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-6">
+  <div class="px-3">
+    <div class="mb-3 bg-white p-4 rounded-[15px] shadow-sm border-b-4 border-transparent">
+      <h2 class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-4">
         Painel de Comandos
       </h2>
 
       <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div
-          class="bg-[#f8f9fd] p-6 rounded-[15px] shadow-sm flex justify-between items-start border-b-4 border-transparent"
+          class="bg-[#f8f9fd] p-3 h-[100px] rounded-[15px] shadow flex justify-between items-start border-b-4 border-transparent"
         >
-          <div>
-            <p class="text-[10px] font-bold text-black/70 uppercase mb-1 tracking-wider">
+          <div class="flex flex-col gap-4">
+            <p class="text-[10px] font-bold text-black/70 uppercase tracking-wider">
               Atendimentos Hoje
             </p>
-            <h3 class="text-2xl font-black text-black tracking-tighter">
-              {{ totalRegistradosHoje }}
-            </h3>
-            <span class="inline-block w-8 h-1 bg-blue-darken-4 rounded-full"></span>
-            <div class="flex gap-2 mt-2">
-              <span class="text-[11px] font-bold text-blue-500 uppercase">
-                {{ totalNormalGeral }} Normal
-              </span>
-              <span class="text-[11px] font-bold text-orange-500 uppercase">
-                {{ totalPrioridadeGeral }} Prioridade
-              </span>
+
+            <div class="flex items-center gap-6">
+              <h3 class="text-2xl font-black text-black tracking-tighter">
+                {{ totalRegistradosHoje }}
+              </h3>
+
+              <span class="w-[2px] h-8 bg-gray-300 rounded-full"></span>
+
+              <div class="flex flex-col">
+                <span class="text-[11px] font-bold text-blue-500 uppercase">
+                  {{ totalNormalGeral }} Normal
+                </span>
+                <span class="text-[11px] font-bold text-orange-500 uppercase">
+                  {{ totalPrioridadeGeral }} Prioridade
+                </span>
+              </div>
             </div>
           </div>
           <div
@@ -35,10 +40,14 @@
 
         <div
           @click="handleChamarNormal"
-          class="cursor-pointer bg-[#2563eb] hover:bg-[#1d4ed8] p-6 rounded-[15px] shadow-md flex justify-between items-center transition-all active:scale-95"
+          class="cursor-pointer bg-[#2563eb] hover:bg-[#1d4ed8] p-4 rounded-[15px] shadow-md flex justify-between items-center transition-all active:scale-95"
         >
           <div>
-            <p class="text-[10px] font-bold text-white/70 uppercase mb-1 tracking-wider">Ação</p>
+            <p class="text-2xl font-bold text-white uppercase mb-1 tracking-wider">
+              <span>
+                {{ totalNormalFila }}
+              </span>
+            </p>
             <h3 class="text-2xl font-black text-white font-bold">Chamar Normal</h3>
           </div>
           <div
@@ -49,10 +58,14 @@
         </div>
 
         <div
-          class="cursor-pointer bg-[#FFA000] hover:bg-[#FF8F00] p-6 rounded-[15px] shadow-md flex justify-between items-center transition-all active:scale-95"
+          class="cursor-pointer bg-[#FFA000] hover:bg-[#FF8F00] p-4 rounded-[15px] shadow-md flex justify-between items-center transition-all active:scale-95"
         >
           <div @click="handleChamarPrioridade">
-            <p class="text-[10px] font-bold text-white/70 uppercase mb-1 tracking-wider">Ação</p>
+            <p class="text-2xl font-bold text-white uppercase mb-1 tracking-wider">
+              <span>
+                {{ totalPrioridadeFila }}
+              </span>
+            </p>
             <h3 class="text-2xl font-black text-white font-bold">Chamar Prioridade</h3>
           </div>
           <div
@@ -63,25 +76,31 @@
         </div>
 
         <div
-          class="bg-[#f8f9fd] p-6 rounded-[15px] shadow-sm flex justify-between items-start border-b-4 border-transparent"
+          class="bg-[#f8f9fd] p-4 rounded-[15px] shadow flex justify-between items-start border-b-4 border-transparent"
         >
-          <div>
-            <p class="text-[10px] font-bold text-black/70 uppercase mb-1 tracking-wider">
+          <div class="flex flex-col gap-4">
+            <p class="text-[10px] font-bold text-black/70 uppercase tracking-wider">
               Pessoas na Fila
             </p>
-            <h3 class="text-2xl font-black text-black tracking-tighter">
-              {{ agendamentosAguardando }}
-            </h3>
-            <span class="inline-block w-8 h-1 bg-blue-darken-4 rounded-full"></span>
-            <div class="flex gap-2 mt-2">
-              <span class="text-[11px] font-bold text-blue-500 uppercase">
-                {{ totalNormalFila }} Normal
-              </span>
-              <span class="text-[11px] font-bold text-orange-500 uppercase">
-                {{ totalPrioridadeFila }} Prioridade
-              </span>
+
+            <div class="flex items-center gap-6">
+              <h3 class="text-2xl font-black text-black tracking-tighter">
+                {{ agendamentosAguardando }}
+              </h3>
+
+              <span class="w-[2px] h-8 bg-gray-300 rounded-full"></span>
+
+              <div class="flex flex-col">
+                <span class="text-[11px] font-bold text-blue-500 uppercase">
+                  {{ totalNormalFila }} Normal
+                </span>
+                <span class="text-[11px] font-bold text-orange-500 uppercase">
+                  {{ totalPrioridadeFila }} Prioridade
+                </span>
+              </div>
             </div>
           </div>
+
           <div
             class="w-12 h-12 bg-black/20 rounded-[12px] flex items-center justify-center text-white backdrop-blur-sm"
           >
@@ -107,10 +126,12 @@ export default {
     mostrarModalEdicao: false,
     mostrarModalEspontaneo: false,
     sidebarAberta: false,
+    jaAbriuModal: false,
 
     // Dados
     filtroTexto: '',
     usuario: null,
+    perfil: '',
     setorTrabalhoId: null,
     secretariaTrabalhoId: null,
     enderecoEstatico: null,
@@ -126,18 +147,30 @@ export default {
   }),
 
   watch: {
-    mostrarModalEspontaneo(novoValor) {
-      const acao = novoValor ? 'addEventListener' : 'removeEventListener'
-      window[acao]('keydown', this.handleEsc)
-    },
+      mostrarModalEspontaneo(novoValor) {
+          const acao = novoValor ? 'addEventListener' : 'removeEventListener'
+          window[acao]('keydown', this.handleEsc)
+
+          // LÓGICA DE ATIVAÇÃO PERMANENTE:
+          // Se abriu o modal uma vez, vira 'true' e fica 'true'.
+          if (novoValor === true) {
+              this.jaAbriuModal = true;
+              // Força uma busca imediata com a visão liberada
+              this.buscarAgendamentos();
+          }
+      },
   },
 
   computed: {
-    // 🟢 1. O FILTRO MESTRE (Blindado contra o Bug do Zero)
+    // 1. O FILTRO MESTRE (Blindado contra o Bug do Zero)
     meusAgendamentos() {
       const meuId = this.usuario?.id || localStorage.getItem('usuarioId');
       
       if (!meuId) return []; // Se o sistema ainda não carregou o seu usuário, a lista fica vazia.
+      
+      if (this.perfil === 'CADASTRO') {
+          return this.agendamentosPorSetor;
+      }
 
       return this.agendamentosPorSetor.filter(a => {
         // 🛑 A TRAVA: Se o paciente ainda não foi chamado (gerenciadorId é nulo/vazio), ignora ele na hora!
@@ -148,7 +181,7 @@ export default {
       });
     },
 
-    // 🟢 2. PAINEL "ATENDIMENTOS HOJE": Agora só mostra o total de quem passou pelo SEU guichê!
+    // 2. PAINEL "ATENDIMENTOS HOJE": Agora só mostra o total de quem passou pelo SEU guichê!
     totalRegistradosHoje() {
       return this.meusAgendamentos.filter((a) => a.situacao === 'ATENDIDO').length
     },
@@ -165,7 +198,7 @@ export default {
       ).length;
     },
 
-    // 🟢 3. PAINÉIS DE RESULTADO: Apenas os seus atendidos e ausentes
+    // 3. PAINÉIS DE RESULTADO: Apenas os seus atendidos e ausentes
     agendamentosFinalizados() {
       return this.meusAgendamentos.filter((a) => a.situacao === 'ATENDIDO').length;
     },
@@ -173,7 +206,7 @@ export default {
       return this.meusAgendamentos.filter((a) => a.situacao === 'FALTOU').length;
     },
 
-    // 🌎 4. PAINEL "PESSOAS NA FILA": A fila geral de quem está aguardando no setor (Não mexemos, fica global)
+    // 4. PAINEL "PESSOAS NA FILA": A fila geral de quem está aguardando no setor (Não mexemos, fica global)
     agendamentosAguardando() {
       return this.agendamentosPorSetor.filter(
         (a) => a.situacao === 'AGENDADO' && ['AGENDADO', 'ESPONTANEO'].includes(a.tipoAgendamento),
@@ -288,6 +321,8 @@ export default {
 
         if (data.id) {
           localStorage.setItem('usuarioId', data.id)
+          this.perfil = data.perfil || 'ATENDENTE'
+          localStorage.setItem('perfilUsuario', this.perfil)
         }
       } catch (error) {
         localStorage.clear()
@@ -297,19 +332,24 @@ export default {
 
     async buscarAgendamentos() {
       try {
-        if (!this.usuario?.id) await this.getUsuarioLogado()
+        if (!this.usuario?.id) await this.getUsuarioLogado();
+        
         if (this.setorTrabalhoId) {
-          const meuId = this.usuario?.id || localStorage.getItem('usuarioId')
+          const meuId = this.usuario?.id || localStorage.getItem('usuarioId');
+          
+          // Garanta que jaAbriuModal exista no 'data' dessa view também!
+          const perfilEnvio = this.perfil || localStorage.getItem('perfilUsuario') || 'ATENDENTE';
 
           const data = await AtendenteApi.buscarAgendamentosPorSetor(
             this.setorTrabalhoId,
-            meuId
-          )
+            meuId,
+            perfilEnvio // Faltava esse cara aqui na primeira view!
+          );
 
-          this.agendamentosPorSetor = [...data]
+          this.agendamentosPorSetor = [...data];
         }
       } catch (e) {
-        console.error('Erro ao buscar agendamentos:', e)
+        console.error('Erro ao buscar agendamentos:', e);
       }
     },
 
@@ -335,15 +375,15 @@ export default {
 
         if (res.status === 200) {
           if (itemClicado) {
-            // 🟢 Adiciona nos chamados manualmente para o "computed" enxergar na hora
+            // Adiciona nos chamados manualmente para o "computed" enxergar na hora
             this.idsChamadosManualmente.push(itemClicado.agendamentoId || itemClicado.id)
 
-            // 🟢 Altera o status localmente de forma imediata (Otimismo de UI)
+            // Altera o status localmente de forma imediata (Otimismo de UI)
             itemClicado.situacao = 'CHAMADO'
             itemClicado.gerenciadorId = meuId
           }
 
-          // 🟢 MUDA A ABA AQUI
+          // MUDA A ABA AQUI
           this.mudarAba('ATENDIMENTO')
 
           // E depois vai no banco buscar os dados reais
@@ -360,7 +400,7 @@ export default {
         const dados = response.data || response
 
         if (dados && dados.sucesso === false) {
-          // 🟢 Garante que SEMPRE haverá uma mensagem legível, mesmo se a API falhar em enviar
+          // Garante que SEMPRE haverá uma mensagem legível, mesmo se a API falhar em enviar
           alert(
             dados.mensagem ||
               'Ação bloqueada: Verifique se você já possui um atendimento em aberto ou se a fila está vazia.',
@@ -371,7 +411,7 @@ export default {
       } catch (error) {
         console.error('Erro técnico:', error)
 
-        // 🟢 Se for erro de Token/Sessão expirada (401 ou 403), avisa o usuário!
+        // Se for erro de Token/Sessão expirada (401 ou 403), avisa o usuário!
         if (error.response && (error.response.status === 401 || error.response.status === 403)) {
           alert('Sua sessão expirou por inatividade. Atualize a página ou faça login novamente.')
           return
@@ -392,7 +432,7 @@ export default {
         const dados = response.data || response
 
         if (dados && dados.sucesso === false) {
-          // 🟢 Garante a mensagem
+          // Garante a mensagem
           alert(
             dados.mensagem ||
               'Ação bloqueada: Verifique se você já possui um atendimento em aberto ou se a fila de prioridades está vazia.',
@@ -403,7 +443,7 @@ export default {
       } catch (error) {
         console.error('Erro técnico:', error)
 
-        // 🟢 Blindagem contra expiração de inatividade
+        // Blindagem contra expiração de inatividade
         if (error.response && (error.response.status === 401 || error.response.status === 403)) {
           alert('Sua sessão expirou por inatividade. Atualize a página ou faça login novamente.')
           return
@@ -434,7 +474,7 @@ export default {
           this.agendamentosPorSetor[index].situacao = 'FALTOU'
         }
 
-        // 🟢 4. MUDA A ABA NA HORA!
+        // 4. MUDA A ABA NA HORA!
         this.abaAtiva = 'AGUARDANDO'
 
         // 5. Busca os dados reais no fundo
@@ -462,7 +502,7 @@ export default {
           this.agendamentosPorSetor[index].situacao = 'ATENDIDO'
         }
 
-        // 🟢 5. MUDA A ABA NA HORA!
+        // 5. MUDA A ABA NA HORA!
         this.abaAtiva = 'AGUARDANDO'
 
         // 6. Busca os dados reais no fundo
@@ -547,7 +587,7 @@ export default {
     this.atualizarRelogioLocal()
     setInterval(this.atualizarRelogioLocal, 1000)
 
-    // 3. 💓 PING: Envia a cada 10 segundos
+    // 3. PING: Envia a cada 10 segundos
     setInterval(() => this.enviarPing(), 10000);
 
     if (this.usuario?.setores) {

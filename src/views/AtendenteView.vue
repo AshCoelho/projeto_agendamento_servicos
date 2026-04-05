@@ -68,7 +68,7 @@
 
       <ChamarSenhas @senha-chamada="onSenhaChamadaPelosBotoes"></ChamarSenhas>
 
-      <div class="px-8 pb-8">
+      <div class="px-3">
         <div class="bg-white rounded-[15px] shadow-sm border-b-4 border-transparent p-4">
           <div class="flex justify-between">
             <div class="flex justify-start gap-6 mb-4 px-4">
@@ -76,75 +76,110 @@
                 @click="mudarAba('AGUARDANDO')"
                 :class="
                   abaAtiva === 'AGUARDANDO'
-                    ? 'bg-[#2563eb] text-white rounded-[7px] p-1 shadow-blue-100'
-                    : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-400 border-b-2 border-transparent hover:text-gray-600 hover:border-gray-200'
                 "
-                class="text-xs font-black border-b-2 p-2 uppercase"
+                class="flex items-center gap-1.5 px-4 py-2 -mb-[1px] text-[11px] font-black uppercase tracking-widest transition-all duration-150"
               >
-                Fila Geral<sup
-                  class="ml-0.5 bg-gray-400 text-white font-bold inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px]"
-                  >{{ agendamentosAguardando }}</sup
+                Fila Geral
+                <span
+                  :class="
+                    abaAtiva === 'AGUARDANDO'
+                      ? 'bg-blue-50 text-blue-600'
+                      : 'bg-gray-100 text-gray-400'
+                  "
+                  class="text-[10px] font-bold px-1.5 py-0.5 rounded-full transition-all"
                 >
+                  {{ agendamentosAguardando }}
+                </span>
               </button>
 
               <button
                 @click="mudarAba('PRIORIDADES')"
                 :class="
                   abaAtiva === 'PRIORIDADES'
-                    ? 'bg-[#2563eb] text-white rounded-[7px] p-1 shadow-blue-100'
-                    : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-400 border-b-2 border-transparent hover:text-gray-600 hover:border-gray-200'
                 "
-                class="text-xs font-black border-b-2 p-2 uppercase tracking-widest"
+                class="flex items-center gap-1.5 px-4 py-2 -mb-[1px] text-[11px] font-black uppercase tracking-widest transition-all duration-150"
               >
-                Prioridades<sup
-                  class="ml-0.5 bg-gray-400 text-white font-bold inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px]"
-                  >{{ totalPrioridadeFila }}</sup
+                Prioridades
+                <span
+                  :class="
+                    abaAtiva === 'PRIORIDADES'
+                      ? 'bg-blue-50 text-blue-600'
+                      : 'bg-gray-100 text-gray-400'
+                  "
+                  class="text-[10px] font-bold px-1.5 py-0.5 rounded-full transition-all"
                 >
+                  {{ totalPrioridadeFila }}
+                </span>
               </button>
 
               <button
                 @click="mudarAba('ATENDIMENTO')"
                 :class="
                   abaAtiva === 'ATENDIMENTO'
-                    ? 'bg-[#2563eb] text-white rounded-[7px] p-1 shadow-blue-100'
-                    : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-400 border-b-2 border-transparent hover:text-gray-600 hover:border-gray-200'
                 "
-                class="text-xs font-black border-b-2 p-2 uppercase tracking-widest"
+                class="flex items-center gap-1.5 px-4 py-2 -mb-[1px] text-[11px] font-black uppercase tracking-widest transition-all duration-150"
               >
-                Em Atendimento<sup
-                  class="ml-0.5 bg-gray-400 text-white font-bold inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px]"
-                  >{{ agendamentosEmAtendimento }}</sup
+                Em Atendimento
+                <span
+                  :class="
+                    abaAtiva === 'ATENDIMENTO'
+                      ? 'bg-blue-50 text-blue-600'
+                      : 'bg-gray-100 text-gray-400'
+                  "
+                  class="text-[10px] font-bold px-1.5 py-0.5 rounded-full transition-all"
                 >
+                  {{ agendamentosEmAtendimento }}
+                </span>
               </button>
 
               <button
                 @click="mudarAba('CANCELADOS')"
                 :class="
                   abaAtiva === 'CANCELADOS'
-                    ? 'bg-[#2563eb] text-white rounded-[7px] p-1 shadow-blue-100'
-                    : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-400 border-b-2 border-transparent hover:text-gray-600 hover:border-gray-200'
                 "
-                class="text-xs font-black border-b-2 p-2 uppercase tracking-widest"
+                class="flex items-center gap-1.5 px-4 py-2 -mb-[1px] text-[11px] font-black uppercase tracking-widest transition-all duration-150"
               >
-                Ausentes<sup
-                  class="ml-0.5 bg-gray-400 text-white font-bold inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px]"
-                  >{{ agendamentosCancelados }}</sup
+                Ausentes
+                <span
+                  :class="
+                    abaAtiva === 'CANCELADOS'
+                      ? 'bg-blue-50 text-blue-600'
+                      : 'bg-gray-100 text-gray-400'
+                  "
+                  class="text-[10px] font-bold px-1.5 py-0.5 rounded-full transition-all"
                 >
+                  {{ agendamentosCancelados }}
+                </span>
               </button>
 
               <button
                 @click="mudarAba('FINALIZADOS')"
                 :class="
                   abaAtiva === 'FINALIZADOS'
-                    ? 'bg-[#2563eb] text-white rounded-[7px] p-1 shadow-blue-100'
-                    : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-400 border-b-2 border-transparent hover:text-gray-600 hover:border-gray-200'
                 "
-                class="text-xs font-black border-b-2 p-2 uppercase tracking-widest"
+                class="flex items-center gap-1.5 px-4 py-2 -mb-[1px] text-[11px] font-black uppercase tracking-widest transition-all duration-150"
               >
-                Atendidos<sup
-                  class="ml-0.5 bg-gray-400 text-white font-bold inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px]"
-                  >{{ agendamentosFinalizados }}</sup
+                Atendidos
+                <span
+                  :class="
+                    abaAtiva === 'FINALIZADOS'
+                      ? 'bg-blue-50 text-blue-600'
+                      : 'bg-gray-100 text-gray-400'
+                  "
+                  class="text-[10px] font-bold px-1.5 py-0.5 rounded-full transition-all"
                 >
+                  {{ agendamentosFinalizados }}
+                </span>
               </button>
               <div
                 v-if="mostrarModalEspontaneo"
@@ -564,7 +599,8 @@ export default {
     mostrarModalEdicao: false,
     mostrarModalEspontaneo: false,
     sidebarAberta: false,
-
+    jaAbriuModal: false,
+    perfil: '',
     // Dados
     filtroTexto: '',
     usuario: null,
@@ -584,10 +620,18 @@ export default {
   }),
 
   watch: {
-    mostrarModalEspontaneo(novoValor) {
-      const acao = novoValor ? 'addEventListener' : 'removeEventListener'
-      window[acao]('keydown', this.handleEsc)
-    },
+      mostrarModalEspontaneo(novoValor) {
+          const acao = novoValor ? 'addEventListener' : 'removeEventListener'
+          window[acao]('keydown', this.handleEsc)
+
+          // LÓGICA DE ATIVAÇÃO PERMANENTE:
+          // Se abriu o modal uma vez, vira 'true' e fica 'true'.
+          if (novoValor === true) {
+              this.jaAbriuModal = true;
+              // Força uma busca imediata com a visão liberada
+              this.buscarAgendamentos();
+          }
+      },
   },
 
   computed: {
@@ -866,6 +910,10 @@ export default {
 
         if (data.id) {
           localStorage.setItem('usuarioId', data.id)
+
+          const perfilLogado = data.perfil || 'ATENDENTE'
+          localStorage.setItem('perfilUsuario', perfilLogado)
+          this.perfil = perfilLogado
         }
       } catch (error) {
         localStorage.clear()
@@ -874,21 +922,30 @@ export default {
     },
 
     async buscarAgendamentos() {
-      try {
-        if (!this.usuario?.id) await this.getUsuarioLogado()
-        if (this.setorTrabalhoId) {
-          const meuId = this.usuario?.id || localStorage.getItem('usuarioId')
+        try {
+            // 1. Garante que o usuário e o perfil foram carregados
+            if (!this.usuario?.id) await this.getUsuarioLogado();
+            
+            if (this.setorTrabalhoId) {
+                const meuId = this.usuario?.id || localStorage.getItem('usuarioId');
+                
+                // 2. CAPTURA O PERFIL (Prioriza a variável do componente, depois o storage)
+                // Se o cara for 'CADASTRO', o SQL libera a fila toda do setor.
+                const perfilEnvio = this.perfil || localStorage.getItem('perfilUsuario') || 'ATENDENTE';
 
-          const data = await AtendenteApi.buscarAgendamentosPorSetor(
-            this.setorTrabalhoId,
-            meuId
-          )
+                // 3. Chama a API passando a String do Perfil
+                const data = await AtendenteApi.buscarAgendamentosPorSetor(
+                    this.setorTrabalhoId,
+                    meuId,
+                    perfilEnvio 
+                );
 
-          this.agendamentosPorSetor = [...data]
+                // 4. Atualiza a lista reativa
+                this.agendamentosPorSetor = [...data];
+            }
+        } catch (e) {
+            console.error('Erro ao buscar agendamentos:', e);
         }
-      } catch (e) {
-        console.error('Erro ao buscar agendamentos:', e)
-      }
     },
 
     async handleChamar(senha) {
@@ -1129,7 +1186,7 @@ export default {
         const servicos = await AtendenteApi.carregarServicosPorSetor(
           this.setorTrabalhoId,
           idParaEnviar,
-          apenasCadastro // 👈 IMPORTANTE: Passar como 3º parâmetro aqui!
+          apenasCadastro // IMPORTANTE: Passar como 3º parâmetro aqui!
         );
 
         this.servicos = servicos

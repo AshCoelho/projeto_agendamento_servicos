@@ -111,6 +111,7 @@ export default {
     selectedSecretaria: null,
     selectedSetor: null,
     usuario: null,
+    perfil: '',
     secretarias: [],
     setores: [],
     guiches: [],
@@ -133,6 +134,9 @@ export default {
       if (userData && token) {
         try {
           this.usuario = JSON.parse(userData)
+
+          this.perfil = this.usuario.perfil || 'ATENDENTE'
+          localStorage.setItem('perfilUsuario', this.perfil)
 
           this.selectedGuiche = null
           this.selectedSetor = null

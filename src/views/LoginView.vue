@@ -202,6 +202,7 @@ export default {
             this.$router.push('/administrador')
             break
           case 'ATENDENTE':
+          case 'CADASTRO':
             this.$router.push('/guiche')
             break
           case 'MEDICO':

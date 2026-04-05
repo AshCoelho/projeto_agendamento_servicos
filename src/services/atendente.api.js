@@ -1,19 +1,30 @@
 import api from '@/services/api'
 
 export const AtendenteApi = {
-  // ✅ Alterado: Agora busca agendamentos por SETOR
-  async buscarAgendamentosPorSetor(setorId, gerenciadorId = null) {
-    let url = `/agendamentos/setor/${setorId}`
+  // Alterado: Agora busca agendamentos por SETOR
+  async buscarAgendamentosPorSetor(setorId, gerenciadorId = null, perfil = 'ATENDENTE') {
+      let url = `/agendamentos/setor/${setorId}`
+      let params = []
 
-    // só envia se existir
-    if (gerenciadorId && !isNaN(gerenciadorId)) {
-      url += `?gerenciadorId=${gerenciadorId}`
-    }
+      // 1. Adiciona o gerenciadorId se existir
+      if (gerenciadorId && !isNaN(gerenciadorId)) {
+          params.push(`gerenciadorId=${gerenciadorId}`)
+      }
 
-    console.log('URL FINAL:', url)
+      // 2. ALTERAÇÃO CRÍTICA: Envia o 'perfil' em vez de 'cadastro'
+      // O seu Controller no Java agora espera @RequestParam(name = "perfil")
+      params.push(`perfil=${perfil}`)
 
-    const res = await api.get(url)
-    return Array.isArray(res.data) ? res.data : []
+      // 3. Monta a Query String
+      if (params.length > 0) {
+          url += `?${params.join('&')}`
+      }
+
+      // console.log('URL FINAL:', url) 
+      // Exemplo: /agendamentos/setor/5?gerenciadorId=10&perfil=CADASTRO
+
+      const res = await api.get(url)
+      return Array.isArray(res.data) ? res.data : []
   },
   
   async chamarPorSenha(senha, gerenciadorId, setorId) {
@@ -67,7 +78,7 @@ export const AtendenteApi = {
         url += `&gerenciadorId=${gerenciadorId}`
       }
 
-      console.log("URL FINAL:", url)
+      //console.log("URL FINAL:", url)
 
       const response = await api.get(url)
       return response.data
