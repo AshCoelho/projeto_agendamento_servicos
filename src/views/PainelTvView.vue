@@ -236,7 +236,7 @@ const atualizarRelogio = () => {
 }
 
 const qrSrc = computed(() => {
-  const urlPublica = `http://localhost/tv/${setorId.value}`
+  const urlPublica = `https://agendamento.saoluis.ma.gov.br/tv/${setorId.value}`
   return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
     urlPublica,
   )}`
