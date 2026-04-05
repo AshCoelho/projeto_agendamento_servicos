@@ -1,29 +1,34 @@
 <template>
-  <div class="px-8">
-    <div class="mb-6 bg-white p-6 rounded-[15px] shadow-sm border-b-4 border-transparent">
-      <h2 class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-6">
+  <div class="px-3">
+    <div class="mb-3 bg-white p-4 rounded-[15px] shadow-sm border-b-4 border-transparent">
+      <h2 class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-4">
         Painel de Comandos
       </h2>
 
       <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div
-          class="bg-[#f8f9fd] p-6 rounded-[15px] shadow-sm flex justify-between items-start border-b-4 border-transparent"
+          class="bg-[#f8f9fd] p-3 h-[100px] rounded-[15px] shadow flex justify-between items-start border-b-4 border-transparent"
         >
-          <div>
-            <p class="text-[10px] font-bold text-black/70 uppercase mb-1 tracking-wider">
+          <div class="flex flex-col gap-4">
+            <p class="text-[10px] font-bold text-black/70 uppercase tracking-wider">
               Atendimentos Hoje
             </p>
-            <h3 class="text-2xl font-black text-black tracking-tighter">
-              {{ totalRegistradosHoje }}
-            </h3>
-            <span class="inline-block w-8 h-1 bg-blue-darken-4 rounded-full"></span>
-            <div class="flex gap-2 mt-2">
-              <span class="text-[11px] font-bold text-blue-500 uppercase">
-                {{ totalNormalGeral }} Normal
-              </span>
-              <span class="text-[11px] font-bold text-orange-500 uppercase">
-                {{ totalPrioridadeGeral }} Prioridade
-              </span>
+
+            <div class="flex items-center gap-6">
+              <h3 class="text-2xl font-black text-black tracking-tighter">
+                {{ totalRegistradosHoje }}
+              </h3>
+
+              <span class="w-[2px] h-8 bg-gray-300 rounded-full"></span>
+
+              <div class="flex flex-col">
+                <span class="text-[11px] font-bold text-blue-500 uppercase">
+                  {{ totalNormalGeral }} Normal
+                </span>
+                <span class="text-[11px] font-bold text-orange-500 uppercase">
+                  {{ totalPrioridadeGeral }} Prioridade
+                </span>
+              </div>
             </div>
           </div>
           <div
@@ -35,10 +40,14 @@
 
         <div
           @click="handleChamarNormal"
-          class="cursor-pointer bg-[#2563eb] hover:bg-[#1d4ed8] p-6 rounded-[15px] shadow-md flex justify-between items-center transition-all active:scale-95"
+          class="cursor-pointer bg-[#2563eb] hover:bg-[#1d4ed8] p-4 rounded-[15px] shadow-md flex justify-between items-center transition-all active:scale-95"
         >
           <div>
-            <p class="text-[10px] font-bold text-white/70 uppercase mb-1 tracking-wider">Ação</p>
+            <p class="text-2xl font-bold text-white uppercase mb-1 tracking-wider">
+              <span>
+                {{ totalNormalFila }}
+              </span>
+            </p>
             <h3 class="text-2xl font-black text-white font-bold">Chamar Normal</h3>
           </div>
           <div
@@ -49,10 +58,14 @@
         </div>
 
         <div
-          class="cursor-pointer bg-[#FFA000] hover:bg-[#FF8F00] p-6 rounded-[15px] shadow-md flex justify-between items-center transition-all active:scale-95"
+          class="cursor-pointer bg-[#FFA000] hover:bg-[#FF8F00] p-4 rounded-[15px] shadow-md flex justify-between items-center transition-all active:scale-95"
         >
           <div @click="handleChamarPrioridade">
-            <p class="text-[10px] font-bold text-white/70 uppercase mb-1 tracking-wider">Ação</p>
+            <p class="text-2xl font-bold text-white uppercase mb-1 tracking-wider">
+              <span>
+                {{ totalPrioridadeFila }}
+              </span>
+            </p>
             <h3 class="text-2xl font-black text-white font-bold">Chamar Prioridade</h3>
           </div>
           <div
@@ -63,25 +76,31 @@
         </div>
 
         <div
-          class="bg-[#f8f9fd] p-6 rounded-[15px] shadow-sm flex justify-between items-start border-b-4 border-transparent"
+          class="bg-[#f8f9fd] p-4 rounded-[15px] shadow flex justify-between items-start border-b-4 border-transparent"
         >
-          <div>
-            <p class="text-[10px] font-bold text-black/70 uppercase mb-1 tracking-wider">
+          <div class="flex flex-col gap-4">
+            <p class="text-[10px] font-bold text-black/70 uppercase tracking-wider">
               Pessoas na Fila
             </p>
-            <h3 class="text-2xl font-black text-black tracking-tighter">
-              {{ agendamentosAguardando }}
-            </h3>
-            <span class="inline-block w-8 h-1 bg-blue-darken-4 rounded-full"></span>
-            <div class="flex gap-2 mt-2">
-              <span class="text-[11px] font-bold text-blue-500 uppercase">
-                {{ totalNormalFila }} Normal
-              </span>
-              <span class="text-[11px] font-bold text-orange-500 uppercase">
-                {{ totalPrioridadeFila }} Prioridade
-              </span>
+
+            <div class="flex items-center gap-6">
+              <h3 class="text-2xl font-black text-black tracking-tighter">
+                {{ agendamentosAguardando }}
+              </h3>
+
+              <span class="w-[2px] h-8 bg-gray-300 rounded-full"></span>
+
+              <div class="flex flex-col">
+                <span class="text-[11px] font-bold text-blue-500 uppercase">
+                  {{ totalNormalFila }} Normal
+                </span>
+                <span class="text-[11px] font-bold text-orange-500 uppercase">
+                  {{ totalPrioridadeFila }} Prioridade
+                </span>
+              </div>
             </div>
           </div>
+
           <div
             class="w-12 h-12 bg-black/20 rounded-[12px] flex items-center justify-center text-white backdrop-blur-sm"
           >

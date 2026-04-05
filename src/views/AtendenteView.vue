@@ -68,7 +68,7 @@
 
       <ChamarSenhas @senha-chamada="onSenhaChamadaPelosBotoes"></ChamarSenhas>
 
-      <div class="px-8 pb-8">
+      <div class="px-3">
         <div class="bg-white rounded-[15px] shadow-sm border-b-4 border-transparent p-4">
           <div class="flex justify-between">
             <div class="flex justify-start gap-6 mb-4 px-4">
@@ -76,75 +76,110 @@
                 @click="mudarAba('AGUARDANDO')"
                 :class="
                   abaAtiva === 'AGUARDANDO'
-                    ? 'bg-[#2563eb] text-white rounded-[7px] p-1 shadow-blue-100'
-                    : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-400 border-b-2 border-transparent hover:text-gray-600 hover:border-gray-200'
                 "
-                class="text-xs font-black border-b-2 p-2 uppercase"
+                class="flex items-center gap-1.5 px-4 py-2 -mb-[1px] text-[11px] font-black uppercase tracking-widest transition-all duration-150"
               >
-                Fila Geral<sup
-                  class="ml-0.5 bg-gray-400 text-white font-bold inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px]"
-                  >{{ agendamentosAguardando }}</sup
+                Fila Geral
+                <span
+                  :class="
+                    abaAtiva === 'AGUARDANDO'
+                      ? 'bg-blue-50 text-blue-600'
+                      : 'bg-gray-100 text-gray-400'
+                  "
+                  class="text-[10px] font-bold px-1.5 py-0.5 rounded-full transition-all"
                 >
+                  {{ agendamentosAguardando }}
+                </span>
               </button>
 
               <button
                 @click="mudarAba('PRIORIDADES')"
                 :class="
                   abaAtiva === 'PRIORIDADES'
-                    ? 'bg-[#2563eb] text-white rounded-[7px] p-1 shadow-blue-100'
-                    : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-400 border-b-2 border-transparent hover:text-gray-600 hover:border-gray-200'
                 "
-                class="text-xs font-black border-b-2 p-2 uppercase tracking-widest"
+                class="flex items-center gap-1.5 px-4 py-2 -mb-[1px] text-[11px] font-black uppercase tracking-widest transition-all duration-150"
               >
-                Prioridades<sup
-                  class="ml-0.5 bg-gray-400 text-white font-bold inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px]"
-                  >{{ totalPrioridadeFila }}</sup
+                Prioridades
+                <span
+                  :class="
+                    abaAtiva === 'PRIORIDADES'
+                      ? 'bg-blue-50 text-blue-600'
+                      : 'bg-gray-100 text-gray-400'
+                  "
+                  class="text-[10px] font-bold px-1.5 py-0.5 rounded-full transition-all"
                 >
+                  {{ totalPrioridadeFila }}
+                </span>
               </button>
 
               <button
                 @click="mudarAba('ATENDIMENTO')"
                 :class="
                   abaAtiva === 'ATENDIMENTO'
-                    ? 'bg-[#2563eb] text-white rounded-[7px] p-1 shadow-blue-100'
-                    : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-400 border-b-2 border-transparent hover:text-gray-600 hover:border-gray-200'
                 "
-                class="text-xs font-black border-b-2 p-2 uppercase tracking-widest"
+                class="flex items-center gap-1.5 px-4 py-2 -mb-[1px] text-[11px] font-black uppercase tracking-widest transition-all duration-150"
               >
-                Em Atendimento<sup
-                  class="ml-0.5 bg-gray-400 text-white font-bold inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px]"
-                  >{{ agendamentosEmAtendimento }}</sup
+                Em Atendimento
+                <span
+                  :class="
+                    abaAtiva === 'ATENDIMENTO'
+                      ? 'bg-blue-50 text-blue-600'
+                      : 'bg-gray-100 text-gray-400'
+                  "
+                  class="text-[10px] font-bold px-1.5 py-0.5 rounded-full transition-all"
                 >
+                  {{ agendamentosEmAtendimento }}
+                </span>
               </button>
 
               <button
                 @click="mudarAba('CANCELADOS')"
                 :class="
                   abaAtiva === 'CANCELADOS'
-                    ? 'bg-[#2563eb] text-white rounded-[7px] p-1 shadow-blue-100'
-                    : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-400 border-b-2 border-transparent hover:text-gray-600 hover:border-gray-200'
                 "
-                class="text-xs font-black border-b-2 p-2 uppercase tracking-widest"
+                class="flex items-center gap-1.5 px-4 py-2 -mb-[1px] text-[11px] font-black uppercase tracking-widest transition-all duration-150"
               >
-                Ausentes<sup
-                  class="ml-0.5 bg-gray-400 text-white font-bold inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px]"
-                  >{{ agendamentosCancelados }}</sup
+                Ausentes
+                <span
+                  :class="
+                    abaAtiva === 'CANCELADOS'
+                      ? 'bg-blue-50 text-blue-600'
+                      : 'bg-gray-100 text-gray-400'
+                  "
+                  class="text-[10px] font-bold px-1.5 py-0.5 rounded-full transition-all"
                 >
+                  {{ agendamentosCancelados }}
+                </span>
               </button>
 
               <button
                 @click="mudarAba('FINALIZADOS')"
                 :class="
                   abaAtiva === 'FINALIZADOS'
-                    ? 'bg-[#2563eb] text-white rounded-[7px] p-1 shadow-blue-100'
-                    : 'bg-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-600'
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-400 border-b-2 border-transparent hover:text-gray-600 hover:border-gray-200'
                 "
-                class="text-xs font-black border-b-2 p-2 uppercase tracking-widest"
+                class="flex items-center gap-1.5 px-4 py-2 -mb-[1px] text-[11px] font-black uppercase tracking-widest transition-all duration-150"
               >
-                Atendidos<sup
-                  class="ml-0.5 bg-gray-400 text-white font-bold inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px]"
-                  >{{ agendamentosFinalizados }}</sup
+                Atendidos
+                <span
+                  :class="
+                    abaAtiva === 'FINALIZADOS'
+                      ? 'bg-blue-50 text-blue-600'
+                      : 'bg-gray-100 text-gray-400'
+                  "
+                  class="text-[10px] font-bold px-1.5 py-0.5 rounded-full transition-all"
                 >
+                  {{ agendamentosFinalizados }}
+                </span>
               </button>
               <div
                 v-if="mostrarModalEspontaneo"
@@ -680,18 +715,16 @@ export default {
 
     agendamentosFinalizados() {
       const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'))
-      
+
       return this.agendamentosPorSetor.filter(
         (a) => a.situacao === 'ATENDIDO' && Number(a.gerenciadorId || a.usuarioId) === meuId,
       ).length
     },
 
     agendamentosCancelados() {
-      return this.agendamentosPorSetor.filter(
-        (a) => a.situacao === 'FALTOU'
-      ).length
+      return this.agendamentosPorSetor.filter((a) => a.situacao === 'FALTOU').length
     },
-    
+
     totalNormalFila() {
       return this.agendamentosPorSetor.filter(
         (a) => a.situacao === 'AGENDADO' && a.tipoAtendimento === 'NORMAL',
@@ -879,10 +912,7 @@ export default {
         if (this.setorTrabalhoId) {
           const meuId = this.usuario?.id || localStorage.getItem('usuarioId')
 
-          const data = await AtendenteApi.buscarAgendamentosPorSetor(
-            this.setorTrabalhoId,
-            meuId
-          )
+          const data = await AtendenteApi.buscarAgendamentosPorSetor(this.setorTrabalhoId, meuId)
 
           this.agendamentosPorSetor = [...data]
         }
@@ -968,136 +998,144 @@ export default {
     },
 
     async imprimirTicketWebUSB(device, senha, dataHora, nomeServico) {
-  try {
-    await device.open();
-    if (device.configuration === null) await device.selectConfiguration(1);
-    await device.claimInterface(0);
+      try {
+        await device.open()
+        if (device.configuration === null) await device.selectConfiguration(1)
+        await device.claimInterface(0)
 
-    const outEndpoint = device.configuration.interfaces[0].alternate.endpoints
-      .find(e => e.direction === 'out');
+        const outEndpoint = device.configuration.interfaces[0].alternate.endpoints.find(
+          (e) => e.direction === 'out',
+        )
 
-    if (!outEndpoint) throw new Error("Endpoint de saída não encontrado.");
+        if (!outEndpoint) throw new Error('Endpoint de saída não encontrado.')
 
-    const encoder = new TextEncoder();
-    
-    const commands = [
-      new Uint8Array([0x1b, 0x40]),           // Reset da impressora
-      new Uint8Array([0x1b, 0x61, 0x01]),     // Centralizar tudo
+        const encoder = new TextEncoder()
 
-      // 1. PREFEITURA DE SÃO LUÍS (Negrito)
-      new Uint8Array([0x1b, 0x45, 0x01]),     
-      encoder.encode('PREFEITURA DE SÃO LUIS\n\n'),
-      new Uint8Array([0x1b, 0x45, 0x00]),     
+        const commands = [
+          new Uint8Array([0x1b, 0x40]), // Reset da impressora
+          new Uint8Array([0x1b, 0x61, 0x01]), // Centralizar tudo
 
-      // 2. SERVIÇO
-      encoder.encode('SERVICO:\n'),
-      encoder.encode(`${nomeServico.toUpperCase()}\n\n`),
+          // 1. PREFEITURA DE SÃO LUÍS (Negrito)
+          new Uint8Array([0x1b, 0x45, 0x01]),
+          encoder.encode('PREFEITURA DE SÃO LUIS\n\n'),
+          new Uint8Array([0x1b, 0x45, 0x00]),
 
-      // 3. SENHA (Grande e Negrito)
-      encoder.encode('SENHA:\n'),
-      new Uint8Array([0x1d, 0x21, 0x22]),     // (Tamanho Máximo: 4x)
-      new Uint8Array([0x1b, 0x45, 0x01]),     // Negrito ON
-      encoder.encode(`${senha}\n\n`),
-      new Uint8Array([0x1b, 0x45, 0x00]),     // Negrito OFF
-      new Uint8Array([0x1d, 0x21, 0x00]),     // Volta fonte normal
+          // 2. SERVIÇO
+          encoder.encode('SERVICO:\n'),
+          encoder.encode(`${nomeServico.toUpperCase()}\n\n`),
 
-      // 4. AGUARDE SER CHAMADO
-      encoder.encode('AGUARDE SER CHAMADO\n\n'),
+          // 3. SENHA (Grande e Negrito)
+          encoder.encode('SENHA:\n'),
+          new Uint8Array([0x1d, 0x21, 0x22]), // (Tamanho Máximo: 4x)
+          new Uint8Array([0x1b, 0x45, 0x01]), // Negrito ON
+          encoder.encode(`${senha}\n\n`),
+          new Uint8Array([0x1b, 0x45, 0x00]), // Negrito OFF
+          new Uint8Array([0x1d, 0x21, 0x00]), // Volta fonte normal
 
-      // 5. EMISSÃO
-      encoder.encode(`EMISSÃO: ${dataHora}\n`),
+          // 4. AGUARDE SER CHAMADO
+          encoder.encode('AGUARDE SER CHAMADO\n\n'),
 
-      // Espaço e Corte
-      encoder.encode('\n\n\n\n'),             
-      new Uint8Array([0x1d, 0x56, 0x42, 0x00]) // Comando de Corte
-    ];
+          // 5. EMISSÃO
+          encoder.encode(`EMISSÃO: ${dataHora}\n`),
 
-    const totalLength = commands.reduce((acc, cur) => acc + cur.length, 0);
-    const combinedData = new Uint8Array(totalLength);
-    let offset = 0;
-    for (const cmd of commands) {
-      combinedData.set(cmd, offset);
-      offset += cmd.length;
-    }
+          // Espaço e Corte
+          encoder.encode('\n\n\n\n'),
+          new Uint8Array([0x1d, 0x56, 0x42, 0x00]), // Comando de Corte
+        ]
 
-    await device.transferOut(outEndpoint.endpointNumber, combinedData);
-    await new Promise(resolve => setTimeout(resolve, 800));
-    await device.close();
+        const totalLength = commands.reduce((acc, cur) => acc + cur.length, 0)
+        const combinedData = new Uint8Array(totalLength)
+        let offset = 0
+        for (const cmd of commands) {
+          combinedData.set(cmd, offset)
+          offset += cmd.length
+        }
 
-    console.log("Ticket impresso com sucesso.");
-  } catch (err) {
-    console.error("Erro físico na impressora:", err);
-    try { if(device.opened) await device.close(); } catch(e) {}
-    alert("Atendimento salvo, mas houve erro na impressora: " + err.message);
-  }
-},
+        await device.transferOut(outEndpoint.endpointNumber, combinedData)
+        await new Promise((resolve) => setTimeout(resolve, 800))
+        await device.close()
 
-  async salvarEspontaneo() {
-    if (this.isSalvando) return;
-
-    if (!navigator.usb) {
-      alert("Acesso USB bloqueado. Verifique o HTTPS ou as Flags do Chrome.");
-      return;
-    }
-
-    let device;
-    try {
-      // TENTA IMPRIMIR DIRETO: Verifica se já existe permissão prévia
-      const pairedDevices = await navigator.usb.getDevices();
-      
-      if (pairedDevices.length > 0) {
-        device = pairedDevices[0]; // Pega a primeira que já foi autorizada
-      } else {
-        // Se for a primeira vez ou cache limpo, abre o popup
-        device = await navigator.usb.requestDevice({ filters: [] });
+        console.log('Ticket impresso com sucesso.')
+      } catch (err) {
+        console.error('Erro físico na impressora:', err)
+        try {
+          if (device.opened) await device.close()
+        } catch (e) {}
+        alert('Atendimento salvo, mas houve erro na impressora: ' + err.message)
       }
-    } catch (err) {
-      console.warn("Seleção cancelada.");
-      return;
-    }
+    },
 
-    try {
-      if (!this.novoAgendamento.nomeCidadao?.trim()) {
-        alert('Informe o nome do cidadão.');
-        return;
+    async salvarEspontaneo() {
+      if (this.isSalvando) return
+
+      if (!navigator.usb) {
+        alert('Acesso USB bloqueado. Verifique o HTTPS ou as Flags do Chrome.')
+        return
       }
 
-      this.isSalvando = true;
+      let device
+      try {
+        // TENTA IMPRIMIR DIRETO: Verifica se já existe permissão prévia
+        const pairedDevices = await navigator.usb.getDevices()
 
-      const payload = {
-        nomeCidadao: this.novoAgendamento.nomeCidadao,
-        tipoAtendimentoId: Number(this.novoAgendamento.tipoAtendimentoId),
-        servicoId: Number(this.novoAgendamento.servico),
-        setorId: Number(this.setorTrabalhoId),
-        situacao: 'AGENDADO',
-        observacao: this.novoAgendamento.observacoes,
-      };
-
-      const res = await AtendenteApi.salvarEspontaneo(this.secretariaTrabalhoId, payload);
-
-      if (res.status === 200 || res.status === 201) {
-        const senha = res.data.codigo || res.data.senha || '---';
-        const dataHora = new Date().toLocaleString('pt-BR');
-
-        // Busca o nome amigável do serviço
-        const servicoObj = this.servicos.find(s => s.id == this.novoAgendamento.servico);
-        const nomeServico = servicoObj ? servicoObj.nome : 'GERAL';
-
-        // Dispara a impressão
-        await this.imprimirTicketWebUSB(device, senha, dataHora, nomeServico);
-
-        // Limpa e fecha
-        this.mostrarModalEspontaneo = false;
-        this.novoAgendamento = { nomeCidadao: '', servico: null, tipoAtendimentoId: null, observacoes: '' };
-        await this.buscarAgendamentos();
+        if (pairedDevices.length > 0) {
+          device = pairedDevices[0] // Pega a primeira que já foi autorizada
+        } else {
+          // Se for a primeira vez ou cache limpo, abre o popup
+          device = await navigator.usb.requestDevice({ filters: [] })
+        }
+      } catch (err) {
+        console.warn('Seleção cancelada.')
+        return
       }
-    } catch (e) {
-      console.error('Erro geral:', e);
-      alert('Erro: ' + (e.response?.data?.mensagem || e.message));
-    } finally {
-      this.isSalvando = false;
-    }
-  },
+
+      try {
+        if (!this.novoAgendamento.nomeCidadao?.trim()) {
+          alert('Informe o nome do cidadão.')
+          return
+        }
+
+        this.isSalvando = true
+
+        const payload = {
+          nomeCidadao: this.novoAgendamento.nomeCidadao,
+          tipoAtendimentoId: Number(this.novoAgendamento.tipoAtendimentoId),
+          servicoId: Number(this.novoAgendamento.servico),
+          setorId: Number(this.setorTrabalhoId),
+          situacao: 'AGENDADO',
+          observacao: this.novoAgendamento.observacoes,
+        }
+
+        const res = await AtendenteApi.salvarEspontaneo(this.secretariaTrabalhoId, payload)
+
+        if (res.status === 200 || res.status === 201) {
+          const senha = res.data.codigo || res.data.senha || '---'
+          const dataHora = new Date().toLocaleString('pt-BR')
+
+          // Busca o nome amigável do serviço
+          const servicoObj = this.servicos.find((s) => s.id == this.novoAgendamento.servico)
+          const nomeServico = servicoObj ? servicoObj.nome : 'GERAL'
+
+          // Dispara a impressão
+          await this.imprimirTicketWebUSB(device, senha, dataHora, nomeServico)
+
+          // Limpa e fecha
+          this.mostrarModalEspontaneo = false
+          this.novoAgendamento = {
+            nomeCidadao: '',
+            servico: null,
+            tipoAtendimentoId: null,
+            observacoes: '',
+          }
+          await this.buscarAgendamentos()
+        }
+      } catch (e) {
+        console.error('Erro geral:', e)
+        alert('Erro: ' + (e.response?.data?.mensagem || e.message))
+      } finally {
+        this.isSalvando = false
+      }
+    },
 
     async atualizarEspontaneo() {
       try {
@@ -1126,7 +1164,7 @@ export default {
 
         const servicos = await AtendenteApi.carregarServicosPorSetor(
           this.setorTrabalhoId,
-          !isNaN(meuId) ? meuId : null
+          !isNaN(meuId) ? meuId : null,
         )
 
         this.servicos = servicos
