@@ -1,5 +1,8 @@
 export const AgendamentoService = {
-  filtrarAgendamentos(lista, abaAtiva, idsChamadosManualmente, meuUsuarioId) {
+  filtrarAgendamentos(lista, abaAtiva, idsChamadosManualmente, meuUsuarioId, perfil) {
+
+    const perfilUpper = (perfil || '').toUpperCase()
+
     let listaNormalizada = lista.map((item) => {
       const status = item.situacao ? item.situacao.toUpperCase() : 'AGENDADO'
       const tipoAg = item.tipoAgendamento ? item.tipoAgendamento.toUpperCase() : 'NORMAL'
@@ -9,42 +12,51 @@ export const AgendamentoService = {
       if (idsChamadosManualmente && idsChamadosManualmente.includes(id)) {
         return { ...item, situacao: 'EM_ATENDIMENTO', tipoAgendamento: tipoAg, tipoAtendimento: tipoAt }
       }
+
       return { ...item, situacao: status, tipoAgendamento: tipoAg, tipoAtendimento: tipoAt }
     })
 
+    const ehAdmin = perfilUpper === 'SUPERADMIN' || perfilUpper === 'CADASTRO'
+
     const regras = {
-      'AGUARDANDO': (a) => 
-        a.situacao === 'AGENDADO' && 
+      'AGUARDANDO': (a) =>
+        a.situacao === 'AGENDADO' &&
         ['AGENDADO', 'ESPONTANEO'].includes(a.tipoAgendamento),
 
-      'PRIORIDADES': (a) => 
-        a.situacao === 'AGENDADO' && 
+      'PRIORIDADES': (a) =>
+        a.situacao === 'AGENDADO' &&
         a.tipoAtendimento.includes('PRIORIDADE'),
 
       'ATENDIMENTO': (a) => {
-        // 🟢 APENAS gerenciadorId. Se vier nulo, vira 0 e a regra bloqueia com segurança.
-        const idNoBanco = Number(a.gerenciadorId);
-        const ocupado = ['EM_ATENDIMENTO', 'CHAMADO'].includes(a.situacao);
-        return ocupado && idNoBanco === Number(meuUsuarioId);
+        const idNoBanco = Number(a.gerenciadorId)
+        const ocupado = ['EM_ATENDIMENTO', 'CHAMADO'].includes(a.situacao)
+
+        // 🔥 ADMIN vê todos atendimentos em andamento
+        if (ehAdmin) return ocupado
+
+        return ocupado && idNoBanco === Number(meuUsuarioId)
       },
 
-      'CANCELADOS': (a) => {
-        return a.situacao === 'FALTOU';
-      },
+      'CANCELADOS': (a) => a.situacao === 'FALTOU',
 
       'FINALIZADOS': (a) => {
-        const idNoBanco = Number(a.gerenciadorId);
-        return a.situacao === 'ATENDIDO' && idNoBanco === Number(meuUsuarioId);
+        const idNoBanco = Number(a.gerenciadorId)
+
+        // 🔥 ADMIN vê TODOS finalizados
+        if (ehAdmin) return a.situacao === 'ATENDIDO'
+
+        return a.situacao === 'ATENDIDO' && idNoBanco === Number(meuUsuarioId)
       }
     }
 
-    // Apelidos de segurança
-    regras['FINALIZADO'] = regras['FINALIZADOS'];
-    regras['ATENDIDOS'] = regras['FINALIZADOS'];
-    regras['CANCELADO'] = regras['CANCELADOS'];
-    regras['AUSENTES'] = regras['CANCELADOS'];
+    // aliases
+    regras['FINALIZADO'] = regras['FINALIZADOS']
+    regras['ATENDIDOS'] = regras['FINALIZADOS']
+    regras['CANCELADO'] = regras['CANCELADOS']
+    regras['AUSENTES'] = regras['CANCELADOS']
 
-    // Retorna a lista filtrada ou vazio se a aba não existir
-    return regras[abaAtiva] ? listaNormalizada.filter(regras[abaAtiva]) : [];
+    return regras[abaAtiva]
+      ? listaNormalizada.filter(regras[abaAtiva])
+      : []
   }
 }

@@ -693,6 +693,7 @@ export default {
         this.abaAtiva,
         this.idsChamadosManualmente,
         meuId,
+        this.perfil,
       )
 
       if (this.filtroTexto && this.filtroTexto.trim() !== '') {
@@ -724,10 +725,18 @@ export default {
 
     agendamentosFinalizados() {
       const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'))
+      const perfil = (this.usuario?.perfil || '').toUpperCase()
 
-      return this.agendamentosPorSetor.filter(
-        (a) => a.situacao === 'ATENDIDO' && Number(a.gerenciadorId || a.usuarioId) === meuId,
-      ).length
+      return this.agendamentosPorSetor.filter((a) => {
+        if (perfil === 'SUPERADMIN') {
+          return a.situacao === 'ATENDIDO' // 🔥 vê TODOS
+        }
+
+        return (
+          a.situacao === 'ATENDIDO' &&
+          Number(a.gerenciadorId || a.usuarioId) === meuId
+        )
+      }).length
     },
 
     agendamentosCancelados() {

@@ -406,6 +406,9 @@ export default {
               'Ação bloqueada: Verifique se você já possui um atendimento em aberto ou se a fila está vazia.',
           )
         } else if (dados && (dados.sucesso === true || dados.id)) {
+
+          this.mudarAba('ATENDIMENTO')
+
           this.$emit('senha-chamada', dados.id)
         }
       } catch (error) {
@@ -438,6 +441,8 @@ export default {
               'Ação bloqueada: Verifique se você já possui um atendimento em aberto ou se a fila de prioridades está vazia.',
           )
         } else if (dados && (dados.sucesso === true || dados.id)) {
+
+          this.mudarAba('ATENDIMENTO')
           this.$emit('senha-chamada', dados.id)
         }
       } catch (error) {
