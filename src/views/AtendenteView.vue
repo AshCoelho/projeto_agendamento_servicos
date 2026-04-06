@@ -779,6 +779,19 @@ export default {
       return 'Ponto de Atendimento'
     },
 
+    verificarGuicheValido() {
+      // Pode vir de duas formas dependendo do backend
+      const numero = this.usuario?.numeroPonto
+      const descricao = this.usuario?.descricaoPonto
+
+      // Se qualquer um essencial for null → logout
+      if (!numero || !descricao) {
+        console.warn('Guichê inválido. Fazendo logout...')
+
+        this.handleLogout()
+      }
+    },
+
     async enviarPing() {
       try {
         // Tenta pegar o ID do atendimento automático ou do selecionado
@@ -915,6 +928,8 @@ export default {
         const { data } = await AtendenteApi.getUsuarioLogado()
         this.usuario = data
 
+        this.verificarGuicheValido()
+
         if (data.id) {
           localStorage.setItem('usuarioId', data.id)
 
@@ -932,6 +947,8 @@ export default {
       try {
         // 1. Garante que o usuário e o perfil foram carregados
         if (!this.usuario?.id) await this.getUsuarioLogado()
+
+        this.verificarGuicheValido()
 
         if (this.setorTrabalhoId) {
           const meuId = this.usuario?.id || localStorage.getItem('usuarioId')
