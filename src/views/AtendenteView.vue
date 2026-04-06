@@ -620,18 +620,18 @@ export default {
   }),
 
   watch: {
-      mostrarModalEspontaneo(novoValor) {
-          const acao = novoValor ? 'addEventListener' : 'removeEventListener'
-          window[acao]('keydown', this.handleEsc)
+    mostrarModalEspontaneo(novoValor) {
+      const acao = novoValor ? 'addEventListener' : 'removeEventListener'
+      window[acao]('keydown', this.handleEsc)
 
-          // LÓGICA DE ATIVAÇÃO PERMANENTE:
-          // Se abriu o modal uma vez, vira 'true' e fica 'true'.
-          if (novoValor === true) {
-              this.jaAbriuModal = true;
-              // Força uma busca imediata com a visão liberada
-              this.buscarAgendamentos();
-          }
-      },
+      // LÓGICA DE ATIVAÇÃO PERMANENTE:
+      // Se abriu o modal uma vez, vira 'true' e fica 'true'.
+      if (novoValor === true) {
+        this.jaAbriuModal = true
+        // Força uma busca imediata com a visão liberada
+        this.buscarAgendamentos()
+      }
+    },
   },
 
   computed: {
@@ -724,18 +724,16 @@ export default {
 
     agendamentosFinalizados() {
       const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'))
-      
+
       return this.agendamentosPorSetor.filter(
         (a) => a.situacao === 'ATENDIDO' && Number(a.gerenciadorId || a.usuarioId) === meuId,
       ).length
     },
 
     agendamentosCancelados() {
-      return this.agendamentosPorSetor.filter(
-        (a) => a.situacao === 'FALTOU'
-      ).length
+      return this.agendamentosPorSetor.filter((a) => a.situacao === 'FALTOU').length
     },
-    
+
     totalNormalFila() {
       return this.agendamentosPorSetor.filter(
         (a) => a.situacao === 'AGENDADO' && a.tipoAtendimento === 'NORMAL',
@@ -922,30 +920,30 @@ export default {
     },
 
     async buscarAgendamentos() {
-        try {
-            // 1. Garante que o usuário e o perfil foram carregados
-            if (!this.usuario?.id) await this.getUsuarioLogado();
-            
-            if (this.setorTrabalhoId) {
-                const meuId = this.usuario?.id || localStorage.getItem('usuarioId');
-                
-                // 2. CAPTURA O PERFIL (Prioriza a variável do componente, depois o storage)
-                // Se o cara for 'CADASTRO', o SQL libera a fila toda do setor.
-                const perfilEnvio = this.perfil || localStorage.getItem('perfilUsuario') || 'ATENDENTE';
+      try {
+        // 1. Garante que o usuário e o perfil foram carregados
+        if (!this.usuario?.id) await this.getUsuarioLogado()
 
-                // 3. Chama a API passando a String do Perfil
-                const data = await AtendenteApi.buscarAgendamentosPorSetor(
-                    this.setorTrabalhoId,
-                    meuId,
-                    perfilEnvio 
-                );
+        if (this.setorTrabalhoId) {
+          const meuId = this.usuario?.id || localStorage.getItem('usuarioId')
 
-                // 4. Atualiza a lista reativa
-                this.agendamentosPorSetor = [...data];
-            }
-        } catch (e) {
-            console.error('Erro ao buscar agendamentos:', e);
+          // 2. CAPTURA O PERFIL (Prioriza a variável do componente, depois o storage)
+          // Se o cara for 'CADASTRO', o SQL libera a fila toda do setor.
+          const perfilEnvio = this.perfil || localStorage.getItem('perfilUsuario') || 'ATENDENTE'
+
+          // 3. Chama a API passando a String do Perfil
+          const data = await AtendenteApi.buscarAgendamentosPorSetor(
+            this.setorTrabalhoId,
+            meuId,
+            perfilEnvio,
+          )
+
+          // 4. Atualiza a lista reativa
+          this.agendamentosPorSetor = [...data]
         }
+      } catch (e) {
+        console.error('Erro ao buscar agendamentos:', e)
+      }
     },
 
     async handleChamar(senha) {
@@ -1025,136 +1023,144 @@ export default {
     },
 
     async imprimirTicketWebUSB(device, senha, dataHora, nomeServico) {
-  try {
-    await device.open();
-    if (device.configuration === null) await device.selectConfiguration(1);
-    await device.claimInterface(0);
+      try {
+        await device.open()
+        if (device.configuration === null) await device.selectConfiguration(1)
+        await device.claimInterface(0)
 
-    const outEndpoint = device.configuration.interfaces[0].alternate.endpoints
-      .find(e => e.direction === 'out');
+        const outEndpoint = device.configuration.interfaces[0].alternate.endpoints.find(
+          (e) => e.direction === 'out',
+        )
 
-    if (!outEndpoint) throw new Error("Endpoint de saída não encontrado.");
+        if (!outEndpoint) throw new Error('Endpoint de saída não encontrado.')
 
-    const encoder = new TextEncoder();
-    
-    const commands = [
-      new Uint8Array([0x1b, 0x40]),           // Reset da impressora
-      new Uint8Array([0x1b, 0x61, 0x01]),     // Centralizar tudo
+        const encoder = new TextEncoder()
 
-      // 1. PREFEITURA DE SÃO LUÍS (Negrito)
-      new Uint8Array([0x1b, 0x45, 0x01]),     
-      encoder.encode('PREFEITURA DE SÃO LUIS\n\n'),
-      new Uint8Array([0x1b, 0x45, 0x00]),     
+        const commands = [
+          new Uint8Array([0x1b, 0x40]), // Reset da impressora
+          new Uint8Array([0x1b, 0x61, 0x01]), // Centralizar tudo
 
-      // 2. SERVIÇO
-      encoder.encode('SERVICO:\n'),
-      encoder.encode(`${nomeServico.toUpperCase()}\n\n`),
+          // 1. PREFEITURA DE SÃO LUÍS (Negrito)
+          new Uint8Array([0x1b, 0x45, 0x01]),
+          encoder.encode('PREFEITURA DE SÃO LUIS\n\n'),
+          new Uint8Array([0x1b, 0x45, 0x00]),
 
-      // 3. SENHA (Grande e Negrito)
-      encoder.encode('SENHA:\n'),
-      new Uint8Array([0x1d, 0x21, 0x22]),     // (Tamanho Máximo: 4x)
-      new Uint8Array([0x1b, 0x45, 0x01]),     // Negrito ON
-      encoder.encode(`${senha}\n\n`),
-      new Uint8Array([0x1b, 0x45, 0x00]),     // Negrito OFF
-      new Uint8Array([0x1d, 0x21, 0x00]),     // Volta fonte normal
+          // 2. SERVIÇO
+          encoder.encode('SERVICO:\n'),
+          encoder.encode(`${nomeServico.toUpperCase()}\n\n`),
 
-      // 4. AGUARDE SER CHAMADO
-      encoder.encode('AGUARDE SER CHAMADO\n\n'),
+          // 3. SENHA (Grande e Negrito)
+          encoder.encode('SENHA:\n'),
+          new Uint8Array([0x1d, 0x21, 0x22]), // (Tamanho Máximo: 4x)
+          new Uint8Array([0x1b, 0x45, 0x01]), // Negrito ON
+          encoder.encode(`${senha}\n\n`),
+          new Uint8Array([0x1b, 0x45, 0x00]), // Negrito OFF
+          new Uint8Array([0x1d, 0x21, 0x00]), // Volta fonte normal
 
-      // 5. EMISSÃO
-      encoder.encode(`EMISSÃO: ${dataHora}\n`),
+          // 4. AGUARDE SER CHAMADO
+          encoder.encode('AGUARDE SER CHAMADO\n\n'),
 
-      // Espaço e Corte
-      encoder.encode('\n\n\n\n'),             
-      new Uint8Array([0x1d, 0x56, 0x42, 0x00]) // Comando de Corte
-    ];
+          // 5. EMISSÃO
+          encoder.encode(`EMISSÃO: ${dataHora}\n`),
 
-    const totalLength = commands.reduce((acc, cur) => acc + cur.length, 0);
-    const combinedData = new Uint8Array(totalLength);
-    let offset = 0;
-    for (const cmd of commands) {
-      combinedData.set(cmd, offset);
-      offset += cmd.length;
-    }
+          // Espaço e Corte
+          encoder.encode('\n\n\n\n'),
+          new Uint8Array([0x1d, 0x56, 0x42, 0x00]), // Comando de Corte
+        ]
 
-    await device.transferOut(outEndpoint.endpointNumber, combinedData);
-    await new Promise(resolve => setTimeout(resolve, 800));
-    await device.close();
+        const totalLength = commands.reduce((acc, cur) => acc + cur.length, 0)
+        const combinedData = new Uint8Array(totalLength)
+        let offset = 0
+        for (const cmd of commands) {
+          combinedData.set(cmd, offset)
+          offset += cmd.length
+        }
 
-    console.log("Ticket impresso com sucesso.");
-  } catch (err) {
-    console.error("Erro físico na impressora:", err);
-    try { if(device.opened) await device.close(); } catch(e) {}
-    alert("Atendimento salvo, mas houve erro na impressora: " + err.message);
-  }
-},
+        await device.transferOut(outEndpoint.endpointNumber, combinedData)
+        await new Promise((resolve) => setTimeout(resolve, 800))
+        await device.close()
 
-  async salvarEspontaneo() {
-    if (this.isSalvando) return;
-
-    if (!navigator.usb) {
-      alert("Acesso USB bloqueado. Verifique o HTTPS ou as Flags do Chrome.");
-      return;
-    }
-
-    let device;
-    try {
-      // TENTA IMPRIMIR DIRETO: Verifica se já existe permissão prévia
-      const pairedDevices = await navigator.usb.getDevices();
-      
-      if (pairedDevices.length > 0) {
-        device = pairedDevices[0]; // Pega a primeira que já foi autorizada
-      } else {
-        // Se for a primeira vez ou cache limpo, abre o popup
-        device = await navigator.usb.requestDevice({ filters: [] });
+        console.log('Ticket impresso com sucesso.')
+      } catch (err) {
+        console.error('Erro físico na impressora:', err)
+        try {
+          if (device.opened) await device.close()
+        } catch (e) {}
+        alert('Atendimento salvo, mas houve erro na impressora: ' + err.message)
       }
-    } catch (err) {
-      console.warn("Seleção cancelada.");
-      return;
-    }
+    },
 
-    try {
-      if (!this.novoAgendamento.nomeCidadao?.trim()) {
-        alert('Informe o nome do cidadão.');
-        return;
+    async salvarEspontaneo() {
+      if (this.isSalvando) return
+
+      if (!navigator.usb) {
+        alert('Acesso USB bloqueado. Verifique o HTTPS ou as Flags do Chrome.')
+        return
       }
 
-      this.isSalvando = true;
+      let device
+      try {
+        // TENTA IMPRIMIR DIRETO: Verifica se já existe permissão prévia
+        const pairedDevices = await navigator.usb.getDevices()
 
-      const payload = {
-        nomeCidadao: this.novoAgendamento.nomeCidadao,
-        tipoAtendimentoId: Number(this.novoAgendamento.tipoAtendimentoId),
-        servicoId: Number(this.novoAgendamento.servico),
-        setorId: Number(this.setorTrabalhoId),
-        situacao: 'AGENDADO',
-        observacao: this.novoAgendamento.observacoes,
-      };
-
-      const res = await AtendenteApi.salvarEspontaneo(this.secretariaTrabalhoId, payload);
-
-      if (res.status === 200 || res.status === 201) {
-        const senha = res.data.codigo || res.data.senha || '---';
-        const dataHora = new Date().toLocaleString('pt-BR');
-
-        // Busca o nome amigável do serviço
-        const servicoObj = this.servicos.find(s => s.id == this.novoAgendamento.servico);
-        const nomeServico = servicoObj ? servicoObj.nome : 'GERAL';
-
-        // Dispara a impressão
-        await this.imprimirTicketWebUSB(device, senha, dataHora, nomeServico);
-
-        // Limpa e fecha
-        this.mostrarModalEspontaneo = false;
-        this.novoAgendamento = { nomeCidadao: '', servico: null, tipoAtendimentoId: null, observacoes: '' };
-        await this.buscarAgendamentos();
+        if (pairedDevices.length > 0) {
+          device = pairedDevices[0] // Pega a primeira que já foi autorizada
+        } else {
+          // Se for a primeira vez ou cache limpo, abre o popup
+          device = await navigator.usb.requestDevice({ filters: [] })
+        }
+      } catch (err) {
+        console.warn('Seleção cancelada.')
+        return
       }
-    } catch (e) {
-      console.error('Erro geral:', e);
-      alert('Erro: ' + (e.response?.data?.mensagem || e.message));
-    } finally {
-      this.isSalvando = false;
-    }
-  },
+
+      try {
+        if (!this.novoAgendamento.nomeCidadao?.trim()) {
+          alert('Informe o nome do cidadão.')
+          return
+        }
+
+        this.isSalvando = true
+
+        const payload = {
+          nomeCidadao: this.novoAgendamento.nomeCidadao,
+          tipoAtendimentoId: Number(this.novoAgendamento.tipoAtendimentoId),
+          servicoId: Number(this.novoAgendamento.servico),
+          setorId: Number(this.setorTrabalhoId),
+          situacao: 'AGENDADO',
+          observacao: this.novoAgendamento.observacoes,
+        }
+
+        const res = await AtendenteApi.salvarEspontaneo(this.secretariaTrabalhoId, payload)
+
+        if (res.status === 200 || res.status === 201) {
+          const senha = res.data.codigo || res.data.senha || '---'
+          const dataHora = new Date().toLocaleString('pt-BR')
+
+          // Busca o nome amigável do serviço
+          const servicoObj = this.servicos.find((s) => s.id == this.novoAgendamento.servico)
+          const nomeServico = servicoObj ? servicoObj.nome : 'GERAL'
+
+          // Dispara a impressão
+          await this.imprimirTicketWebUSB(device, senha, dataHora, nomeServico)
+
+          // Limpa e fecha
+          this.mostrarModalEspontaneo = false
+          this.novoAgendamento = {
+            nomeCidadao: '',
+            servico: null,
+            tipoAtendimentoId: null,
+            observacoes: '',
+          }
+          await this.buscarAgendamentos()
+        }
+      } catch (e) {
+        console.error('Erro geral:', e)
+        alert('Erro: ' + (e.response?.data?.mensagem || e.message))
+      } finally {
+        this.isSalvando = false
+      }
+    },
 
     async atualizarEspontaneo() {
       try {
@@ -1181,13 +1187,13 @@ export default {
       try {
         const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'))
 
-        const idParaEnviar = (apenasCadastro || isNaN(meuId)) ? null : meuId;
+        const idParaEnviar = apenasCadastro || isNaN(meuId) ? null : meuId
 
         const servicos = await AtendenteApi.carregarServicosPorSetor(
           this.setorTrabalhoId,
           idParaEnviar,
-          apenasCadastro // IMPORTANTE: Passar como 3º parâmetro aqui!
-        );
+          apenasCadastro, // IMPORTANTE: Passar como 3º parâmetro aqui!
+        )
 
         this.servicos = servicos
       } catch (e) {
@@ -1241,7 +1247,6 @@ export default {
 </script>
 
 <style scoped>
-/* CSS para customizar a barra de rolagem e deixá-la elegante */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
   height: 6px;

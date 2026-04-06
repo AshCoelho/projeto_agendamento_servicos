@@ -38,22 +38,15 @@
         class="flex-[4] md:flex-[4] bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden relative"
       >
         <!-- Iframe da câmera ocupando só esse card -->
-        <iframe
-          v-if="!mostrarSenha"
-          src="https://cameras.saoluis.ma.gov.br/cam1.html"
-          class="absolute inset-0 w-full h-full z-0 rounded-2xl"
-          frameborder="0"
-        ></iframe>
 
         <div
-          class="w-full text-[20px] md:text-[2vw] flex justify-center items-center pt-10 md:pt-2 font-bold"
+          class="w-full text-[20px] md:text-[2vw] flex justify-center items-center pt-2 md:pt-2 font-bold"
           :class="senhaAtual?.numero?.includes('P') ? 'text-red-600' : 'text-blue-600'"
         >
           {{ senhaAtual?.numero?.includes('P') ? 'PRIORIDADE' : 'NORMAL' }}
         </div>
 
         <div
-          v-show="mostrarSenha"
           class="flex-1 flex flex-col md:flex-row items-center justify-around px-4 md:px-10 bg-white"
         >
           <div class="flex flex-col items-center justify-center">
@@ -61,7 +54,7 @@
               >SENHA</span
             >
             <h1
-              class="text-[25vw] md:text-[20vw] leading-[0.8] font-black tracking-tighter"
+              class="text-[18vw] md:text-[20vw] leading-[0.8] font-black tracking-tighter"
               :class="senhaAtual.numero.includes('P') ? 'text-red-600' : 'text-[#0056B3]'"
             >
               {{ senhaAtual.numero || '---' }}
@@ -74,7 +67,7 @@
             <span class="text-[#8e8e8e] text-2xl md:text-6xl font-bold uppercase tracking-widest">{{
               localFormatado
             }}</span>
-            <h1 class="text-[18vw] md:text-[14vw] leading-[0.8] font-black text-[#1A237E]">
+            <h1 class="text-[15vw] md:text-[14vw] leading-[0.8] font-black text-[#1A237E]">
               {{ guicheFormatado }}
             </h1>
           </div>
@@ -192,7 +185,6 @@ const historico = ref([])
 
 const lastKey = ref(null)
 const fetching = ref(false)
-const mostrarSenha = ref(false)
 
 let intervalChamada = null
 let intervalRelogio = null
@@ -236,7 +228,7 @@ const atualizarRelogio = () => {
 }
 
 const qrSrc = computed(() => {
-  const urlPublica = `http://localhost/tv/${setorId.value}`
+  const urlPublica = `https://agendamento.saoluis.ma.gov.br/tv/${setorId.value}`
   return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
     urlPublica,
   )}`
@@ -283,8 +275,6 @@ const processarFila = () => {
     cidadao: String(chamada.nome),
   }
 
-  mostrarSenha.value = true // Traz a tela pra frente da câmera
-
   const normalizar = (str) =>
     str
       ?.trim()
@@ -318,8 +308,6 @@ const processarFila = () => {
       falando.value = false // Libera a catraca para a próxima senha
 
       if (filaChamadas.length === 0) {
-        mostrarSenha.value = false // Fila vazia? Volta pra câmera
-      } else {
         processarFila() // Tem gente na fila? Puxa o próximo!
       }
     }, 4000)
