@@ -199,11 +199,11 @@ export default {
 
         switch (perfil) {
           case 'ADMIN':
-          case 'SUPERADMIN':
             this.$router.push('/administrador')
             break
           case 'ATENDENTE':
           case 'CADASTRO':
+          case 'SUPERADMIN':
             this.$router.push('/guiche')
             break
           case 'MEDICO':
