@@ -31,12 +31,12 @@ export const AtendenteApi = {
     return await api.post(`/agendamentos/chamar/por-senha/${encodeURIComponent(senha)}/${gerenciadorId}/${setorId}`)
   },
 
-  // ✅ Alterado: Chamar Próximo Normal por SETOR
+
   async chamarNormal(setorId, gerenciadorId) {
     return await api.post(`/agendamentos/chamar/normal/${setorId}/${gerenciadorId}`)
   },
 
-  // ✅ Alterado: Chamar Próximo Prioridade por SETOR
+  
   async chamarPrioridade(setorId, gerenciadorId) {
     return await api.post(`/agendamentos/chamar/prioridade/${setorId}/${gerenciadorId}`)
   },
