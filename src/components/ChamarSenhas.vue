@@ -359,11 +359,20 @@ export default {
 
       const statusClicado = itemClicado.situacao?.toUpperCase()
       const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'))
+
+      const agora = new Date();
+      const pad = (n) => n.toString().padStart(2, '0');
+      const dataStr = `${agora.getFullYear()}-${pad(agora.getMonth() + 1)}-${pad(agora.getDate())}`;
+      const milis = agora.getMilliseconds().toString().padStart(3, '0');
+      const horarioFront = `${dataStr} ${pad(agora.getHours())}:${pad(agora.getMinutes())}:${pad(agora.getSeconds())}.${milis}`;
+
       const donoDoItemClicado = Number(itemClicado.gerenciadorId || itemClicado.usuarioId)
 
       const ehMinhaSenhaAtual =
         (statusClicado === 'EM_ATENDIMENTO' || statusClicado === 'CHAMADO') &&
         donoDoItemClicado === meuId
+
+      const setorId = Number(this.setorTrabalhoId || localStorage.getItem('setorTrabalhoId')); 
 
       if (this.temAtendimentoAtivo && !ehMinhaSenhaAtual) {
         alert('Você já possui um atendimento em aberto. Finalize-o antes de chamar outra senha.')
@@ -371,7 +380,7 @@ export default {
       }
 
       try {
-        const res = await AtendenteApi.chamarPorSenha(senha, this.usuario.id, this.setorTrabalhoId)
+        const res = await AtendenteApi.chamarPorSenha(senha, meuId, setorId, horarioFront);
 
         if (res.status === 200) {
           if (itemClicado) {
@@ -379,8 +388,9 @@ export default {
             this.idsChamadosManualmente.push(itemClicado.agendamentoId || itemClicado.id)
 
             // Altera o status localmente de forma imediata (Otimismo de UI)
-            itemClicado.situacao = 'CHAMADO'
-            itemClicado.gerenciadorId = meuId
+            itemClicado.situacao = 'EM_ATENDIMENTO'
+            itemClicado.gerenciadorId = meuId,
+            itemClicado.horaChamada = horarioFront;
           }
 
           // MUDA A ABA AQUI
@@ -396,7 +406,14 @@ export default {
 
     async handleChamarNormal() {
       try {
-        const response = await AtendenteApi.chamarNormal(this.setorTrabalhoId, this.usuario.id)
+
+        const agora = new Date();
+        const pad = (n) => n.toString().padStart(2, '0');
+        const dataStr = `${agora.getFullYear()}-${pad(agora.getMonth() + 1)}-${pad(agora.getDate())}`;
+        const horaStr = `${pad(agora.getHours())}:${pad(agora.getMinutes())}:${pad(agora.getSeconds())}.${agora.getMilliseconds().toString().padStart(3, '0')}000`;
+        const horarioFront = `${dataStr} ${horaStr}`;
+
+        const response = await AtendenteApi.chamarNormal(this.setorTrabalhoId, this.usuario.id, horarioFront)
         const dados = response.data || response
 
         if (dados && dados.sucesso === false) {
@@ -431,7 +448,14 @@ export default {
 
     async handleChamarPrioridade() {
       try {
-        const response = await AtendenteApi.chamarPrioridade(this.setorTrabalhoId, this.usuario.id)
+
+        const agora = new Date();
+        const pad = (n) => n.toString().padStart(2, '0');
+        const dataStr = `${agora.getFullYear()}-${pad(agora.getMonth() + 1)}-${pad(agora.getDate())}`;
+        const horaStr = `${pad(agora.getHours())}:${pad(agora.getMinutes())}:${pad(agora.getSeconds())}.${agora.getMilliseconds().toString().padStart(3, '0')}000`;
+        const horarioFront = `${dataStr} ${horaStr}`;
+        
+        const response = await AtendenteApi.chamarPrioridade(this.setorTrabalhoId, this.usuario.id, horarioFront)
         const dados = response.data || response
 
         if (dados && dados.sucesso === false) {

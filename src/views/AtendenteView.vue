@@ -528,7 +528,7 @@
                       class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-600 text-[10px] font-black rounded-lg uppercase tracking-tight shadow-sm whitespace-nowrap"
                     >
                       <i class="pi pi-clock text-[10px]"></i>
-                      {{ calcularTempoEspera(item.horaAgendamento, item.situacao) }}
+                      {{ calcularTempoEspera(item.horaAgendamento, item.situacao, item.horaChamada, item.horaFinalizado) }}
                     </span>
                   </td>
 
@@ -876,28 +876,53 @@ export default {
       })
     },
 
-    calcularTempoEspera(horaAgendamento, situacao) {
-      if (!horaAgendamento) return '--'
+   calcularTempoEspera(horaAgendamento, situacao, hChamada, hFinalizado) {
+  if (!horaAgendamento) return '00:00:00';
 
-      if (['ATENDIDO', 'FINALIZADOS', 'FALTOU', 'CANCELADO'].includes(situacao)) {
-        return '--'
-      }
+  // Função interna para converter a string do Java/Postgres (2026-04-07 06:20:51.777798) para Date
+  const parseData = (str) => {
+    if (!str) return null;
+    // Substitui o espaço por 'T' para garantir compatibilidade com o padrão ISO no JS
+    const isoStr = str.replace(' ', 'T');
+    return new Date(isoStr);
+  };
 
-      const dataCriacao = new Date(horaAgendamento).getTime()
-      const agora = this.horaAtual.getTime()
-      let diffMs = agora - dataCriacao
+  const dataAgendamento = parseData(horaAgendamento);
+  const dataChamada = parseData(hChamada);
+  const dataFinalizado = parseData(hFinalizado);
 
-      if (diffMs < 0) diffMs = 0
+  // Se a data de agendamento for inválida, para aqui
+  if (!dataAgendamento || isNaN(dataAgendamento.getTime())) return '00:00:00';
 
-      const minutosTotal = Math.floor(diffMs / 60000)
-      const horas = Math.floor(minutosTotal / 60)
-      const minRestantes = minutosTotal % 60
+  let inicio, fim;
 
-      if (horas > 0) {
-        return `${horas}h ${String(minRestantes).padStart(2, '0')}m`
-      }
-      return `${minutosTotal} min`
-    },
+  // Verificamos se o atendimento foi finalizado (ajuste o texto 'ATENDIDO' conforme seu banco)
+  if (situacao === 'ATENDIDO' || situacao === 'FINALIZADO') {
+    if (dataChamada && dataFinalizado) {
+      // Caso 1: Quanto tempo durou o atendimento na mesa (Chamada -> Fim)
+      inicio = dataChamada;
+      fim = dataFinalizado;
+    } else if (dataFinalizado) {
+      // Caso 2: Quanto tempo o cidadão ficou na unidade (Agendamento -> Fim)
+      inicio = dataAgendamento;
+      fim = dataFinalizado;
+    } else {
+      // Trava para não contar se não houver data de encerramento
+      return '00:00:00';
+    }
+  } else {
+    // Caso 3: Ainda esperando ou em atendimento (Relógio rodando)
+    inicio = dataAgendamento;
+    fim = new Date();
+  }
+
+  const diffMs = Math.abs(fim - inicio);
+  const diffHrs = Math.floor(diffMs / 3600000);
+  const diffMins = Math.floor((diffMs % 3600000) / 60000);
+  const diffSecs = Math.floor((diffMs % 60000) / 1000);
+
+  return `${String(diffHrs).padStart(2, '0')}:${String(diffMins).padStart(2, '0')}:${String(diffSecs).padStart(2, '0')}`;
+},
 
     async handleLogout() {
       const token = localStorage.getItem('token')
@@ -976,6 +1001,12 @@ export default {
       const itemClicado = this.agendamentosPorSetor.find((a) => a.senha === senha)
       if (!itemClicado) return
 
+      const agora = new Date();
+      const pad = (n) => n.toString().padStart(2, '0');
+      const dataStr = `${agora.getFullYear()}-${pad(agora.getMonth() + 1)}-${pad(agora.getDate())}`;
+      const milis = agora.getMilliseconds().toString().padStart(3, '0');
+      const horarioFront = `${dataStr} ${pad(agora.getHours())}:${pad(agora.getMinutes())}:${pad(agora.getSeconds())}.${milis}`;
+
       const statusClicado = itemClicado.situacao?.toUpperCase()
       const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'))
       const donoDoItemClicado = Number(itemClicado.gerenciadorId || itemClicado.usuarioId)
@@ -990,13 +1021,14 @@ export default {
       }
 
       try {
-        const res = await AtendenteApi.chamarPorSenha(senha, this.usuario.id, this.setorTrabalhoId)
+        const res = await AtendenteApi.chamarPorSenha(senha, this.usuario.id, this.setorTrabalhoId, horarioFront)
 
         if (res.status === 200) {
           if (itemClicado) {
             this.idsChamadosManualmente.push(itemClicado.agendamentoId || itemClicado.id)
             itemClicado.situacao = 'CHAMADO'
-            itemClicado.gerenciadorId = meuId
+            itemClicado.gerenciadorId = meuId,
+            itemClicado.horaChamada = horarioFront;
           }
 
           // Muda a aba instantaneamente
@@ -1011,7 +1043,14 @@ export default {
       if (!confirm('Deseja realmente cancelar?')) return
       try {
         const token = localStorage.getItem('token')
-        await AtendenteApi.cancelarAtendimento(id, token)
+
+        const agora = new Date()
+        const pad = (n) => n.toString().padStart(2, '0')
+        const dataStr = `${agora.getFullYear()}-${pad(agora.getMonth() + 1)}-${pad(agora.getDate())}`
+        const horaStr = `${pad(agora.getHours())}:${pad(agora.getMinutes())}:${pad(agora.getSeconds())}.${agora.getMilliseconds().toString().padStart(3, '0')}000`
+        const horarioFront = `${dataStr} ${horaStr}`
+
+        await AtendenteApi.cancelarAtendimento(id, token, horarioFront)
 
         this.idsChamadosManualmente = this.idsChamadosManualmente.filter((itemId) => itemId !== id)
 
@@ -1028,23 +1067,41 @@ export default {
 
     async handleFinalizar(id) {
       if (!confirm('Deseja finalizar?')) return
+      
       try {
-        await AtendenteApi.finalizarAtendimento(id)
+        // 1. Gera o horário exato do dispositivo do usuário
+        const agora = new Date();
+        const pad = (n) => n.toString().padStart(2, '0');
+        
+        // Formata a data: YYYY-MM-DD
+        const dataStr = `${agora.getFullYear()}-${pad(agora.getMonth() + 1)}-${pad(agora.getDate())}`;
+        
+        // Formata a hora: HH:mm:ss
+        const horaSimples = `${pad(agora.getHours())}:${pad(agora.getMinutes())}:${pad(agora.getSeconds())}`;
+        
+        // MILISSEGUNDOS: O segredo do erro 400 está aqui. 
+        // Pegamos apenas os 3 dígitos que o Java espera (.SSS)
+        const milis = agora.getMilliseconds().toString().padStart(3, '0');
+        
+        // Monta a string final SEM os "000" extras
+        const horarioFront = `${dataStr} ${horaSimples}.${milis}`;
 
-        this.idsChamadosManualmente = this.idsChamadosManualmente.filter((itemId) => itemId !== id)
+        // 2. Passa o ID e o Horário para a API
+        await AtendenteApi.finalizarAtendimento(id, horarioFront);
 
-        const index = this.agendamentosPorSetor.findIndex((a) => (a.agendamentoId || a.id) === id)
+        // --- Sua lógica de UI (MANTIDA) ---
+        this.idsChamadosManualmente = this.idsChamadosManualmente.filter((itemId) => itemId !== id);
+        const index = this.agendamentosPorSetor.findIndex((a) => (a.agendamentoId || a.id) === id);
         if (index !== -1) {
-          this.agendamentosPorSetor[index].situacao = 'ATENDIDO'
+          this.agendamentosPorSetor[index].situacao = 'ATENDIDO';
         }
+        this.mostrarModalEdicao = false;
+        this.abaAtiva = 'AGUARDANDO';
+        // ---------------------------------
 
-        this.mostrarModalEdicao = false
-
-        // Volta pra Fila Geral na hora
-        this.abaAtiva = 'AGUARDANDO'
       } catch (e) {
-        console.error('Erro ao finalizar:', e)
-        alert('Erro ao finalizar atendimento.')
+        console.error('Erro ao finalizar:', e);
+        alert('Erro ao finalizar atendimento.');
       }
     },
 
@@ -1157,7 +1214,13 @@ export default {
           observacao: this.novoAgendamento.observacoes,
         }
 
-        const res = await AtendenteApi.salvarEspontaneo(this.secretariaTrabalhoId, payload)
+        const agora = new Date();
+        const pad = (n) => n.toString().padStart(2, '0');
+        const dataStr = `${agora.getFullYear()}-${pad(agora.getMonth() + 1)}-${pad(agora.getDate())}`;
+        const horaStr = `${pad(agora.getHours())}:${pad(agora.getMinutes())}:${pad(agora.getSeconds())}.${agora.getMilliseconds().toString().padStart(3, '0')}000`;
+        const horarioFront = `${dataStr} ${horaStr}`;
+
+        const res = await AtendenteApi.salvarEspontaneo(this.secretariaTrabalhoId, payload, horarioFront);
 
         if (res.status === 200 || res.status === 201) {
           const senha = res.data.codigo || res.data.senha || '---'

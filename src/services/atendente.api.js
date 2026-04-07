@@ -27,33 +27,44 @@ export const AtendenteApi = {
       return Array.isArray(res.data) ? res.data : []
   },
   
-  async chamarPorSenha(senha, gerenciadorId, setorId) {
-    return await api.post(`/agendamentos/chamar/por-senha/${encodeURIComponent(senha)}/${gerenciadorId}/${setorId}`)
+  async chamarPorSenha(senha, gerenciadorId, setorId, horario) {
+    return await api.post(
+      `/agendamentos/chamar/por-senha/${encodeURIComponent(senha)}/${gerenciadorId}/${setorId}`,
+      null, // O segundo parâmetro é o corpo (body), enviamos null
+      { 
+        params: { 
+          horario: horario // O Axios anexa isso como ?horario=...
+        } 
+      }
+    );
   },
 
-
-  async chamarNormal(setorId, gerenciadorId) {
-    return await api.post(`/agendamentos/chamar/normal/${setorId}/${gerenciadorId}`)
+  async chamarNormal(setorId, gerenciadorId, horario) {
+    return await api.post(`/agendamentos/chamar/normal/${setorId}/${gerenciadorId}?horario=${encodeURIComponent(horario)}`)
   },
 
-  
-  async chamarPrioridade(setorId, gerenciadorId) {
-    return await api.post(`/agendamentos/chamar/prioridade/${setorId}/${gerenciadorId}`)
+  async chamarPrioridade(setorId, gerenciadorId, horario) {
+    return await api.post(`/agendamentos/chamar/prioridade/${setorId}/${gerenciadorId}?horario=${encodeURIComponent(horario)}`)
   },
 
-  async cancelarAtendimento(id, token) {
-    return await api.put(`/agendamentos/cancelar/${id}`, {}, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+  async cancelarAtendimento(id, token, horario) {
+    return await api.put(
+      `/agendamentos/cancelar/${id}?horario=${encodeURIComponent(horario)}`, 
+      {}, 
+      {
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    )
   },
 
-  async finalizarAtendimento(id) {
-    return await api.put(`/agendamentos/finalizar/${id}`)
+  async finalizarAtendimento(id, horario) {
+    // Envia o horário via query string para o Spring Boot
+    return await api.put(`/agendamentos/finalizar/${id}?horario=${encodeURIComponent(horario)}`);
   },
 
-  async salvarEspontaneo(secretariaId, payload) {
-    // payload agora deve conter o setorId em vez de enderecoId
-    return await api.post(`/agendamentos/espontaneo/${secretariaId}`, payload)
+  async salvarEspontaneo(secretariaId, payload, horario) {
+    // A URL agora leva o ?horario=...
+    return await api.post(`/agendamentos/espontaneo/${secretariaId}?horario=${encodeURIComponent(horario)}`, payload);
   },
 
   async carregarTiposAtendimento(secretariaId) {
