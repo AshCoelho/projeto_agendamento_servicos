@@ -865,18 +865,22 @@ export default {
       })
     },
 
-    formatarDataHora(data) {
+    formatarDataHoraBanco(data) {
       if (!data) return ''
 
-      // data vem no formato ISO do backend, e queremos apenas DD/MM/YYYY HH:mm
+      // data vem do backend, ex: "2026-04-08T01:12:57.845-03:00"
       const d = new Date(data)
+
+      // Extrai valores UTC e ajusta para UTC-3
+      let horas = d.getUTCHours() - 3 // São Paulo / Fortaleza
+      if (horas < 0) horas += 24 // ajusta caso passe de 0h
+
       const dia = String(d.getUTCDate()).padStart(2, '0')
-      const mes = String(d.getUTCMonth() + 1).padStart(2, '0') // meses começam em 0
+      const mes = String(d.getUTCMonth() + 1).padStart(2, '0')
       const ano = d.getUTCFullYear()
-      const hora = String(d.getUTCHours() - 3).padStart(2, '0') // UTC-3 (São Paulo)
       const minuto = String(d.getUTCMinutes()).padStart(2, '0')
 
-      return `${dia}/${mes}/${ano} ${hora}:${minuto}`
+      return `${dia}/${mes}/${ano} ${String(horas).padStart(2, '0')}:${minuto}`
     },
 
    calcularTempoEspera(horaAgendamento, situacao, hChamada, hFinalizado) {
