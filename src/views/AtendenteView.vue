@@ -866,17 +866,21 @@ export default {
     },
 
     formatarDataHora(data) {
-      if (!data) return '' // garante que data exista
+      if (!data) return ''
 
+      // separa data e hora
       const partes = data.split(' ')
-      if (partes.length !== 2) return data // se não for "YYYY-MM-DD HH:MM:SS", retorna bruto
+      if (partes.length !== 2) return data
 
-      const [date, time] = partes
-      const horaMinuto = time ? time.slice(0, 5) : '' // pega HH:MM com segurança
+      const [dataBanco, horaBanco] = partes
 
-      const dataFormatada = date.split('-').reverse().join('/') // transforma YYYY-MM-DD → DD/MM/YYYY
+      // formata data YYYY-MM-DD → DD/MM/YYYY
+      const dataFormatada = dataBanco.split('-').reverse().join('/')
 
-      return `${dataFormatada} ${horaMinuto}`
+      // pega só HH:MM da hora
+      const horaFormatada = horaBanco ? horaBanco.substring(0, 5) : ''
+
+      return `${dataFormatada} ${horaFormatada}`
     },
 
    calcularTempoEspera(horaAgendamento, situacao, hChamada, hFinalizado) {
