@@ -1058,11 +1058,22 @@ export default {
       try {
         const token = localStorage.getItem('token')
 
-        const agora = new Date()
-        const pad = (n) => n.toString().padStart(2, '0')
-        const dataStr = `${agora.getFullYear()}-${pad(agora.getMonth() + 1)}-${pad(agora.getDate())}`
-        const horaStr = `${pad(agora.getHours())}:${pad(agora.getMinutes())}:${pad(agora.getSeconds())}.${agora.getMilliseconds().toString().padStart(3, '0')}000`
-        const horarioFront = `${dataStr} ${horaStr}`
+        // 1. Gera o horário exato do dispositivo do usuário
+        const agora = new Date();
+        const pad = (n) => n.toString().padStart(2, '0');
+        
+        // Formata a data: YYYY-MM-DD
+        const dataStr = `${agora.getFullYear()}-${pad(agora.getMonth() + 1)}-${pad(agora.getDate())}`;
+        
+        // Formata a hora: HH:mm:ss
+        const horaSimples = `${pad(agora.getHours())}:${pad(agora.getMinutes())}:${pad(agora.getSeconds())}`;
+        
+        // MILISSEGUNDOS: O segredo do erro 400 está aqui. 
+        // Pegamos apenas os 3 dígitos que o Java espera (.SSS)
+        const milis = agora.getMilliseconds().toString().padStart(3, '0');
+        
+        // Monta a string final SEM os "000" extras
+        const horarioFront = `${dataStr} ${horaSimples}.${milis}`;
 
         await AtendenteApi.cancelarAtendimento(id, token, horarioFront)
 
