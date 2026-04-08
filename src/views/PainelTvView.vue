@@ -425,8 +425,8 @@ const buscarChamadas = async () => {
     // Garantimos que seja uma String limpa para o Set
     const gerarChaveUnica = (item) => {
       const id = pegarCampo(item, ['agendamentoId', 'id']) ?? ''
-     
-      return `${id}`
+      const hora = pegarCampo(item, ['horaChamada', 'data_chamada']) ?? ''
+      return `${id}_${hora}`
     }
 
     // 3. PRIMEIRA EXECUÇÃO (Carga Inicial)
