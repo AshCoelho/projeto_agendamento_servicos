@@ -866,9 +866,17 @@ export default {
     },
 
     formatarDataHora(data) {
-      if (!data) return ''
-      const [date, time] = data.split(' ')
-      return `${date.split('-').reverse().join('/') } ${time.slice(0,5)}`
+      if (!data) return '' // garante que data exista
+
+      const partes = data.split(' ')
+      if (partes.length !== 2) return data // se não for "YYYY-MM-DD HH:MM:SS", retorna bruto
+
+      const [date, time] = partes
+      const horaMinuto = time ? time.slice(0, 5) : '' // pega HH:MM com segurança
+
+      const dataFormatada = date.split('-').reverse().join('/') // transforma YYYY-MM-DD → DD/MM/YYYY
+
+      return `${dataFormatada} ${horaMinuto}`
     },
 
    calcularTempoEspera(horaAgendamento, situacao, hChamada, hFinalizado) {
