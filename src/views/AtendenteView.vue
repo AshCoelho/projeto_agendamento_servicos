@@ -868,19 +868,18 @@ export default {
     formatarDataHora(data) {
       if (!data) return ''
 
-      // separa data e hora
-      const partes = data.split(' ')
-      if (partes.length !== 2) return data
+      // converte a string para Date
+      const d = new Date(data)
 
-      const [dataBanco, horaBanco] = partes
+      // formata para DD/MM/YYYY HH:MM
+      const dia = String(d.getDate()).padStart(2, '0')
+      const mes = String(d.getMonth() + 1).padStart(2, '0') // mês começa em 0
+      const ano = d.getFullYear()
 
-      // formata data YYYY-MM-DD → DD/MM/YYYY
-      const dataFormatada = dataBanco.split('-').reverse().join('/')
+      const horas = String(d.getHours()).padStart(2, '0')
+      const minutos = String(d.getMinutes()).padStart(2, '0')
 
-      // pega só HH:MM da hora
-      const horaFormatada = horaBanco ? horaBanco.substring(0, 5) : ''
-
-      return `${dataFormatada} ${horaFormatada}`
+      return `${dia}/${mes}/${ano} ${horas}:${minutos}`
     },
 
    calcularTempoEspera(horaAgendamento, situacao, hChamada, hFinalizado) {
