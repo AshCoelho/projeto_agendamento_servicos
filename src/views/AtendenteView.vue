@@ -884,44 +884,50 @@ export default {
    calcularTempoEspera(horaAgendamento, situacao, hChamada, hFinalizado) {
   if (!horaAgendamento) return '00:00:00';
 
-  // Função interna para converter a string do Java/Postgres (2026-04-07 06:20:51.777798) para Date
-  const parseData = (str) => {
+  // Converte string do backend para Date **sem ajuste de fuso**
+  const parseDataBanco = (str) => {
     if (!str) return null;
-    // Substitui o espaço por 'T' para garantir compatibilidade com o padrão ISO no JS
-    const isoStr = str.replace(' ', 'T');
-    return new Date(isoStr);
+    const [dataParte, horaParte] = str.split(/[ T]/); // aceita ' ' ou 'T'
+    if (!horaParte) return null;
+
+    const [ano, mes, dia] = dataParte.split('-');
+    const [hora, minuto, segundo] = horaParte.split(':');
+    return new Date(Date.UTC(
+      parseInt(ano),
+      parseInt(mes) - 1,
+      parseInt(dia),
+      parseInt(hora),
+      parseInt(minuto),
+      parseInt(segundo || 0)
+    ));
   };
 
-  const dataAgendamento = parseData(horaAgendamento);
-  const dataChamada = parseData(hChamada);
-  const dataFinalizado = parseData(hFinalizado);
+  const dataAgendamento = parseDataBanco(horaAgendamento);
+  const dataChamada = parseDataBanco(hChamada);
+  const dataFinalizado = parseDataBanco(hFinalizado);
 
-  // Se a data de agendamento for inválida, para aqui
-  if (!dataAgendamento || isNaN(dataAgendamento.getTime())) return '00:00:00';
+  if (!dataAgendamento) return '00:00:00';
 
   let inicio, fim;
 
-  // Verificamos se o atendimento foi finalizado (ajuste o texto 'ATENDIDO' conforme seu banco)
   if (situacao === 'ATENDIDO' || situacao === 'FINALIZADO') {
     if (dataChamada && dataFinalizado) {
-      // Caso 1: Quanto tempo durou o atendimento na mesa (Chamada -> Fim)
       inicio = dataChamada;
       fim = dataFinalizado;
     } else if (dataFinalizado) {
-      // Caso 2: Quanto tempo o cidadão ficou na unidade (Agendamento -> Fim)
       inicio = dataAgendamento;
       fim = dataFinalizado;
     } else {
-      // Trava para não contar se não houver data de encerramento
       return '00:00:00';
     }
   } else {
-    // Caso 3: Ainda esperando ou em atendimento (Relógio rodando)
     inicio = dataAgendamento;
-    fim = new Date();
+    fim = new Date(); // agora
   }
 
-  const diffMs = Math.abs(fim - inicio);
+  const diffMs = fim - inicio; // sem Math.abs, negativo é permitido se horário estiver errado
+  if (diffMs < 0) return '00:00:00'; // evita contar de trás pra frente
+
   const diffHrs = Math.floor(diffMs / 3600000);
   const diffMins = Math.floor((diffMs % 3600000) / 60000);
   const diffSecs = Math.floor((diffMs % 60000) / 1000);
