@@ -1217,7 +1217,7 @@ export default {
         const agora = new Date();
         const pad = (n) => n.toString().padStart(2, '0');
         const dataStr = `${agora.getFullYear()}-${pad(agora.getMonth() + 1)}-${pad(agora.getDate())}`;
-        const horaStr = `${pad(agora.getHours())}:${pad(agora.getMinutes())}:${pad(agora.getSeconds())}.${agora.getMilliseconds().toString().padStart(3, '0')}000`;
+        const horaStr = `${pad(agora.getHours())}:${pad(agora.getMinutes())}:${pad(agora.getSeconds())}.${agora.getMilliseconds().toString().padStart(3, '0')}`
         const horarioFront = `${dataStr} ${horaStr}`;
 
         const res = await AtendenteApi.salvarEspontaneo(this.secretariaTrabalhoId, payload, horarioFront);
