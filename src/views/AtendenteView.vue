@@ -521,7 +521,7 @@
                     </span>
                   </td>
                   <td class="px-6 text-xs font-bold text-gray-400 whitespace-nowrap">
-                    {{ item.horaAgendamento }}
+                    {{ formatarDataHora(item.horaAgendamento) }}
                   </td>
                   <td class="px-6">
                     <span
@@ -867,13 +867,8 @@ export default {
 
     formatarDataHora(data) {
       if (!data) return ''
-      return new Date(data).toLocaleString('pt-BR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      })
+      const [date, time] = data.split(' ')
+      return `${date.split('-').reverse().join('/') } ${time.slice(0,5)}`
     },
 
    calcularTempoEspera(horaAgendamento, situacao, hChamada, hFinalizado) {
