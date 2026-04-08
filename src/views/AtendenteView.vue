@@ -865,7 +865,7 @@ export default {
       })
     },
 
-    formatarDataHoraBanco(data) {
+    formatarDataHora(data) {
       if (!data) return ''
 
       // data chega assim: "2026-04-08T04:12:57.845"
