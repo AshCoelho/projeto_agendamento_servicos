@@ -521,7 +521,7 @@
                     </span>
                   </td>
                   <td class="px-6 text-xs font-bold text-gray-400 whitespace-nowrap">
-                    {{ formatarDataHora(item.horaAgendamento) }}
+                    {{ item.horaAgendamento }}
                   </td>
                   <td class="px-6">
                     <span
