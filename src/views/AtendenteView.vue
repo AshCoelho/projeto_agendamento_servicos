@@ -614,6 +614,7 @@ export default {
     tiposAtendimento: [],
     horaAtual: new Date(),
     isSalvando: false,
+    isRecarregando: false,
 
     // Formulários
     novoAgendamento: { nomeCidadao: '', servico: null, tipoAtendimentoId: null, observacoes: '' },
@@ -837,9 +838,9 @@ export default {
     },
 
     handleBeforeUnload(event) {
-      if (this.temAtendimentoAtivo) {
-        event.preventDefault()
-        event.returnValue = ''
+      if (this.temAtendimentoAtivo && !this.isRecarregando) {
+        event.preventDefault();
+        event.returnValue = '';
       }
     },
 
@@ -868,19 +869,21 @@ export default {
     formatarDataHora(data) {
       if (!data) return ''
 
-      // data chega assim: "2026-04-08T04:12:57.845"
-      const [dataParte, horaParte] = data.split('T')
-      if (!horaParte) return dataParte
+      const date = new Date(data)
 
-      const [ano, mes, dia] = dataParte.split('-')
-      let [hora, minuto] = horaParte.split(':') // pega HH e MM
+      if (isNaN(date)) return ''
 
-      // Subtrai 3 horas para ajustar fuso São Paulo
-      hora = String((parseInt(hora, 10) - 3 + 24) % 24).padStart(2, '0')
+      const pad = (n) => n.toString().padStart(2, '0')
+
+      const dia = pad(date.getDate())
+      const mes = pad(date.getMonth() + 1)
+      const ano = date.getFullYear()
+
+      const hora = pad(date.getHours())
+      const minuto = pad(date.getMinutes())
 
       return `${dia}/${mes}/${ano} ${hora}:${minuto}`
     },
-
    calcularTempoEspera(horaAgendamento, situacao, hChamada, hFinalizado) {
   if (!horaAgendamento) return '00:00:00';
 
@@ -1174,7 +1177,7 @@ export default {
         await new Promise((resolve) => setTimeout(resolve, 800))
         await device.close()
 
-        console.log('Ticket impresso com sucesso.')
+        //console.log('Ticket impresso com sucesso.')
       } catch (err) {
         console.error('Erro físico na impressora:', err)
         try {
@@ -1225,7 +1228,15 @@ export default {
           observacao: this.novoAgendamento.observacoes,
         }
 
-        const horarioFront = new Date().toISOString()
+        const agora = new Date();
+        const offset = -3; // Brasil (ajuste se necessário)
+
+        const pad = (n) => n.toString().padStart(2, '0');
+        const milis = agora.getMilliseconds().toString().padStart(3, '0');
+
+        const horarioFront = `${agora.getFullYear()}-${pad(agora.getMonth()+1)}-${pad(agora.getDate())}T${pad(agora.getHours())}:${pad(agora.getMinutes())}:${pad(agora.getSeconds())}.${milis}`;
+
+        //console.log("hora: " + horarioFront);
 
         const res = await AtendenteApi.salvarEspontaneo(this.secretariaTrabalhoId, payload, horarioFront);
 
@@ -1313,6 +1324,13 @@ export default {
   },
 
   async mounted() {
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'F5' || (e.ctrlKey && e.key === 'r')) {
+        this.isRecarregando = true;
+      }
+    });
+
     window.addEventListener('beforeunload', this.handleBeforeUnload)
 
     await this.getUsuarioLogado()

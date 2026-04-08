@@ -353,57 +353,6 @@ export default {
       }
     },
 
-    async handleChamar(senha) {
-      const itemClicado = this.agendamentosPorSetor.find((a) => a.senha === senha)
-      if (!itemClicado) return
-
-      const statusClicado = itemClicado.situacao?.toUpperCase()
-      const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'))
-
-      const agora = new Date();
-      const pad = (n) => n.toString().padStart(2, '0');
-      const dataStr = `${agora.getFullYear()}-${pad(agora.getMonth() + 1)}-${pad(agora.getDate())}`;
-      const milis = agora.getMilliseconds().toString().padStart(3, '0');
-      const horarioFront = `${dataStr} ${pad(agora.getHours())}:${pad(agora.getMinutes())}:${pad(agora.getSeconds())}.${milis}`;
-
-      const donoDoItemClicado = Number(itemClicado.gerenciadorId || itemClicado.usuarioId)
-
-      const ehMinhaSenhaAtual =
-        (statusClicado === 'EM_ATENDIMENTO' || statusClicado === 'CHAMADO') &&
-        donoDoItemClicado === meuId
-
-      const setorId = Number(this.setorTrabalhoId || localStorage.getItem('setorTrabalhoId')); 
-
-      if (this.temAtendimentoAtivo && !ehMinhaSenhaAtual) {
-        alert('Você já possui um atendimento em aberto. Finalize-o antes de chamar outra senha.')
-        return
-      }
-
-      try {
-        const res = await AtendenteApi.chamarPorSenha(senha, meuId, setorId, horarioFront);
-
-        if (res.status === 200) {
-          if (itemClicado) {
-            // Adiciona nos chamados manualmente para o "computed" enxergar na hora
-            this.idsChamadosManualmente.push(itemClicado.agendamentoId || itemClicado.id)
-
-            // Altera o status localmente de forma imediata (Otimismo de UI)
-            itemClicado.situacao = 'EM_ATENDIMENTO'
-            itemClicado.gerenciadorId = meuId,
-            itemClicado.horaChamada = horarioFront;
-          }
-
-          // MUDA A ABA AQUI
-          this.mudarAba('ATENDIMENTO')
-
-          // E depois vai no banco buscar os dados reais
-          await this.buscarAgendamentos()
-        }
-      } catch (e) {
-        alert(e?.response?.data?.mensagem || 'Falha na chamada.')
-      }
-    },
-
     async handleChamarNormal() {
       try {
 
@@ -412,6 +361,8 @@ export default {
         const dataStr = `${agora.getFullYear()}-${pad(agora.getMonth() + 1)}-${pad(agora.getDate())}`;
         const horaStr = `${pad(agora.getHours())}:${pad(agora.getMinutes())}:${pad(agora.getSeconds())}.${agora.getMilliseconds().toString().padStart(3, '0')}000`;
         const horarioFront = `${dataStr} ${horaStr}`;
+
+        ///console.log("hora:" +horarioFront);
 
         const response = await AtendenteApi.chamarNormal(this.setorTrabalhoId, this.usuario.id, horarioFront)
         const dados = response.data || response
