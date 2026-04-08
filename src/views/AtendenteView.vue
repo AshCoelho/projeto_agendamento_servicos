@@ -868,19 +868,17 @@ export default {
     formatarDataHora(data) {
       if (!data) return ''
 
-      // data vem do backend, ex: "2026-04-08T01:12:57.845-03:00"
-      const d = new Date(data)
+      console.log('Data original do backend:', data)
 
-      // Extrai valores UTC e ajusta para UTC-3
-      let horas = d.getUTCHours() - 3 // São Paulo / Fortaleza
-      if (horas < 0) horas += 24 // ajusta caso passe de 0h
+      // data do backend: "2026-04-08 01:12:57.845"
+      // pega só os números usando split
+      const [dataParte, horaParte] = data.split(' ')
+      if (!horaParte) return dataParte
 
-      const dia = String(d.getUTCDate()).padStart(2, '0')
-      const mes = String(d.getUTCMonth() + 1).padStart(2, '0')
-      const ano = d.getUTCFullYear()
-      const minuto = String(d.getUTCMinutes()).padStart(2, '0')
+      const [ano, mes, dia] = dataParte.split('-')
+      const [hora, minuto] = horaParte.split(':') // pega HH e MM
 
-      return `${dia}/${mes}/${ano} ${String(horas).padStart(2, '0')}:${minuto}`
+      return `${dia}/${mes}/${ano} ${hora}:${minuto}`
     },
 
    calcularTempoEspera(horaAgendamento, situacao, hChamada, hFinalizado) {
