@@ -868,18 +868,27 @@ export default {
     formatarDataHora(data) {
       if (!data) return ''
 
-      // converte a string para Date
-      const d = new Date(data)
+      // Se vier no formato ISO ou com espaço
+      let dataPart = ''
+      let horaPart = ''
 
-      // formata para DD/MM/YYYY HH:MM
-      const dia = String(d.getDate()).padStart(2, '0')
-      const mes = String(d.getMonth() + 1).padStart(2, '0') // mês começa em 0
-      const ano = d.getFullYear()
+      if (data.includes('T')) {
+        // formato ISO: "2026-04-08T01:12:57.845"
+        [dataPart, horaPart] = data.split('T')
+      } else if (data.includes(' ')) {
+        // formato banco: "2026-04-08 01:12:57.845"
+        [dataPart, horaPart] = data.split(' ')
+      } else {
+        return data
+      }
 
-      const horas = String(d.getHours()).padStart(2, '0')
-      const minutos = String(d.getMinutes()).padStart(2, '0')
+      // pega apenas HH:MM
+      const horaFormatada = horaPart ? horaPart.substring(0,5) : ''
 
-      return `${dia}/${mes}/${ano} ${horas}:${minutos}`
+      // formata data YYYY-MM-DD → DD/MM/YYYY
+      const dataFormatada = dataPart.split('-').reverse().join('/')
+
+      return `${dataFormatada} ${horaFormatada}`
     },
 
    calcularTempoEspera(horaAgendamento, situacao, hChamada, hFinalizado) {
