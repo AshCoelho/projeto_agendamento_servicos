@@ -865,18 +865,18 @@ export default {
       })
     },
 
-    formatarDataHora(data) {
+    formatarDataHoraBanco(data) {
       if (!data) return ''
 
-      console.log('Data original do backend:', data)
-
-      // data do backend: "2026-04-08 01:12:57.845"
-      // pega só os números usando split
-      const [dataParte, horaParte] = data.split(' ')
+      // data chega assim: "2026-04-08T04:12:57.845"
+      const [dataParte, horaParte] = data.split('T')
       if (!horaParte) return dataParte
 
       const [ano, mes, dia] = dataParte.split('-')
-      const [hora, minuto] = horaParte.split(':') // pega HH e MM
+      let [hora, minuto] = horaParte.split(':') // pega HH e MM
+
+      // Subtrai 3 horas para ajustar fuso São Paulo
+      hora = String((parseInt(hora, 10) - 3 + 24) % 24).padStart(2, '0')
 
       return `${dia}/${mes}/${ano} ${hora}:${minuto}`
     },
