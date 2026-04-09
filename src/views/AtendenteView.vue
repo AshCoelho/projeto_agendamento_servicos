@@ -1050,11 +1050,11 @@ export default {
     async handleCancelar(id) {
       if (!confirm('Deseja realmente cancelar?')) return
       try {
-        const token = localStorage.getItem('token')
+        //const token = localStorage.getItem('token')
 
         const horarioFront = new Date().toISOString().replace('Z', '');
 
-        await AtendenteApi.cancelarAtendimento(id, token, horarioFront)
+        await AtendenteApi.cancelarAtendimento(id, horarioFront)
 
         this.idsChamadosManualmente = this.idsChamadosManualmente.filter((itemId) => itemId !== id)
 
