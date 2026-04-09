@@ -1052,7 +1052,7 @@ export default {
       try {
         const token = localStorage.getItem('token')
 
-        const horarioFront = new Date().toISOString();
+        const horarioFront = new Date().toISOString().replace('Z', '');
 
         await AtendenteApi.cancelarAtendimento(id, token, horarioFront)
 
