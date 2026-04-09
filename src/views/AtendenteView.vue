@@ -9,7 +9,7 @@
 
     <main class="flex-1 overflow-x-hidden">
       <header
-        class="flex items-center justify-between bg-white border-b border-gray-100 px-8 py-3 mb-5 shadow-sm"
+        class="flex items-center justify-between bg-white border-b border-gray-100 px-8 py-3 mb-2 shadow-sm"
       >
         <div class="flex items-center gap-2 text-[13px] font-bold">
           <span class="text-gray-400">Gestão</span>
@@ -69,7 +69,7 @@
       <ChamarSenhas @senha-chamada="onSenhaChamadaPelosBotoes"></ChamarSenhas>
 
       <div class="px-3">
-        <div class="bg-white rounded-[15px] shadow-sm border-b-4 border-transparent p-4">
+        <div class="bg-white rounded-[10px] shadow-sm border-b-4 border-transparent p-4">
           <div class="flex justify-between">
             <div class="flex justify-start gap-6 mb-4 px-4">
               <button
@@ -451,7 +451,7 @@
                   <th class="px-6 py-4 text-left">Situação</th>
                   <th class="px-6 py-4 text-left">Tipo</th>
                   <th class="px-6 py-4 text-left">Data/Hora</th>
-                  <th class="px-6 py-4 text-left">Tempo de Espera</th>
+                  <th class="px-6 py-4 text-left">{{ labelTempoEspera }}</th>
 
                   <th class="px-6 py-4 text-right pr-10">Ações</th>
                 </tr>
@@ -528,7 +528,14 @@
                       class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-600 text-[10px] font-black rounded-lg uppercase tracking-tight shadow-sm whitespace-nowrap"
                     >
                       <i class="pi pi-clock text-[10px]"></i>
-                      {{ calcularTempoEspera(item.horaAgendamento, item.situacao, item.horaChamada, item.horaFinalizado) }}
+                      {{
+                        calcularTempoEspera(
+                          item.horaAgendamento,
+                          item.situacao,
+                          item.horaChamada,
+                          item.horaFinalizado,
+                        )
+                      }}
                     </span>
                   </td>
 
@@ -636,6 +643,16 @@ export default {
   },
 
   computed: {
+    labelTempoEspera() {
+      const labels = {
+        AGUARDANDO: 'Tempo na Fila',
+        PRIORIDADES: 'Tempo na Fila',
+        ATENDIMENTO: 'Tempo em Atendimento',
+        CANCELADOS: 'Tempo na Fila',
+        FINALIZADOS: 'Duração do Atendimento',
+      }
+      return labels[this.abaAtiva] || 'Tempo de Espera'
+    },
     labelLocalTrabalho() {
       const secretariaNome = localStorage.getItem('secretariaNomeAtiva')?.toUpperCase() || ''
       const perfil = this.usuario?.perfil?.toUpperCase()
@@ -733,10 +750,7 @@ export default {
           return a.situacao === 'ATENDIDO' // 🔥 vê TODOS
         }
 
-        return (
-          a.situacao === 'ATENDIDO' &&
-          Number(a.gerenciadorId || a.usuarioId) === meuId
-        )
+        return a.situacao === 'ATENDIDO' && Number(a.gerenciadorId || a.usuarioId) === meuId
       }).length
     },
 
@@ -839,8 +853,8 @@ export default {
 
     handleBeforeUnload(event) {
       if (this.temAtendimentoAtivo && !this.isRecarregando) {
-        event.preventDefault();
-        event.returnValue = '';
+        event.preventDefault()
+        event.returnValue = ''
       }
     },
 
@@ -885,56 +899,57 @@ export default {
       return `${dia}/${mes}/${ano} ${hora}:${minuto}`
     },
 
-   calcularTempoEspera(horaAgendamento, situacao, hChamada, hFinalizado) {
-    if (!horaAgendamento) return '00:00:00';
+    calcularTempoEspera(horaAgendamento, situacao, hChamada, hFinalizado) {
+      if (!horaAgendamento) return '00:00:00'
 
-    // Converte a string YYYY-MM-DD HH:mm:ss para um objeto Date LOCAL
-    const parseDataBanco = (str) => {
-      if (!str) return null;
-      // Substitui o 'T' por espaço e remove frações de segundos se houver
-      const limpaStr = str.replace('T', ' ').split('.')[0];
-      
-      // Ao passar a string direto para o construtor (sem o Z no final),
-      // o navegador entende como Horário Local.
-      const d = new Date(limpaStr.replace(/-/g, '/')); 
-      return isNaN(d.getTime()) ? null : d;
-    };
+      // Converte a string YYYY-MM-DD HH:mm:ss para um objeto Date LOCAL
+      const parseDataBanco = (str) => {
+        if (!str) return null
+        // Substitui o 'T' por espaço e remove frações de segundos se houver
+        const limpaStr = str.replace('T', ' ').split('.')[0]
 
-    const dataAgendamento = parseDataBanco(horaAgendamento);
-    const dataChamada = parseDataBanco(hChamada);
-    const dataFinalizado = parseDataBanco(hFinalizado);
+        // Ao passar a string direto para o construtor (sem o Z no final),
+        // o navegador entende como Horário Local.
+        const d = new Date(limpaStr.replace(/-/g, '/'))
+        return isNaN(d.getTime()) ? null : d
+      }
 
-    if (!dataAgendamento) return '00:00:00';
+      const dataAgendamento = parseDataBanco(horaAgendamento)
+      const dataChamada = parseDataBanco(hChamada)
+      const dataFinalizado = parseDataBanco(hFinalizado)
 
-    let inicio, fim;
+      if (!dataAgendamento) return '00:00:00'
 
-    // Lógica de definição de balizas
-    if (situacao === 'CHAMADO' || situacao === 'EM_ATENDIMENTO') {
+      let inicio, fim
+
+      // Lógica de definição de balizas
+      if (situacao === 'AGENDADO' || situacao === 'FALTOU') {
+        //  desde que a senha foi criada até agora
+        inicio = dataAgendamento
+        fim = new Date()
+      } else if (situacao === 'CHAMADO' || situacao === 'EM_ATENDIMENTO') {
         // Se já foi chamado mas não finalizou, o fim é "agora" e o início é quando chamou
-        inicio = dataChamada || dataAgendamento;
-        fim = new Date();
-    } else if (situacao === 'ATENDIDO' || situacao === 'FINALIZADO') {
+        inicio = dataChamada || dataAgendamento
+        fim = new Date()
+      } else if (situacao === 'ATENDIDO' || situacao === 'FINALIZADO') {
         // Se finalizou, o tempo é o intervalo entre a chamada e a finalização
-        inicio = dataChamada || dataAgendamento;
-        fim = dataFinalizado || new Date();
-    } else {
+        inicio = dataChamada || dataAgendamento
+        fim = dataFinalizado || new Date()
+      } else {
         // Se está apenas AGENDADO ou na fila, conta do agendamento até "agora"
-        inicio = dataAgendamento;
-        fim = new Date();
-    }
+        inicio = dataAgendamento
+        fim = new Date()
+      }
 
-    const diffMs = fim - inicio;
+      const diffMs = fim - inicio
+      if (diffMs < 0) return '00:00:00'
 
-    // Se o relógio do cliente estiver muito atrasado em relação ao servidor, 
-    // pode dar negativo. Tratamos para não exibir erro.
-    if (diffMs < 0) return '00:00:00';
+      const h = Math.floor(diffMs / 3600000)
+      const m = Math.floor((diffMs % 3600000) / 60000)
+      const s = Math.floor((diffMs % 60000) / 1000)
 
-    const diffHrs = Math.floor(diffMs / 3600000);
-    const diffMins = Math.floor((diffMs % 3600000) / 60000);
-    const diffSecs = Math.floor((diffMs % 60000) / 1000);
-
-    return `${String(diffHrs).padStart(2, '0')}:${String(diffMins).padStart(2, '0')}:${String(diffSecs).padStart(2, '0')}`;
-  },
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+    },
 
     async handleLogout() {
       const token = localStorage.getItem('token')
@@ -1029,14 +1044,18 @@ export default {
       }
 
       try {
-        const res = await AtendenteApi.chamarPorSenha(senha, this.usuario.id, this.setorTrabalhoId, horarioFront)
+        const res = await AtendenteApi.chamarPorSenha(
+          senha,
+          this.usuario.id,
+          this.setorTrabalhoId,
+          horarioFront,
+        )
 
         if (res.status === 200) {
           if (itemClicado) {
             this.idsChamadosManualmente.push(itemClicado.agendamentoId || itemClicado.id)
             itemClicado.situacao = 'CHAMADO'
-            itemClicado.gerenciadorId = meuId,
-            itemClicado.horaChamada = horarioFront;
+            ;((itemClicado.gerenciadorId = meuId), (itemClicado.horaChamada = horarioFront))
           }
 
           // Muda a aba instantaneamente
@@ -1052,7 +1071,7 @@ export default {
       try {
         //const token = localStorage.getItem('token')
 
-        const horarioFront = new Date().toISOString().split('.')[0];
+        const horarioFront = new Date().toISOString().split('.')[0]
 
         await AtendenteApi.cancelarAtendimento(id, horarioFront)
 
@@ -1071,27 +1090,25 @@ export default {
 
     async handleFinalizar(id) {
       if (!confirm('Deseja finalizar?')) return
-      
+
       try {
-        
-        const horarioFront = new Date().toISOString().split('.')[0];
+        const horarioFront = new Date().toISOString().split('.')[0]
 
         // 2. Passa o ID e o Horário para a API
-        await AtendenteApi.finalizarAtendimento(id, horarioFront);
+        await AtendenteApi.finalizarAtendimento(id, horarioFront)
 
         // --- Sua lógica de UI (MANTIDA) ---
-        this.idsChamadosManualmente = this.idsChamadosManualmente.filter((itemId) => itemId !== id);
-        const index = this.agendamentosPorSetor.findIndex((a) => (a.agendamentoId || a.id) === id);
+        this.idsChamadosManualmente = this.idsChamadosManualmente.filter((itemId) => itemId !== id)
+        const index = this.agendamentosPorSetor.findIndex((a) => (a.agendamentoId || a.id) === id)
         if (index !== -1) {
-          this.agendamentosPorSetor[index].situacao = 'ATENDIDO';
+          this.agendamentosPorSetor[index].situacao = 'ATENDIDO'
         }
-        this.mostrarModalEdicao = false;
-        this.abaAtiva = 'AGUARDANDO';
+        this.mostrarModalEdicao = false
+        this.abaAtiva = 'AGUARDANDO'
         // ---------------------------------
-
       } catch (e) {
-        console.error('Erro ao finalizar:', e);
-        alert('Erro ao finalizar atendimento.');
+        console.error('Erro ao finalizar:', e)
+        alert('Erro ao finalizar atendimento.')
       }
     },
 
@@ -1204,9 +1221,13 @@ export default {
           observacao: this.novoAgendamento.observacoes,
         }
 
-        const horarioFront = new Date().toISOString();
+        const horarioFront = new Date().toISOString()
 
-        const res = await AtendenteApi.salvarEspontaneo(this.secretariaTrabalhoId, payload, horarioFront);
+        const res = await AtendenteApi.salvarEspontaneo(
+          this.secretariaTrabalhoId,
+          payload,
+          horarioFront,
+        )
 
         if (res.status === 200 || res.status === 201) {
           const senha = res.data.codigo || res.data.senha || '---'
@@ -1292,12 +1313,11 @@ export default {
   },
 
   async mounted() {
-
     window.addEventListener('keydown', (e) => {
       if (e.key === 'F5' || (e.ctrlKey && e.key === 'r')) {
-        this.isRecarregando = true;
+        this.isRecarregando = true
       }
-    });
+    })
 
     window.addEventListener('beforeunload', this.handleBeforeUnload)
 

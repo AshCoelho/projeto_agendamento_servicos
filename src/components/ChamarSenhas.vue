@@ -1,6 +1,6 @@
 <template>
   <div class="px-3">
-    <div class="mb-3 bg-white p-4 rounded-[15px] shadow-sm border-b-4 border-transparent">
+    <div class="mb-3 bg-white p-4 rounded-[10px] shadow-sm border-b-4 border-transparent">
       <h2 class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-4">
         Painel de Comandos
       </h2>
@@ -147,38 +147,38 @@ export default {
   }),
 
   watch: {
-      mostrarModalEspontaneo(novoValor) {
-          const acao = novoValor ? 'addEventListener' : 'removeEventListener'
-          window[acao]('keydown', this.handleEsc)
+    mostrarModalEspontaneo(novoValor) {
+      const acao = novoValor ? 'addEventListener' : 'removeEventListener'
+      window[acao]('keydown', this.handleEsc)
 
-          // LÓGICA DE ATIVAÇÃO PERMANENTE:
-          // Se abriu o modal uma vez, vira 'true' e fica 'true'.
-          if (novoValor === true) {
-              this.jaAbriuModal = true;
-              // Força uma busca imediata com a visão liberada
-              this.buscarAgendamentos();
-          }
-      },
+      // LÓGICA DE ATIVAÇÃO PERMANENTE:
+      // Se abriu o modal uma vez, vira 'true' e fica 'true'.
+      if (novoValor === true) {
+        this.jaAbriuModal = true
+        // Força uma busca imediata com a visão liberada
+        this.buscarAgendamentos()
+      }
+    },
   },
 
   computed: {
     // 1. O FILTRO MESTRE (Blindado contra o Bug do Zero)
     meusAgendamentos() {
-      const meuId = this.usuario?.id || localStorage.getItem('usuarioId');
-      
-      if (!meuId) return []; // Se o sistema ainda não carregou o seu usuário, a lista fica vazia.
-      
+      const meuId = this.usuario?.id || localStorage.getItem('usuarioId')
+
+      if (!meuId) return [] // Se o sistema ainda não carregou o seu usuário, a lista fica vazia.
+
       if (this.perfil === 'CADASTRO') {
-          return this.agendamentosPorSetor;
+        return this.agendamentosPorSetor
       }
 
-      return this.agendamentosPorSetor.filter(a => {
+      return this.agendamentosPorSetor.filter((a) => {
         // 🛑 A TRAVA: Se o paciente ainda não foi chamado (gerenciadorId é nulo/vazio), ignora ele na hora!
-        if (!a.gerenciadorId) return false;
-        
+        if (!a.gerenciadorId) return false
+
         // Se ele tem um gerenciadorId, compara com o seu de forma segura
-        return Number(a.gerenciadorId) === Number(meuId);
-      });
+        return Number(a.gerenciadorId) === Number(meuId)
+      })
     },
 
     // 2. PAINEL "ATENDIMENTOS HOJE": Agora só mostra o total de quem passou pelo SEU guichê!
@@ -188,39 +188,45 @@ export default {
 
     totalNormalGeral() {
       return this.meusAgendamentos.filter(
-        (a) => a.situacao === 'ATENDIDO' && a.tipoAtendimento === 'NORMAL'
-      ).length;
+        (a) => a.situacao === 'ATENDIDO' && a.tipoAtendimento === 'NORMAL',
+      ).length
     },
-    
+
     totalPrioridadeGeral() {
       return this.meusAgendamentos.filter(
-        (a) => a.situacao === 'ATENDIDO' && a.tipoAtendimento && a.tipoAtendimento.includes('PRIORIDADE')
-      ).length;
+        (a) =>
+          a.situacao === 'ATENDIDO' &&
+          a.tipoAtendimento &&
+          a.tipoAtendimento.includes('PRIORIDADE'),
+      ).length
     },
 
     // 3. PAINÉIS DE RESULTADO: Apenas os seus atendidos e ausentes
     agendamentosFinalizados() {
-      return this.meusAgendamentos.filter((a) => a.situacao === 'ATENDIDO').length;
+      return this.meusAgendamentos.filter((a) => a.situacao === 'ATENDIDO').length
     },
     agendamentosCancelados() {
-      return this.meusAgendamentos.filter((a) => a.situacao === 'FALTOU').length;
+      return this.meusAgendamentos.filter((a) => a.situacao === 'FALTOU').length
     },
 
     // 4. PAINEL "PESSOAS NA FILA": A fila geral de quem está aguardando no setor (Não mexemos, fica global)
     agendamentosAguardando() {
       return this.agendamentosPorSetor.filter(
         (a) => a.situacao === 'AGENDADO' && ['AGENDADO', 'ESPONTANEO'].includes(a.tipoAgendamento),
-      ).length;
+      ).length
     },
     totalNormalFila() {
       return this.agendamentosPorSetor.filter(
         (a) => a.situacao === 'AGENDADO' && a.tipoAtendimento === 'NORMAL',
-      ).length;
+      ).length
     },
     totalPrioridadeFila() {
       return this.agendamentosPorSetor.filter(
-        (a) => a.situacao === 'AGENDADO' && a.tipoAtendimento && a.tipoAtendimento.includes('PRIORIDADE'),
-      ).length;
+        (a) =>
+          a.situacao === 'AGENDADO' &&
+          a.tipoAtendimento &&
+          a.tipoAtendimento.includes('PRIORIDADE'),
+      ).length
     },
 
     atendimentoAtual() {
@@ -229,7 +235,7 @@ export default {
       return this.agendamentosPorSetor.find(
         (a) =>
           (a.situacao === 'EM_ATENDIMENTO' || a.situacao === 'CHAMADO') &&
-          Number(a.gerenciadorId || a.usuarioId) === meuId
+          Number(a.gerenciadorId || a.usuarioId) === meuId,
       )
     },
     temAtendimentoAtivo() {
@@ -273,21 +279,21 @@ export default {
     async enviarPing() {
       try {
         // Busca o ID prioritariamente do que está sendo atendido agora
-        const agendamentoId = 
-          this.atendimentoAtual?.agendamentoId || 
+        const agendamentoId =
+          this.atendimentoAtual?.agendamentoId ||
           this.atendimentoAtual?.id ||
-          this.selectedItem?.agendamentoId || 
-          this.selectedItem?.id;
+          this.selectedItem?.agendamentoId ||
+          this.selectedItem?.id
 
         if (!agendamentoId) {
-          console.log('Nenhum atendimento ativo para ping.');
-          return;
+          console.log('Nenhum atendimento ativo para ping.')
+          return
         }
 
-        await AtendenteApi.heartbeat(agendamentoId);
-        console.log('Heartbeat enviado para ID:', agendamentoId);
+        await AtendenteApi.heartbeat(agendamentoId)
+        console.log('Heartbeat enviado para ID:', agendamentoId)
       } catch (e) {
-        console.warn('Falha no ping:', e);
+        console.warn('Falha no ping:', e)
       }
     },
 
@@ -332,35 +338,38 @@ export default {
 
     async buscarAgendamentos() {
       try {
-        if (!this.usuario?.id) await this.getUsuarioLogado();
-        
+        if (!this.usuario?.id) await this.getUsuarioLogado()
+
         if (this.setorTrabalhoId) {
-          const meuId = this.usuario?.id || localStorage.getItem('usuarioId');
-          
+          const meuId = this.usuario?.id || localStorage.getItem('usuarioId')
+
           // Garanta que jaAbriuModal exista no 'data' dessa view também!
-          const perfilEnvio = this.perfil || localStorage.getItem('perfilUsuario') || 'ATENDENTE';
+          const perfilEnvio = this.perfil || localStorage.getItem('perfilUsuario') || 'ATENDENTE'
 
           const data = await AtendenteApi.buscarAgendamentosPorSetor(
             this.setorTrabalhoId,
             meuId,
-            perfilEnvio // Faltava esse cara aqui na primeira view!
-          );
+            perfilEnvio, // Faltava esse cara aqui na primeira view!
+          )
 
-          this.agendamentosPorSetor = [...data];
+          this.agendamentosPorSetor = [...data]
         }
       } catch (e) {
-        console.error('Erro ao buscar agendamentos:', e);
+        console.error('Erro ao buscar agendamentos:', e)
       }
     },
 
     async handleChamarNormal() {
       try {
-
-        const horarioFront = new Date().toISOString();
+        const horarioFront = new Date().toISOString()
 
         //console.log("hora:" +horarioFront);
 
-        const response = await AtendenteApi.chamarNormal(this.setorTrabalhoId, this.usuario.id, horarioFront)
+        const response = await AtendenteApi.chamarNormal(
+          this.setorTrabalhoId,
+          this.usuario.id,
+          horarioFront,
+        )
         const dados = response.data || response
 
         if (dados && dados.sucesso === false) {
@@ -370,7 +379,6 @@ export default {
               'Ação bloqueada: Verifique se você já possui um atendimento em aberto ou se a fila está vazia.',
           )
         } else if (dados && (dados.sucesso === true || dados.id)) {
-
           this.mudarAba('ATENDIMENTO')
 
           this.$emit('senha-chamada', dados.id)
@@ -395,10 +403,13 @@ export default {
 
     async handleChamarPrioridade() {
       try {
+        const horarioFront = new Date().toISOString()
 
-        const horarioFront = new Date().toISOString();
-        
-        const response = await AtendenteApi.chamarPrioridade(this.setorTrabalhoId, this.usuario.id, horarioFront)
+        const response = await AtendenteApi.chamarPrioridade(
+          this.setorTrabalhoId,
+          this.usuario.id,
+          horarioFront,
+        )
         const dados = response.data || response
 
         if (dados && dados.sucesso === false) {
@@ -408,7 +419,6 @@ export default {
               'Ação bloqueada: Verifique se você já possui um atendimento em aberto ou se a fila de prioridades está vazia.',
           )
         } else if (dados && (dados.sucesso === true || dados.id)) {
-
           this.mudarAba('ATENDIMENTO')
           this.$emit('senha-chamada', dados.id)
         }
@@ -560,7 +570,7 @@ export default {
     setInterval(this.atualizarRelogioLocal, 1000)
 
     // 3. PING: Envia a cada 10 segundos
-    setInterval(() => this.enviarPing(), 10000);
+    setInterval(() => this.enviarPing(), 10000)
 
     if (this.usuario?.setores) {
       const setorAtual = this.usuario.setores.find((s) => s.id == this.setorTrabalhoId)
