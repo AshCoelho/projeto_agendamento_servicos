@@ -356,13 +356,9 @@ export default {
     async handleChamarNormal() {
       try {
 
-        const agora = new Date();
-        const pad = (n) => n.toString().padStart(2, '0');
-        const dataStr = `${agora.getFullYear()}-${pad(agora.getMonth() + 1)}-${pad(agora.getDate())}`;
-        const horaStr = `${pad(agora.getHours())}:${pad(agora.getMinutes())}:${pad(agora.getSeconds())}.${agora.getMilliseconds().toString().padStart(3, '0')}000`;
-        const horarioFront = `${dataStr} ${horaStr}`;
+        const horarioFront = new Date().toISOString();
 
-        ///console.log("hora:" +horarioFront);
+        console.log("hora:" +horarioFront);
 
         const response = await AtendenteApi.chamarNormal(this.setorTrabalhoId, this.usuario.id, horarioFront)
         const dados = response.data || response
@@ -400,11 +396,7 @@ export default {
     async handleChamarPrioridade() {
       try {
 
-        const agora = new Date();
-        const pad = (n) => n.toString().padStart(2, '0');
-        const dataStr = `${agora.getFullYear()}-${pad(agora.getMonth() + 1)}-${pad(agora.getDate())}`;
-        const horaStr = `${pad(agora.getHours())}:${pad(agora.getMinutes())}:${pad(agora.getSeconds())}.${agora.getMilliseconds().toString().padStart(3, '0')}000`;
-        const horarioFront = `${dataStr} ${horaStr}`;
+        const horarioFront = new Date().toISOString();
         
         const response = await AtendenteApi.chamarPrioridade(this.setorTrabalhoId, this.usuario.id, horarioFront)
         const dados = response.data || response

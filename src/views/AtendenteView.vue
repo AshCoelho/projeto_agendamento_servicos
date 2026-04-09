@@ -1015,11 +1015,7 @@ export default {
       const itemClicado = this.agendamentosPorSetor.find((a) => a.senha === senha)
       if (!itemClicado) return
 
-      const agora = new Date();
-      const pad = (n) => n.toString().padStart(2, '0');
-      const dataStr = `${agora.getFullYear()}-${pad(agora.getMonth() + 1)}-${pad(agora.getDate())}`;
-      const milis = agora.getMilliseconds().toString().padStart(3, '0');
-      const horarioFront = `${dataStr} ${pad(agora.getHours())}:${pad(agora.getMinutes())}:${pad(agora.getSeconds())}.${milis}`;
+      const horarioFront = new Date().toISOString()
 
       const statusClicado = itemClicado.situacao?.toUpperCase()
       const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'))
@@ -1058,22 +1054,7 @@ export default {
       try {
         const token = localStorage.getItem('token')
 
-        // 1. Gera o horário exato do dispositivo do usuário
-        const agora = new Date();
-        const pad = (n) => n.toString().padStart(2, '0');
-        
-        // Formata a data: YYYY-MM-DD
-        const dataStr = `${agora.getFullYear()}-${pad(agora.getMonth() + 1)}-${pad(agora.getDate())}`;
-        
-        // Formata a hora: HH:mm:ss
-        const horaSimples = `${pad(agora.getHours())}:${pad(agora.getMinutes())}:${pad(agora.getSeconds())}`;
-        
-        // MILISSEGUNDOS: O segredo do erro 400 está aqui. 
-        // Pegamos apenas os 3 dígitos que o Java espera (.SSS)
-        const milis = agora.getMilliseconds().toString().padStart(3, '0');
-        
-        // Monta a string final SEM os "000" extras
-        const horarioFront = `${dataStr} ${horaSimples}.${milis}`;
+        const horarioFront = new Date().toISOString();
 
         await AtendenteApi.cancelarAtendimento(id, token, horarioFront)
 
@@ -1094,22 +1075,8 @@ export default {
       if (!confirm('Deseja finalizar?')) return
       
       try {
-        // 1. Gera o horário exato do dispositivo do usuário
-        const agora = new Date();
-        const pad = (n) => n.toString().padStart(2, '0');
         
-        // Formata a data: YYYY-MM-DD
-        const dataStr = `${agora.getFullYear()}-${pad(agora.getMonth() + 1)}-${pad(agora.getDate())}`;
-        
-        // Formata a hora: HH:mm:ss
-        const horaSimples = `${pad(agora.getHours())}:${pad(agora.getMinutes())}:${pad(agora.getSeconds())}`;
-        
-        // MILISSEGUNDOS: O segredo do erro 400 está aqui. 
-        // Pegamos apenas os 3 dígitos que o Java espera (.SSS)
-        const milis = agora.getMilliseconds().toString().padStart(3, '0');
-        
-        // Monta a string final SEM os "000" extras
-        const horarioFront = `${dataStr} ${horaSimples}.${milis}`;
+        const horarioFront = new Date().toISOString();
 
         // 2. Passa o ID e o Horário para a API
         await AtendenteApi.finalizarAtendimento(id, horarioFront);
@@ -1239,15 +1206,8 @@ export default {
           observacao: this.novoAgendamento.observacoes,
         }
 
-        const agora = new Date();
-        const offset = -3; // Brasil (ajuste se necessário)
-
-        const pad = (n) => n.toString().padStart(2, '0');
-        const milis = agora.getMilliseconds().toString().padStart(3, '0');
-
-        const horarioFront = `${agora.getFullYear()}-${pad(agora.getMonth()+1)}-${pad(agora.getDate())}T${pad(agora.getHours())}:${pad(agora.getMinutes())}:${pad(agora.getSeconds())}.${milis}`;
-
-        //console.log("hora: " + horarioFront);
+        const horarioFront = new Date().toISOString();
+        console.log("hora UTC:", horarioFront);
 
         const res = await AtendenteApi.salvarEspontaneo(this.secretariaTrabalhoId, payload, horarioFront);
 
