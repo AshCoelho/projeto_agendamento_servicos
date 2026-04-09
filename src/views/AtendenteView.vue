@@ -884,59 +884,57 @@ export default {
 
       return `${dia}/${mes}/${ano} ${hora}:${minuto}`
     },
+    
    calcularTempoEspera(horaAgendamento, situacao, hChamada, hFinalizado) {
-  if (!horaAgendamento) return '00:00:00';
+    if (!horaAgendamento) return '00:00:00';
 
-  // Converte string do backend para Date **sem ajuste de fuso**
-  const parseDataBanco = (str) => {
-    if (!str) return null;
-    const [dataParte, horaParte] = str.split(/[ T]/); // aceita ' ' ou 'T'
-    if (!horaParte) return null;
+    // Converte a string YYYY-MM-DD HH:mm:ss para um objeto Date LOCAL
+    const parseDataBanco = (str) => {
+      if (!str) return null;
+      // Substitui o 'T' por espaço e remove frações de segundos se houver
+      const limpaStr = str.replace('T', ' ').split('.')[0];
+      
+      // Ao passar a string direto para o construtor (sem o Z no final),
+      // o navegador entende como Horário Local.
+      const d = new Date(limpaStr.replace(/-/g, '/')); 
+      return isNaN(d.getTime()) ? null : d;
+    };
 
-    const [ano, mes, dia] = dataParte.split('-');
-    const [hora, minuto, segundo] = horaParte.split(':');
-    return new Date(Date.UTC(
-      parseInt(ano),
-      parseInt(mes) - 1,
-      parseInt(dia),
-      parseInt(hora),
-      parseInt(minuto),
-      parseInt(segundo || 0)
-    ));
-  };
+    const dataAgendamento = parseDataBanco(horaAgendamento);
+    const dataChamada = parseDataBanco(hChamada);
+    const dataFinalizado = parseDataBanco(hFinalizado);
 
-  const dataAgendamento = parseDataBanco(horaAgendamento);
-  const dataChamada = parseDataBanco(hChamada);
-  const dataFinalizado = parseDataBanco(hFinalizado);
+    if (!dataAgendamento) return '00:00:00';
 
-  if (!dataAgendamento) return '00:00:00';
+    let inicio, fim;
 
-  let inicio, fim;
-
-  if (situacao === 'ATENDIDO' || situacao === 'FINALIZADO') {
-    if (dataChamada && dataFinalizado) {
-      inicio = dataChamada;
-      fim = dataFinalizado;
-    } else if (dataFinalizado) {
-      inicio = dataAgendamento;
-      fim = dataFinalizado;
+    // Lógica de definição de balizas
+    if (situacao === 'CHAMADO' || situacao === 'EM_ATENDIMENTO') {
+        // Se já foi chamado mas não finalizou, o fim é "agora" e o início é quando chamou
+        inicio = dataChamada || dataAgendamento;
+        fim = new Date();
+    } else if (situacao === 'ATENDIDO' || situacao === 'FINALIZADO') {
+        // Se finalizou, o tempo é o intervalo entre a chamada e a finalização
+        inicio = dataChamada || dataAgendamento;
+        fim = dataFinalizado || new Date();
     } else {
-      return '00:00:00';
+        // Se está apenas AGENDADO ou na fila, conta do agendamento até "agora"
+        inicio = dataAgendamento;
+        fim = new Date();
     }
-  } else {
-    inicio = dataAgendamento;
-    fim = new Date(); // agora
-  }
 
-  const diffMs = fim - inicio; // sem Math.abs, negativo é permitido se horário estiver errado
-  if (diffMs < 0) return '00:00:00'; // evita contar de trás pra frente
+    const diffMs = fim - inicio;
 
-  const diffHrs = Math.floor(diffMs / 3600000);
-  const diffMins = Math.floor((diffMs % 3600000) / 60000);
-  const diffSecs = Math.floor((diffMs % 60000) / 1000);
+    // Se o relógio do cliente estiver muito atrasado em relação ao servidor, 
+    // pode dar negativo. Tratamos para não exibir erro.
+    if (diffMs < 0) return '00:00:00';
 
-  return `${String(diffHrs).padStart(2, '0')}:${String(diffMins).padStart(2, '0')}:${String(diffSecs).padStart(2, '0')}`;
-},
+    const diffHrs = Math.floor(diffMs / 3600000);
+    const diffMins = Math.floor((diffMs % 3600000) / 60000);
+    const diffSecs = Math.floor((diffMs % 60000) / 1000);
+
+    return `${String(diffHrs).padStart(2, '0')}:${String(diffMins).padStart(2, '0')}:${String(diffSecs).padStart(2, '0')}`;
+  },
 
     async handleLogout() {
       const token = localStorage.getItem('token')
