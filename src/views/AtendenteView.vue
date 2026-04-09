@@ -1206,8 +1206,21 @@ export default {
           observacao: this.novoAgendamento.observacoes,
         }
 
-        const horarioFront = new Date().toISOString();
-        console.log("hora UTC:", horarioFront);
+        // Fuso horário de Brasília (GMT-3)
+        const agora = new Date();
+
+        // Cria a string no formato YYYY-MM-DD HH:mm:ss.SSS para enviar
+        const pad = (n) => n.toString().padStart(2, '0');
+
+        const offset = -3 * 60; // diferença de minutos para UTC-3
+        const brasilTime = new Date(agora.getTime() - offset * 60 * 1000);
+
+        const horarioFront =
+          `${brasilTime.getFullYear()}-${pad(brasilTime.getMonth() + 1)}-${pad(brasilTime.getDate())} ` +
+          `${pad(brasilTime.getHours())}:${pad(brasilTime.getMinutes())}:${pad(brasilTime.getSeconds())}.` +
+          `${brasilTime.getMilliseconds().toString().padStart(3, '0')}`;
+
+        console.log("hora BR:", horarioFront);
 
         const res = await AtendenteApi.salvarEspontaneo(this.secretariaTrabalhoId, payload, horarioFront);
 
