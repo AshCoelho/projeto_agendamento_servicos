@@ -1206,11 +1206,12 @@ export default {
           observacao: this.novoAgendamento.observacoes,
         }
 
-        // Pega a hora exata do sistema (UTC)
-        const horarioFront = new Date().toISOString(); 
+        const agora = new Date();
+        const pad = (n) => n.toString().padStart(2, '0');
 
-        // Exemplo do que será enviado: "2026-04-09T06:35:00.000Z"
-        console.log("Enviando ISO:", horarioFront);
+        // Cria a string ISO, mas remove o 'Z' para não indicar UTC
+        // Exemplo resultante: 2026-04-09T03:40:00.000
+        const horarioFront = agora.toISOString().replace('Z', '');
 
         const res = await AtendenteApi.salvarEspontaneo(this.secretariaTrabalhoId, payload, horarioFront);
 
