@@ -391,10 +391,9 @@ const formatarSomenteTexto = (valor) => {
   return String(valor).replace(/[0-9]/g, '').trim().toUpperCase() || 'LOCAL'
 }
 
-/** ======= ESTADO GLOBAL (fora do método) ======= **/
-// Usamos um Set para guardar os IDs que já passaram pela voz nesta sessão
+/** ======= ESTADO GLOBAL ======= **/
 const idsProcessados = new Set()
-let maiorIdChamadaConhecido = 0
+let ultimaDataConhecida = "" 
 
 /** ======= BUSCAR CHAMADAS ======= **/
 const buscarChamadas = async () => {
@@ -402,9 +401,33 @@ const buscarChamadas = async () => {
   fetching.value = true
 
   try {
-    const res = await apiPublico.get(`/agendamentos/ultimas-chamadas/${setorId.value}?t=${Date.now()}`)
+    const timestamp = new Date().getTime(); 
+    
+    // Log 1: Início da busca
+    //console.log(`%c[BUSCA] Tentando buscar novidades... (Anchor: ${ultimaDataConhecida})`, "color: cyan");
+
+    const res = await apiPublico.get(
+      `/agendamentos/ultimas-chamadas/${setorId.value}`,
+      { params: { cb: timestamp } }
+    );
+    
     const lista = extrairLista(res.data)
-    if (!lista.length) return
+    
+    // Log 2: O que veio do Banco?
+    if (lista.length > 0) {
+        // console.log("%c[API] Primeiros 2 itens recebidos:", "color: yellow", 
+        //     lista.slice(0, 2).map(i => ({ 
+        //         senha: i.senha, 
+        //         hora: i.horaChamada || i.data_chamada,
+        //         id: i.id || i.agendamentoId
+        //     }))
+        // );
+    }
+
+    if (!lista.length) {
+        fetching.value = false;
+        return;
+    }
 
     // 1. Histórico lateral
     historico.value = lista.map((item) => {
@@ -417,18 +440,21 @@ const buscarChamadas = async () => {
       }
     })
 
-    // 2. Função interna para gerar chave única (ID da chamada ou fallback de Senha+Hora)
     const gerarChaveUnica = (item) => {
       const id = pegarCampo(item, ['id', 'agendamentoId'])
-      const senha = pegarCampo(item, ['senha'])
       const hora = pegarCampo(item, ['horaChamada', 'data_chamada'])
-      // Se o ID falhar, a combinação Senha+Hora garante que a N012 seja "nova"
-      return id ? `ID_${id}` : `S_${senha}_H_${hora}`
+      return `ID_${id}_H_${hora}`
     }
 
     // 3. PRIMEIRA CARGA
     if (lastKey.value === null) {
-      lista.forEach(item => idsProcessados.add(gerarChaveUnica(item)))
+      //console.log("%c[CARGA INICIAL] Populando âncoras de tempo...", "color: gray");
+      lista.forEach(item => {
+        const hora = pegarCampo(item, ['horaChamada', 'data_chamada'])
+        if (hora > ultimaDataConhecida) ultimaDataConhecida = hora
+        idsProcessados.add(gerarChaveUnica(item))
+      })
+      
       const ultima = lista[0]
       senhaAtual.value = {
         numero: String(pegarCampo(ultima, ['senha'])),
@@ -436,31 +462,50 @@ const buscarChamadas = async () => {
         cidadao: String(pegarCampo(ultima, ['nomeCidadao', 'usuarioNome'])),
       }
       lastKey.value = "iniciado"
+      fetching.value = false;
       return
     }
 
     // 4. FILTRAGEM DE NOVIDADES
     const novasChamadas = lista
-      .filter(item => !idsProcessados.has(gerarChaveUnica(item)))
+      .filter(item => {
+        const hora = pegarCampo(item, ['horaChamada', 'data_chamada'])
+        const chave = gerarChaveUnica(item)
+
+        // Log 3: Analisando item por item no filtro
+        const jaProcessado = idsProcessados.has(chave);
+        const ehAntigo = hora < ultimaDataConhecida;
+
+        if (!jaProcessado && !ehAntigo) {
+            //console.log(`%c[FILTRO] ✅ NOVIDADE DETECTADA: ${chave}`, "color: green; font-weight: bold");
+        } else if (ehAntigo) {
+            // console.log(`[FILTRO] ❌ Descartado (Antigo): ${chave} < ${ultimaDataConhecida}`);
+        }
+
+        if (ehAntigo) return false
+        return !jaProcessado
+      })
       .reverse()
 
     // 5. PROCESSA
     for (const nova of novasChamadas) {
       const chave = gerarChaveUnica(nova)
+      const hora = pegarCampo(nova, ['horaChamada', 'data_chamada'])
       const senha = String(pegarCampo(nova, ['senha']))
       const guiche = String(pegarCampo(nova, ['guiche']) || '--')
       const cidadao = String(pegarCampo(nova, ['nomeCidadao', 'usuarioNome']) || 'Cidadão')
 
+      if (hora > ultimaDataConhecida) ultimaDataConhecida = hora
+      
+      //console.log(`%c[FILA] Adicionando à fila de áudio: ${senha}`, "color: orange");
       idsProcessados.add(chave)
-      console.log(`[TV] Nova senha detectada: ${senha} (Chave: ${chave})`)
       falarChamada(cidadao, senha, guiche)
     }
 
-    // Limpeza de cache do Set
-    if (idsProcessados.size > 150) {
+    if (idsProcessados.size > 300) {
       const array = Array.from(idsProcessados)
       idsProcessados.clear()
-      array.slice(-50).forEach(k => idsProcessados.add(k))
+      array.slice(-100).forEach(k => idsProcessados.add(k))
     }
 
   } catch (error) {
