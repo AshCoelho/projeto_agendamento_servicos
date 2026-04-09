@@ -1074,7 +1074,7 @@ export default {
       
       try {
         
-        const horarioFront = new Date().toISOString().replace('Z', '');
+        const horarioFront = new Date().toISOString().split('.')[0];
 
         // 2. Passa o ID e o Horário para a API
         await AtendenteApi.finalizarAtendimento(id, horarioFront);
