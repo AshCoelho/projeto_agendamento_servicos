@@ -48,15 +48,19 @@ export const AtendenteApi = {
   },
 
   async cancelarAtendimento(id, token, horario) {
-    return await api.put(
-      `/agendamentos/cancelar/${id}?horario=${encodeURIComponent(horario)}`, 
-      {}, 
-      {
-        headers: { Authorization: `Bearer ${token}` }
+  return await api.put(
+    `/agendamentos/cancelar/${id}`, 
+    {}, // O corpo (body) continua vazio para o PUT
+    {
+      params: { 
+        horario: horario // O Axios faz o encodeURIComponent e coloca na URL automaticamente
+      },
+      headers: { 
+        Authorization: `Bearer ${token}` 
       }
-    )
-  },
-
+    }
+  );
+},
   async finalizarAtendimento(id, horario) {
     // Envia o horário via query string para o Spring Boot
     return await api.put(`/agendamentos/finalizar/${id}?horario=${encodeURIComponent(horario)}`);
