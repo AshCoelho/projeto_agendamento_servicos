@@ -402,14 +402,11 @@ const buscarChamadas = async () => {
   fetching.value = true
 
   try {
-    const res = await apiPublico.get(
-      `/agendamentos/ultimas-chamadas/${setorId.value}?t=${Date.now()}`,
-    )
-
+    const res = await apiPublico.get(`/agendamentos/ultimas-chamadas/${setorId.value}?t=${Date.now()}`)
     const lista = extrairLista(res.data)
     if (!lista.length) return
 
-    // 1. Atualiza o histórico lateral
+    // 1. Histórico lateral
     historico.value = lista.map((item) => {
       const guicheRaw = pegarCampo(item, ['guiche']) ?? '--'
       return {
@@ -420,53 +417,50 @@ const buscarChamadas = async () => {
       }
     })
 
-    // 2. PRIMEIRA CARGA: Apenas inicializa os dados
+    // 2. Função interna para gerar chave única (ID da chamada ou fallback de Senha+Hora)
+    const gerarChaveUnica = (item) => {
+      const id = pegarCampo(item, ['id', 'agendamentoId'])
+      const senha = pegarCampo(item, ['senha'])
+      const hora = pegarCampo(item, ['horaChamada', 'data_chamada'])
+      // Se o ID falhar, a combinação Senha+Hora garante que a N012 seja "nova"
+      return id ? `ID_${id}` : `S_${senha}_H_${hora}`
+    }
+
+    // 3. PRIMEIRA CARGA
     if (lastKey.value === null) {
-      lista.forEach(item => {
-        const id = Number(pegarCampo(item, ['id']))
-        if (id > maiorIdChamadaConhecido) maiorIdChamadaConhecido = id
-        idsProcessados.add(id)
-      })
-      
-      lastKey.value = "iniciado"
+      lista.forEach(item => idsProcessados.add(gerarChaveUnica(item)))
       const ultima = lista[0]
       senhaAtual.value = {
         numero: String(pegarCampo(ultima, ['senha'])),
         guiche: String(pegarCampo(ultima, ['guiche'])),
         cidadao: String(pegarCampo(ultima, ['nomeCidadao', 'usuarioNome'])),
       }
+      lastKey.value = "iniciado"
       return
     }
 
-    // 3. FILTRAGEM RIGOROSA: Só aceita IDs MAIORES que o último processado
-    // Como a query está em ORDER BY ca.id DESC, as novas estão no topo.
+    // 4. FILTRAGEM DE NOVIDADES
     const novasChamadas = lista
-      .filter(item => {
-        const id = Number(pegarCampo(item, ['id']))
-        return id > maiorIdChamadaConhecido && !idsProcessados.has(id)
-      })
-      .reverse() // Inverte para processar da mais velha para a mais nova
+      .filter(item => !idsProcessados.has(gerarChaveUnica(item)))
+      .reverse()
 
-    // 4. PROCESSA AS NOVAS
+    // 5. PROCESSA
     for (const nova of novasChamadas) {
-      const id = Number(pegarCampo(nova, ['id']))
-      const senha = pegarCampo(nova, ['senha'])
-      const guiche = pegarCampo(nova, ['guiche'])
-      const cidadao = pegarCampo(nova, ['nomeCidadao', 'usuarioNome'])
+      const chave = gerarChaveUnica(nova)
+      const senha = String(pegarCampo(nova, ['senha']))
+      const guiche = String(pegarCampo(nova, ['guiche']) || '--')
+      const cidadao = String(pegarCampo(nova, ['nomeCidadao', 'usuarioNome']) || 'Cidadão')
 
-      // Atualiza o rastreador
-      maiorIdChamadaConhecido = id
-      idsProcessados.add(id)
-
-      // Manda para a fila de voz/tela
-      falarChamada(String(cidadao), String(senha), String(guiche))
+      idsProcessados.add(chave)
+      console.log(`[TV] Nova senha detectada: ${senha} (Chave: ${chave})`)
+      falarChamada(cidadao, senha, guiche)
     }
 
-    // Limpeza periódica do Set
-    if (idsProcessados.size > 200) {
-       const ids = Array.from(idsProcessados).sort((a,b) => a-b)
-       idsProcessados.clear()
-       ids.slice(-50).forEach(i => idsProcessados.add(i))
+    // Limpeza de cache do Set
+    if (idsProcessados.size > 150) {
+      const array = Array.from(idsProcessados)
+      idsProcessados.clear()
+      array.slice(-50).forEach(k => idsProcessados.add(k))
     }
 
   } catch (error) {
