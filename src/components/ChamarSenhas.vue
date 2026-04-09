@@ -358,7 +358,7 @@ export default {
 
         const horarioFront = new Date().toISOString();
 
-        console.log("hora:" +horarioFront);
+        //console.log("hora:" +horarioFront);
 
         const response = await AtendenteApi.chamarNormal(this.setorTrabalhoId, this.usuario.id, horarioFront)
         const dados = response.data || response
