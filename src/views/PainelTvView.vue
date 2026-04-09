@@ -424,9 +424,19 @@ const buscarChamadas = async () => {
     // 2. A CHAVE ÚNICA REAL: Usamos o ID do Agendamento + a Hora da Chamada
     // Garantimos que seja uma String limpa para o Set
     const gerarChaveUnica = (item) => {
-      const id = pegarCampo(item, ['agendamentoId', 'id']) ?? ''
-      const hora = pegarCampo(item, ['horaChamada', 'data_chamada']) ?? ''
-      return `${id}_${hora}`
+      // Pegamos o ID da CHAMADA (se disponível) ou ID do Agendamento
+      const id = pegarCampo(item, ['id', 'agendamentoId']) ?? ''
+      
+      // Pegamos a senha
+      const senha = pegarCampo(item, ['senha']) ?? ''
+      
+      // A hora da chamada formatada (removendo milissegundos para evitar divergência)
+      let hora = pegarCampo(item, ['horaChamada', 'data_chamada']) ?? ''
+      if (hora.includes('.')) hora = hora.split('.')[0]
+      if (hora.includes('T')) hora = hora.replace('T', ' ')
+
+      // A chave agora é composta pelo ID + Senha + Hora exata
+      return `CH_${id}_${senha}_${hora}`.trim()
     }
 
     // 3. PRIMEIRA EXECUÇÃO (Carga Inicial)
@@ -505,7 +515,7 @@ const start = () => {
   intervalRelogio = setInterval(atualizarRelogio, 1000)
 
   buscarChamadas()
-  intervalChamada = setInterval(buscarChamadas, 1500)
+  intervalChamada = setInterval(buscarChamadas, 3500)
 }
 
 const stop = () => {
