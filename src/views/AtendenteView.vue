@@ -884,7 +884,7 @@ export default {
 
       return `${dia}/${mes}/${ano} ${hora}:${minuto}`
     },
-    
+
    calcularTempoEspera(horaAgendamento, situacao, hChamada, hFinalizado) {
     if (!horaAgendamento) return '00:00:00';
 
@@ -1074,7 +1074,7 @@ export default {
       
       try {
         
-        const horarioFront = new Date().toISOString();
+        const horarioFront = new Date().toISOString().replace('Z', '');
 
         // 2. Passa o ID e o Horário para a API
         await AtendenteApi.finalizarAtendimento(id, horarioFront);
