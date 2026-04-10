@@ -393,7 +393,7 @@ const formatarSomenteTexto = (valor) => {
 
 /** ======= ESTADO GLOBAL ======= **/
 const idsProcessados = new Set()
-let ultimaDataConhecida = "" 
+let ultimaDataConhecida = null
 
 /** ======= BUSCAR CHAMADAS ======= **/
 const buscarChamadas = async () => {
@@ -401,42 +401,33 @@ const buscarChamadas = async () => {
   fetching.value = true
 
   try {
-    const timestamp = new Date().getTime(); 
-    
-    // Log 1: Início da busca
-    //console.log(`%c[BUSCA] Tentando buscar novidades... (Anchor: ${ultimaDataConhecida})`, "color: cyan");
+    const timestamp = new Date().getTime()
 
     const res = await apiPublico.get(
       `/agendamentos/ultimas-chamadas/${setorId.value}`,
       { params: { cb: timestamp } }
-    );
-    
-    const lista = extrairLista(res.data)
-    
-    // Log 2: O que veio do Banco?
-    if (lista.length > 0) {
-        // console.log("%c[API] Primeiros 2 itens recebidos:", "color: yellow", 
-        //     lista.slice(0, 2).map(i => ({ 
-        //         senha: i.senha, 
-        //         hora: i.horaChamada || i.data_chamada,
-        //         id: i.id || i.agendamentoId
-        //     }))
-        // );
-    }
+    )
 
-    if (!lista.length) {
-        fetching.value = false;
-        return;
-    }
+    const listaOriginal = extrairLista(res.data)
 
-    // 1. Histórico lateral
+    if (!listaOriginal.length) return
+
+    /** 🔥 NORMALIZAÇÃO (PASSO MAIS IMPORTANTE) **/
+    const lista = [...listaOriginal].sort(
+      (a, b) =>
+        new Date(b.horaChamada || b.data_chamada) -
+        new Date(a.horaChamada || a.data_chamada)
+    )
+
+    /** ===== HISTÓRICO ===== **/
     historico.value = lista.map((item) => {
       const guicheRaw = pegarCampo(item, ['guiche']) ?? '--'
       return {
         numero: pegarCampo(item, ['senha']) || '---',
         localNome: formatarSomenteTexto(guicheRaw),
         localNumero: formatarSomenteNumero(guicheRaw),
-        cidadao: pegarCampo(item, ['nomeCidadao', 'usuarioNome']) || 'Cidadão',
+        cidadao:
+          pegarCampo(item, ['nomeCidadao', 'usuarioNome']) || 'Cidadão',
       }
     })
 
@@ -446,68 +437,83 @@ const buscarChamadas = async () => {
       return `ID_${id}_H_${hora}`
     }
 
-    // 3. PRIMEIRA CARGA
+    /** ===== PRIMEIRA CARGA ===== **/
     if (lastKey.value === null) {
-      //console.log("%c[CARGA INICIAL] Populando âncoras de tempo...", "color: gray");
-      lista.forEach(item => {
-        const hora = pegarCampo(item, ['horaChamada', 'data_chamada'])
-        if (hora > ultimaDataConhecida) ultimaDataConhecida = hora
+      lista.forEach((item) => {
+        const hora = new Date(
+          pegarCampo(item, ['horaChamada', 'data_chamada'])
+        )
+
+        if (!ultimaDataConhecida || hora > ultimaDataConhecida) {
+          ultimaDataConhecida = hora
+        }
+
         idsProcessados.add(gerarChaveUnica(item))
       })
-      
-      const ultima = lista[0]
+
+      const ultima = lista[0] // agora garantido correto
+
       senhaAtual.value = {
         numero: String(pegarCampo(ultima, ['senha'])),
         guiche: String(pegarCampo(ultima, ['guiche'])),
-        cidadao: String(pegarCampo(ultima, ['nomeCidadao', 'usuarioNome'])),
+        cidadao: String(
+          pegarCampo(ultima, ['nomeCidadao', 'usuarioNome'])
+        ),
       }
+
       lastKey.value = "iniciado"
-      fetching.value = false;
       return
     }
 
-    // 4. FILTRAGEM DE NOVIDADES
-    const novasChamadas = lista
-      .filter(item => {
-        const hora = pegarCampo(item, ['horaChamada', 'data_chamada'])
-        const chave = gerarChaveUnica(item)
+    /** ===== FILTRAR NOVIDADES ===== **/
+    const novasChamadas = lista.filter((item) => {
+      const hora = new Date(
+        pegarCampo(item, ['horaChamada', 'data_chamada'])
+      )
 
-        // Log 3: Analisando item por item no filtro
-        const jaProcessado = idsProcessados.has(chave);
-        const ehAntigo = hora < ultimaDataConhecida;
+      const chave = gerarChaveUnica(item)
 
-        if (!jaProcessado && !ehAntigo) {
-            //console.log(`%c[FILTRO] ✅ NOVIDADE DETECTADA: ${chave}`, "color: green; font-weight: bold");
-        } else if (ehAntigo) {
-            // console.log(`[FILTRO] ❌ Descartado (Antigo): ${chave} < ${ultimaDataConhecida}`);
+      const jaProcessado = idsProcessados.has(chave)
+      const ehAntigo =
+        ultimaDataConhecida && hora <= ultimaDataConhecida
+
+      return !jaProcessado && !ehAntigo
+    })
+
+    /** 🔥 PROCESSA DO MAIS ANTIGO → MAIS NOVO (pra áudio correto) **/
+    novasChamadas
+      .sort(
+        (a, b) =>
+          new Date(a.horaChamada || a.data_chamada) -
+          new Date(b.horaChamada || b.data_chamada)
+      )
+      .forEach((nova) => {
+        const chave = gerarChaveUnica(nova)
+        const hora = new Date(
+          pegarCampo(nova, ['horaChamada', 'data_chamada'])
+        )
+
+        const senha = String(pegarCampo(nova, ['senha']))
+        const guiche = String(pegarCampo(nova, ['guiche']) || '--')
+        const cidadao = String(
+          pegarCampo(nova, ['nomeCidadao', 'usuarioNome']) || 'Cidadão'
+        )
+
+        if (!ultimaDataConhecida || hora > ultimaDataConhecida) {
+          ultimaDataConhecida = hora
         }
 
-        if (ehAntigo) return false
-        return !jaProcessado
+        idsProcessados.add(chave)
+
+        falarChamada(cidadao, senha, guiche)
       })
-      .reverse()
 
-    // 5. PROCESSA
-    for (const nova of novasChamadas) {
-      const chave = gerarChaveUnica(nova)
-      const hora = pegarCampo(nova, ['horaChamada', 'data_chamada'])
-      const senha = String(pegarCampo(nova, ['senha']))
-      const guiche = String(pegarCampo(nova, ['guiche']) || '--')
-      const cidadao = String(pegarCampo(nova, ['nomeCidadao', 'usuarioNome']) || 'Cidadão')
-
-      if (hora > ultimaDataConhecida) ultimaDataConhecida = hora
-      
-      //console.log(`%c[FILA] Adicionando à fila de áudio: ${senha}`, "color: orange");
-      idsProcessados.add(chave)
-      falarChamada(cidadao, senha, guiche)
-    }
-
+    /** ===== LIMPEZA DE MEMÓRIA ===== **/
     if (idsProcessados.size > 300) {
-      const array = Array.from(idsProcessados)
+      const ultimos = Array.from(idsProcessados).slice(-100)
       idsProcessados.clear()
-      array.slice(-100).forEach(k => idsProcessados.add(k))
+      ultimos.forEach((k) => idsProcessados.add(k))
     }
-
   } catch (error) {
     console.error('Erro ao buscar chamadas:', error)
   } finally {
