@@ -433,7 +433,7 @@ const buscarChamadas = async () => {
     }
 
     // 1. Histórico lateral
-    historico.value = lista.map((item) => {
+    historico.value = lista.slice(1).map((item) => {
       const guicheRaw = pegarCampo(item, ['guiche']) ?? '--'
       return {
         numero: pegarCampo(item, ['senha']) || '---',
