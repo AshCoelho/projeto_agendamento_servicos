@@ -190,7 +190,7 @@ let intervalChamada = null
 let intervalRelogio = null
 
 /** ======= FILA DE ÁUDIO ======= **/
-const filaChamadas = []
+const filaChamadas = ref([])
 const falando = ref(false)
 
 /** ======= API ======= **/
@@ -262,11 +262,15 @@ const localFormatado = computed(() => {
 
 /** ======= PROCESSADOR DA FILA ======= **/
 const processarFila = () => {
-  if (falando.value || filaChamadas.length === 0) return
+  if (falando.value || filaChamadas.value.length === 0) return
 
   falando.value = true
 
-  const chamada = filaChamadas.shift()
+  const chamada = filaChamadas.value.shift()
+  if (!chamada) {
+    falando.value = false
+    return
+  }
 
   // O SEGREDO 1: A tela só muda quando chega a vez EXATA dessa senha na fila de áudio
   senhaAtual.value = {
@@ -307,8 +311,8 @@ const processarFila = () => {
     setTimeout(() => {
       falando.value = false // Libera a catraca para a próxima senha
 
-      if (filaChamadas.length === 0) {
-        processarFila() // Tem gente na fila? Puxa o próximo!
+      if (filaChamadas.value.length > 0) {
+        queueMicrotask(processarFila)
       }
     }, 4000)
   }
@@ -468,24 +472,21 @@ const buscarChamadas = async () => {
 
     // 4. FILTRAGEM DE NOVIDADES
     const novasChamadas = lista
-      .filter(item => {
-        const hora = pegarCampo(item, ['horaChamada', 'data_chamada'])
-        const chave = gerarChaveUnica(item)
+    .filter(item => {
+      const chave = gerarChaveUnica(item)
 
-        // Log 3: Analisando item por item no filtro
-        const jaProcessado = idsProcessados.has(chave);
-        const ehAntigo = hora < ultimaDataConhecida;
+      // REGRA 1: nunca processar duplicado
+      if (idsProcessados.has(chave)) return false
 
-        if (!jaProcessado && !ehAntigo) {
-            //console.log(`%c[FILTRO] ✅ NOVIDADE DETECTADA: ${chave}`, "color: green; font-weight: bold");
-        } else if (ehAntigo) {
-            // console.log(`[FILTRO] ❌ Descartado (Antigo): ${chave} < ${ultimaDataConhecida}`);
-        }
+      return true
+    })
+    .sort((a, b) => {
+      const ha = pegarCampo(a, ['horaChamada', 'data_chamada'])
+      const hb = pegarCampo(b, ['horaChamada', 'data_chamada'])
 
-        if (ehAntigo) return false
-        return !jaProcessado
-      })
-      .reverse()
+      // ordena pela hora (mais antigo primeiro)
+      return new Date(ha) - new Date(hb)
+    })
 
     // 5. PROCESSA
     for (const nova of novasChamadas) {
