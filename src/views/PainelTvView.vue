@@ -405,10 +405,6 @@ const buscarChamadas = async () => {
 
   try {
     const timestamp = new Date().getTime(); 
-    
-    // Log 1: Início da busca
-    //console.log(`%c[BUSCA] Tentando buscar novidades... (Anchor: ${ultimaDataConhecida})`, "color: cyan");
-
     const res = await apiPublico.get(
       `/agendamentos/ultimas-chamadas/${setorId.value}`,
       { params: { cb: timestamp } }
@@ -420,18 +416,8 @@ const buscarChamadas = async () => {
         return;
     }
     
-    const lista = [...listaBruta].reverse()
-
-    // 1. Histórico lateral
-    historico.value = lista.slice(1).map((item) => {
-      const guicheRaw = pegarCampo(item, ['guiche']) ?? '--'
-      return {
-        numero: pegarCampo(item, ['senha']) || '---',
-        localNome: formatarSomenteTexto(guicheRaw),
-        localNumero: formatarSomenteNumero(guicheRaw),
-        cidadao: pegarCampo(item, ['nomeCidadao', 'usuarioNome']) || 'Cidadão',
-      }
-    })
+    // Invertemos para a interface (Mais nova primeiro)
+    const listaParaInterface = [...listaBruta].reverse()
 
     const gerarChaveUnica = (item) => {
       const id = pegarCampo(item, ['id', 'agendamentoId'])
@@ -439,52 +425,57 @@ const buscarChamadas = async () => {
       return `ID_${id}_H_${hora}`
     }
 
-    // 3. PRIMEIRA CARGA
+    // 1. PRIMEIRA CARGA (Só roda na abertura do painel)
     if (lastKey.value === null) {
-      //console.log("%c[CARGA INICIAL] Populando âncoras de tempo...", "color: gray");
-      lista.forEach(item => {
+      listaBruta.forEach(item => {
         const hora = pegarCampo(item, ['horaChamada', 'data_chamada'])
         if (hora > ultimaDataConhecida) ultimaDataConhecida = hora
         idsProcessados.add(gerarChaveUnica(item))
       })
       
-      const ultima = lista[0]
+      const ultima = listaParaInterface[0]
       senhaAtual.value = {
         numero: String(pegarCampo(ultima, ['senha'])),
         guiche: String(pegarCampo(ultima, ['guiche'])),
         cidadao: String(pegarCampo(ultima, ['nomeCidadao', 'usuarioNome'])),
       }
+
+      // Alimenta o histórico inicial (da 2ª em diante)
+      atualizarHistorico(listaParaInterface.slice(1))
+      
       lastKey.value = "iniciado"
       fetching.value = false;
       return
     }
 
-    // 4. FILTRAGEM DE NOVIDADES
-    const novasChamadas = listaBruta // Use a bruta que já vem na ordem 1, 2, 3...
-  .filter(item => {
-    const chave = gerarChaveUnica(item)
-    return !idsProcessados.has(chave)
-  })
-  // O .sort() aqui é o seu "seguro" caso o backend mude a ordem algum dia
-  .sort((a, b) => {
-    const ha = pegarCampo(a, ['horaChamada', 'data_chamada'])
-    const hb = pegarCampo(b, ['horaChamada', 'data_chamada'])
-    return new Date(ha) - new Date(hb)
-  })
+    // 2. FILTRAGEM DE NOVIDADES
+    const novasChamadas = listaBruta
+      .filter(item => !idsProcessados.has(gerarChaveUnica(item)))
+      .sort((a, b) => {
+        const ha = pegarCampo(a, ['horaChamada', 'data_chamada'])
+        const hb = pegarCampo(b, ['horaChamada', 'data_chamada'])
+        return new Date(ha) - new Date(hb)
+      })
 
-    // 5. PROCESSA
-    for (const nova of novasChamadas) {
-      const chave = gerarChaveUnica(nova)
-      const hora = pegarCampo(nova, ['horaChamada', 'data_chamada'])
-      const senha = String(pegarCampo(nova, ['senha']))
-      const guiche = String(pegarCampo(nova, ['guiche']) || '--')
-      const cidadao = String(pegarCampo(nova, ['nomeCidadao', 'usuarioNome']) || 'Cidadão')
+    // 3. PROCESSA NOVIDADES
+    if (novasChamadas.length > 0) {
+      // Atualizamos o histórico lateral para incluir as novas, 
+      // mas mantemos a "SenhaAtual" antiga até que o áudio a processe.
+      atualizarHistorico(listaParaInterface.filter(i => i.senha !== senhaAtual.value.numero))
 
-      if (hora > ultimaDataConhecida) ultimaDataConhecida = hora
-      
-      //console.log(`%c[FILA] Adicionando à fila de áudio: ${senha}`, "color: orange");
-      idsProcessados.add(chave)
-      falarChamada(cidadao, senha, guiche)
+      for (const nova of novasChamadas) {
+        const chave = gerarChaveUnica(nova)
+        const hora = pegarCampo(nova, ['horaChamada', 'data_chamada'])
+        const senha = String(pegarCampo(nova, ['senha']))
+        const guiche = String(pegarCampo(nova, ['guiche']) || '--')
+        const cidadao = String(pegarCampo(nova, ['nomeCidadao', 'usuarioNome']) || 'Cidadão')
+
+        if (hora > ultimaDataConhecida) ultimaDataConhecida = hora
+        idsProcessados.add(chave)
+        
+        // Joga na fila: a senhaAtual só mudará quando processarFila() chegar nela
+        falarChamada(cidadao, senha, guiche)
+      }
     }
 
     if (idsProcessados.size > 300) {
@@ -498,6 +489,19 @@ const buscarChamadas = async () => {
   } finally {
     fetching.value = false
   }
+}
+
+/** ======= AUXILIAR HISTÓRICO ======= **/
+const atualizarHistorico = (listaMapeada) => {
+  historico.value = listaMapeada.map((item) => {
+    const guicheRaw = pegarCampo(item, ['guiche']) ?? '--'
+    return {
+      numero: pegarCampo(item, ['senha']) || '---',
+      localNome: formatarSomenteTexto(guicheRaw),
+      localNumero: formatarSomenteNumero(guicheRaw),
+      cidadao: pegarCampo(item, ['nomeCidadao', 'usuarioNome']) || 'Cidadão',
+    }
+  })
 }
 
 /** ======= ATIVAR SOM ======= **/
