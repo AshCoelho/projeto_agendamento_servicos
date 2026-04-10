@@ -414,23 +414,13 @@ const buscarChamadas = async () => {
       { params: { cb: timestamp } }
     );
     
-    const lista = extrairLista(res.data)
-    
-    // Log 2: O que veio do Banco?
-    if (lista.length > 0) {
-        // console.log("%c[API] Primeiros 2 itens recebidos:", "color: yellow", 
-        //     lista.slice(0, 2).map(i => ({ 
-        //         senha: i.senha, 
-        //         hora: i.horaChamada || i.data_chamada,
-        //         id: i.id || i.agendamentoId
-        //     }))
-        // );
-    }
-
-    if (!lista.length) {
+    const listaBruta = extrairLista(res.data)
+    if (!listaBruta.length) {
         fetching.value = false;
         return;
     }
+    
+    const lista = [...listaBruta].reverse()
 
     // 1. Histórico lateral
     historico.value = lista.slice(1).map((item) => {
@@ -470,22 +460,17 @@ const buscarChamadas = async () => {
     }
 
     // 4. FILTRAGEM DE NOVIDADES
-    const novasChamadas = lista
-    .filter(item => {
-      const chave = gerarChaveUnica(item)
-
-      // REGRA 1: nunca processar duplicado
-      if (idsProcessados.has(chave)) return false
-
-      return true
-    })
-    .sort((a, b) => {
-      const ha = pegarCampo(a, ['horaChamada', 'data_chamada'])
-      const hb = pegarCampo(b, ['horaChamada', 'data_chamada'])
-
-      // ordena pela hora (mais antigo primeiro)
-      return new Date(ha) - new Date(hb)
-    })
+    const novasChamadas = listaBruta // Use a bruta que já vem na ordem 1, 2, 3...
+  .filter(item => {
+    const chave = gerarChaveUnica(item)
+    return !idsProcessados.has(chave)
+  })
+  // O .sort() aqui é o seu "seguro" caso o backend mude a ordem algum dia
+  .sort((a, b) => {
+    const ha = pegarCampo(a, ['horaChamada', 'data_chamada'])
+    const hb = pegarCampo(b, ['horaChamada', 'data_chamada'])
+    return new Date(ha) - new Date(hb)
+  })
 
     // 5. PROCESSA
     for (const nova of novasChamadas) {
