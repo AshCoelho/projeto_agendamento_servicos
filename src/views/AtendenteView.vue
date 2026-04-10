@@ -212,6 +212,8 @@
                       >
                       <v-text-field
                         v-model="novoAgendamento.nomeCidadao"
+                        @update:model-value="novoAgendamento.nomeCidadao = $event?.toUpperCase()"
+                        style="text-transform: uppercase"
                         type="text"
                         rounded="12px"
                         variant="outlined"
@@ -356,6 +358,8 @@
                       >
                       <v-text-field
                         v-model="selectedItem.usuarioNome"
+                        @update:model-value="selectedItem.usuarioNome = $event?.toUpperCase()"
+                        style="text-transform: uppercase"
                         type="text"
                         rounded="12px"
                         variant="outlined"
@@ -1213,7 +1217,7 @@ export default {
         this.isSalvando = true
 
         const payload = {
-          nomeCidadao: this.novoAgendamento.nomeCidadao,
+          nomeCidadao: this.novoAgendamento.nomeCidadao?.toUpperCase(),
           tipoAtendimentoId: Number(this.novoAgendamento.tipoAtendimentoId),
           servicoId: Number(this.novoAgendamento.servico),
           setorId: Number(this.setorTrabalhoId),
