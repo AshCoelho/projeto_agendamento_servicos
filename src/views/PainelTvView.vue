@@ -312,8 +312,8 @@ const processarFila = () => {
       falando.value = false // Libera a catraca para a próxima senha
 
       if (filaChamadas.value.length > 0) {
-        queueMicrotask(processarFila)
-      }
+          processarFila()
+        }
     }, 4000)
   }
 
@@ -355,8 +355,7 @@ const processarFila = () => {
 
 /** ======= ADICIONA NA FILA ======= **/
 const falarChamada = (nome, senha, guiche) => {
-  // TRAVA REMOVIDA: A senha vai pra fila visual mesmo se o som estiver desligado!
-  filaChamadas.push({
+  filaChamadas.value.push({
     nome,
     senha,
     guiche,
