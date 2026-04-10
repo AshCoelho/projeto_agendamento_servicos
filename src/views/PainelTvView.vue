@@ -416,8 +416,12 @@ const buscarChamadas = async () => {
         return;
     }
     
-    // Invertemos para a interface (Mais nova primeiro)
-    const listaParaInterface = [...listaBruta].reverse()
+    // ORDEM PARA INTERFACE: Garantir que a maior hora fique no topo (índice 0)
+    const listaOrdenada = [...listaBruta].sort((a, b) => {
+      const dateA = new Date(pegarCampo(a, ['horaChamada', 'data_chamada']).replace(/-/g, '/'));
+      const dateB = new Date(pegarCampo(b, ['horaChamada', 'data_chamada']).replace(/-/g, '/'));
+      return dateB - dateA; // Mais recente primeiro
+    });
 
     const gerarChaveUnica = (item) => {
       const id = pegarCampo(item, ['id', 'agendamentoId'])
@@ -425,7 +429,7 @@ const buscarChamadas = async () => {
       return `ID_${id}_H_${hora}`
     }
 
-    // 1. PRIMEIRA CARGA (Só roda na abertura do painel)
+    // 1. PRIMEIRA CARGA
     if (lastKey.value === null) {
       listaBruta.forEach(item => {
         const hora = pegarCampo(item, ['horaChamada', 'data_chamada'])
@@ -433,55 +437,46 @@ const buscarChamadas = async () => {
         idsProcessados.add(gerarChaveUnica(item))
       })
       
-      const ultima = listaParaInterface[0]
+      const ultima = listaOrdenada[0] // A mais recente de todas
       senhaAtual.value = {
         numero: String(pegarCampo(ultima, ['senha'])),
         guiche: String(pegarCampo(ultima, ['guiche'])),
         cidadao: String(pegarCampo(ultima, ['nomeCidadao', 'usuarioNome'])),
       }
 
-      // Alimenta o histórico inicial (da 2ª em diante)
-      atualizarHistorico(listaParaInterface.slice(1))
+      atualizarHistorico(listaOrdenada.slice(1))
       
       lastKey.value = "iniciado"
       fetching.value = false;
       return
     }
 
-    // 2. FILTRAGEM DE NOVIDADES
+    // 2. FILTRAGEM DE NOVIDADES (Para o áudio: mais antigo primeiro)
     const novasChamadas = listaBruta
       .filter(item => !idsProcessados.has(gerarChaveUnica(item)))
       .sort((a, b) => {
         const ha = pegarCampo(a, ['horaChamada', 'data_chamada'])
         const hb = pegarCampo(b, ['horaChamada', 'data_chamada'])
-        return new Date(ha) - new Date(hb)
+        return new Date(ha.replace(/-/g, '/')) - new Date(hb.replace(/-/g, '/'))
       })
 
     // 3. PROCESSA NOVIDADES
     if (novasChamadas.length > 0) {
-      // Atualizamos o histórico lateral para incluir as novas, 
-      // mas mantemos a "SenhaAtual" antiga até que o áudio a processe.
-      atualizarHistorico(listaParaInterface.filter(i => i.senha !== senhaAtual.value.numero))
+      // Atualiza histórico: Pega a lista nova, ordena e remove a que está no telão
+      atualizarHistorico(listaOrdenada.filter(i => gerarChaveUnica(i) !== gerarChaveUnica(listaOrdenada[0])))
 
       for (const nova of novasChamadas) {
         const chave = gerarChaveUnica(nova)
         const hora = pegarCampo(nova, ['horaChamada', 'data_chamada'])
-        const senha = String(pegarCampo(nova, ['senha']))
-        const guiche = String(pegarCampo(nova, ['guiche']) || '--')
-        const cidadao = String(pegarCampo(nova, ['nomeCidadao', 'usuarioNome']) || 'Cidadão')
-
         if (hora > ultimaDataConhecida) ultimaDataConhecida = hora
         idsProcessados.add(chave)
         
-        // Joga na fila: a senhaAtual só mudará quando processarFila() chegar nela
-        falarChamada(cidadao, senha, guiche)
+        falarChamada(
+            String(pegarCampo(nova, ['nomeCidadao', 'usuarioNome']) || 'Cidadão'),
+            String(pegarCampo(nova, ['senha'])),
+            String(pegarCampo(nova, ['guiche']) || '--')
+        )
       }
-    }
-
-    if (idsProcessados.size > 300) {
-      const array = Array.from(idsProcessados)
-      idsProcessados.clear()
-      array.slice(-100).forEach(k => idsProcessados.add(k))
     }
 
   } catch (error) {
