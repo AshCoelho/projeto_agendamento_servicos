@@ -675,10 +675,20 @@ async function agendar() {
 
     const result = await response.json()
 
+    // 1. Gera o PDF primeiro
     gerarPDF(result)
 
+    // 2. Avisa o usuário
     mostrarMensagem(`Agendamento realizado! Senha: ${result.senha}`, 'success')
-    resetarFormulario()
+
+    // 3. Aguarda um pouco para o usuário ver a mensagem e o download iniciar
+    // Depois limpa tudo e recarrega a página do zero
+    setTimeout(() => {
+      resetarFormulario()
+      // window.location.reload(true) força o recarregamento limpando o estado atual
+      window.location.reload() 
+    }, 3000) // 3 segundos de delay
+
   } catch (err) {
     mostrarMensagem('Erro: ' + err.message, 'error')
   } finally {

@@ -124,7 +124,7 @@ export default {
         // Como o GET geral não existe, vamos buscar de um setor específico (ex: setor 5)
         // No futuro, você pode pegar o setorId do usuário logado
         const setorId = 5
-        const { data } = await api.get(`/api/configuracoes-atendimento/setor/${setorId}`)
+        const { data } = await api.get(`/configuracoes-atendimento/setor/${setorId}`)
         this.configuracoesAtendimentos = data
       } catch (e) {
         console.error('Erro ao carregar configurações:', e)
@@ -136,10 +136,10 @@ export default {
       try {
         if (item.ativo) {
           // Bate no @DeleteMapping("/{id}/desativar")
-          await api.delete(`/api/configuracoes-atendimento/${id}/desativar`)
+          await api.delete(`/configuracoes-atendimento/${id}/desativar`)
         } else {
           // Bate no @PutMapping("/{id}/ativar")
-          await api.put(`/api/configuracoes-atendimento/${id}/ativar`)
+          await api.put(`/configuracoes-atendimento/${id}/ativar`)
         }
         this.getConfiguracoesAtendimento()
       } catch (e) {
@@ -154,7 +154,7 @@ export default {
 
     async getAllConfigs() {
       try {
-        const { data } = await api.get('/api/configuracoes-atendimento')
+        const { data } = await api.get('/configuracoes-atendimento')
         this.allConfigs = data
       } catch (e) {
         console.error(e)

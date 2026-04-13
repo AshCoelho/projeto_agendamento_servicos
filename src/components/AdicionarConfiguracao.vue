@@ -140,7 +140,7 @@ export default {
           payload.pausaFim = null
         }
 
-        await api.post('/api/configuracoes-atendimento', payload)
+        await api.post('/configuracoes-atendimento', payload)
         this.$emit('salvo') // Avisa o pai para fechar o modal e atualizar
       } catch (e) {
         const msg = e.response?.data?.message || 'Erro ao salvar configuração'
