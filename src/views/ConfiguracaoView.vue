@@ -33,48 +33,57 @@
           <v-card class="pa-4">
             <v-data-table :items="allConfigs" :headers="headers" class="elevation-0">
               <template v-slot:[`item.horario`]="{ item }">
-                <div class="font-weight-medium">{{ item.horaInicio }} — {{ item.horaFim }}</div>
-              </template>
+        <div class="font-weight-medium">{{ item.horaInicio }} — {{ item.horaFim }}</div>
+      </template>
 
-              <template v-slot:[`item.pausa`]="{ item }">
-                <v-chip v-if="item.pausaInicio" size="small" variant="tonal" color="orange">
-                  {{ item.pausaInicio }} - {{ item.pausaFim }}
-                </v-chip>
-                <span v-else class="text-caption text-grey">Sem pausa</span>
-              </template>
+      <template v-slot:[`item.pausa`]="{ item }">
+        <v-chip v-if="item.pausaInicio" size="small" variant="tonal" color="orange">
+          {{ item.pausaInicio }} - {{ item.pausaFim }}
+        </v-chip>
+        <span v-else class="text-caption text-grey">Sem pausa</span>
+      </template>
 
-              <template v-slot:[`item.detalheRegra`]="{ item }">
-                <span v-if="item.tipoRegra === 'POR_QUANTIDADE'">
-                  {{ item.quantidadeAtendimentos }} atend.
-                </span>
-                <span v-else> {{ item.intervaloMinutos }} min. </span>
-              </template>
+      <template v-slot:[`item.detalheRegra`]="{ item }">
+        <span v-if="item.tipoRegra === 'POR_QUANTIDADE'">
+          {{ item.quantidadeAtendimentos }} atend.
+        </span>
+        <span v-else> {{ item.intervaloMinutos }} min. </span>
+      </template>
 
-              <template v-slot:[`item.ativo`]="{ item }">
-                <v-chip
-                  :color="item.ativo ? 'green' : 'red'"
-                  size="x-small"
-                  class="text-uppercase font-weight-bold"
-                >
-                  {{ item.ativo ? 'Ativo' : 'Inativo' }}
-                </v-chip>
-              </template>
+      <template v-slot:[`item.ativo`]="{ item }">
+        <v-chip
+          :color="item.ativo ? 'green-lighten-4' : 'red-lighten-4'"
+          :text-color="item.ativo ? 'green-darken-3' : 'red-darken-3'"
+          size="x-small"
+          class="text-uppercase font-weight-bold"
+          variant="flat"
+        >
+          {{ item.ativo ? 'Ativo' : 'Inativo' }}
+        </v-chip>
+      </template>
 
-              <template v-slot:[`item.acoes`]="{ item }">
-                <div class="d-flex justify-end gap-2">
-                  <v-btn
-                    icon="mdi-power"
-                    variant="text"
-                    size="small"
-                    :color="item.ativo ? 'red' : 'green'"
-                    @click="alterarStatus(item)"
-                    :title="item.ativo ? 'Desativar' : 'Ativar'"
-                  ></v-btn>
-                  <v-btn icon="mdi-pencil" variant="text" size="small" color="blue"></v-btn>
-                </div>
-              </template>
+      <template v-slot:[`item.acoes`]="{ item }">
+      <div class="d-flex justify-end gap-2">
+        <v-btn
+         
+          :icon="item.ativo ? 'mdi-close' : 'mdi-check'"
+          variant="tonal"
+          size="small"
+          :color="item.ativo ? 'red' : 'green'"
+          @click="alterarStatus(item)"
+          :title="item.ativo ? 'Desativar' : 'Ativar'"
+        ></v-btn>
+        
+        <v-btn 
+          icon="mdi-pencil" 
+          variant="text" 
+          size="small" 
+          color="blue"
+        ></v-btn>
+      </div>
+    </template>
 
-              <template #bottom></template>
+      <template #bottom></template>
             </v-data-table>
           </v-card>
         </v-col>
@@ -104,6 +113,7 @@ import api from '@/services/api'
 export default {
   components: { AdminConfig, AdicionarConfiguracao },
   data: () => ({
+    usuario: null, // Adicionado para armazenar os dados do admin
     allConfigs: [],
     configuracoesAtendimentos: [],
     dialog: { addConfig: false },
@@ -119,51 +129,100 @@ export default {
     ],
   }),
   methods: {
-    async getConfiguracoesAtendimento() {
+    // 1. Primeiro pegamos o usuário para saber quais setores ele comanda
+    async inicializarComponente() {
+    try {
+      // Busca o usuário e ESPERA (await)
+      const res = await api.get('/gerenciador/usuario-logado');
+      this.usuario = res.data;
+      
+      console.log("Usuário carregado:", this.usuario);
+
+      // Agora que temos o usuário, buscamos as configs
+      if (this.usuario?.setores?.length > 0) {
+        await this.getAllConfigs();
+      }
+    } catch (error) {
+      console.error('Erro ao inicializar:', error);
+    }
+  },
+
+    // 2. Buscamos as configurações de TODOS os setores do admin
+    async getConfiguracoesAtendimento(setores) {
       try {
-        // Como o GET geral não existe, vamos buscar de um setor específico (ex: setor 5)
-        // No futuro, você pode pegar o setorId do usuário logado
-        const setorId = 5
-        const { data } = await api.get(`/configuracoes-atendimento/setor/${setorId}`)
-        this.configuracoesAtendimentos = data
+        // Criamos as promessas para cada setor do array
+        const buscas = setores.map(s => api.get(`/configuracoes-atendimento/setor/${s.id}/ativos`))
+        const resultados = await Promise.all(buscas)
+        
+        // Consolidamos tudo em uma lista só para a tabela
+        this.configuracoesAtendimentos = resultados.reduce((acc, res) => {
+          return acc.concat(Array.isArray(res.data) ? res.data : [])
+        }, [])
       } catch (e) {
-        console.error('Erro ao carregar configurações:', e)
+        console.error('Erro ao carregar configurações dos setores:', e)
       }
     },
 
     async alterarStatus(item) {
-      const id = item.id
+      const statusAcao = item.ativo ? 'desativar' : 'ativar';
+      if (!confirm(`Deseja realmente ${statusAcao} esta configuração?`)) return;
+
       try {
         if (item.ativo) {
-          // Bate no @DeleteMapping("/{id}/desativar")
-          await api.delete(`/configuracoes-atendimento/${id}/desativar`)
+          await api.delete(`/configuracoes-atendimento/${item.id}/desativar`);
         } else {
-          // Bate no @PutMapping("/{id}/ativar")
-          await api.put(`/configuracoes-atendimento/${id}/ativar`)
+          await api.put(`/configuracoes-atendimento/${item.id}/ativar`);
         }
-        this.getConfiguracoesAtendimento()
+
+        // ATUALIZAÇÃO EM TEMPO REAL: 
+        // Invertemos o status no objeto local para o usuário ver a mudança na hora
+        item.ativo = !item.ativo;
+
+        // Opcional: Recarregar do banco para garantir sincronia total
+        if (this.usuario?.setores) {
+          this.getConfiguracoesAtendimento(this.usuario.setores);
+        }
       } catch (e) {
-        alert('Erro ao alterar status da configuração.', e)
+        console.error(e);
+        const erroMsg = e.response?.data?.mensagem || 'Erro ao alterar status.';
+        alert(erroMsg);
       }
     },
 
     onConfigSalva() {
-      this.dialog.addConfig = false
-      this.getConfiguracoesAtendimento()
-    },
+    this.dialog.addConfig = false;
+    this.getAllConfigs(); // Atualiza em tempo real após salvar
+  },
 
+    // Mantido caso o seu backend venha a ter um GET total no futuro
     async getAllConfigs() {
-      try {
-        const { data } = await api.get('/configuracoes-atendimento')
-        this.allConfigs = data
-      } catch (e) {
-        console.error(e)
-      }
-    },
+    if (!this.usuario?.setores) return;
+
+    try {
+      // Buscamos de todos os setores do admin
+      const buscas = this.usuario.setores.map(setor => 
+        api.get(`/configuracoes-atendimento/setor/${setor.id}`)
+      );
+
+      const resultados = await Promise.all(buscas);
+
+      // flatMap achata os resultados e o "[...]" força o Vue a atualizar a tela
+      const dadosFormatados = resultados.flatMap(res => 
+        Array.isArray(res.data) ? res.data : []
+      );
+
+      // ATENÇÃO: Atualizamos as DUAS variáveis para não ter erro de vínculo na tabela
+      this.configuracoesAtendimentos = [...dadosFormatados];
+      this.allConfigs = [...dadosFormatados];
+
+      console.log("Configs carregadas com sucesso:", this.allConfigs.length);
+    } catch (e) {
+      console.error("Erro ao carregar configurações:", e);
+    }
+  },
   },
   mounted() {
-    this.getConfiguracoesAtendimento()
-    this.getAllConfigs()
+    this.inicializarComponente(); // Opcional, dependendo do seu backend
   },
 }
 </script>

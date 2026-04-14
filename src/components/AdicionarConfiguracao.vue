@@ -10,7 +10,17 @@
           label="Selecione o Setor"
           required
           variant="outlined"
+          density="compact"
         ></v-select>
+      </v-col>
+
+      <v-col cols="12" class="py-0">
+        <v-checkbox
+          v-model="usaPausa"
+          label="Usar pausa no atendimento (opcional)"
+          hide-details
+          density="compact"
+        ></v-checkbox>
       </v-col>
 
       <v-col cols="6">
@@ -19,6 +29,7 @@
           label="Início Expediente"
           type="time"
           variant="outlined"
+          density="compact"
           required
         ></v-text-field>
       </v-col>
@@ -28,29 +39,32 @@
           label="Fim Expediente"
           type="time"
           variant="outlined"
+          density="compact"
           required
         ></v-text-field>
       </v-col>
 
-      <v-col cols="6">
+      <v-col cols="6" v-if="usaPausa">
         <v-text-field
           v-model="config.pausaInicio"
           label="Início Pausa (Opcional)"
           type="time"
           variant="outlined"
+          density="compact"
         ></v-text-field>
       </v-col>
-      <v-col cols="6">
+      <v-col cols="6" v-if="usaPausa">
         <v-text-field
           v-model="config.pausaFim"
           label="Fim Pausa (Opcional)"
           type="time"
           variant="outlined"
+          density="compact"
         ></v-text-field>
       </v-col>
 
       <v-col cols="12">
-        <v-radio-group v-model="config.tipoRegra" inline label="Regra de Agendamento">
+        <v-radio-group v-model="config.tipoRegra" inline label="Regra de Agendamento" hide-details>
           <v-radio label="Por Intervalo (minutos)" value="POR_INTERVALO"></v-radio>
           <v-radio label="Por Quantidade (total)" value="POR_QUANTIDADE"></v-radio>
         </v-radio-group>
@@ -62,6 +76,7 @@
           label="Minutos por atendimento"
           type="number"
           variant="outlined"
+          density="compact"
         ></v-text-field>
       </v-col>
       <v-col cols="6" v-else>
@@ -70,6 +85,7 @@
           label="Total de atendimentos"
           type="number"
           variant="outlined"
+          density="compact"
         ></v-text-field>
       </v-col>
 
@@ -79,6 +95,7 @@
           label="Número de Guichês"
           type="number"
           variant="outlined"
+          density="compact"
           required
         ></v-text-field>
       </v-col>
@@ -88,9 +105,9 @@
 
     <div class="d-flex justify-end gap-2">
       <v-btn variant="text" @click="$emit('cancelar')">Cancelar</v-btn>
-      <v-btn color="green-darken-1" :loading="loading" @click="salvarConfiguracao"
-        >Salvar Configuração</v-btn
-      >
+      <v-btn color="green-darken-1" :loading="loading" @click="salvarConfiguracao">
+        Salvar Configuração
+      </v-btn>
     </div>
   </v-form>
 </template>
@@ -103,6 +120,7 @@ export default {
     valid: false,
     loading: false,
     setores: [],
+    usaPausa: false, // Controla o checkbox
     config: {
       setor: { id: null },
       horaInicio: '08:00',
@@ -116,12 +134,23 @@ export default {
       ativo: true,
     },
   }),
+  watch: {
+    // Se desmarcar o checkbox, limpa os campos de pausa
+    usaPausa(val) {
+      if (!val) {
+        this.config.pausaInicio = null
+        this.config.pausaFim = null
+      }
+    }
+  },
   methods: {
     async fetchSetores() {
       try {
-        // Usando a rota que você mencionou no mounted do pai
-        const { data } = await api.get('/setores/por-secretaria/5')
-        this.setores = data
+        const { data } = await api.get('/gerenciador/usuario-logado')
+        this.setores = data.setores || []
+        if (this.setores.length > 0) {
+          this.config.setor.id = this.setores[0].id
+        }
       } catch (e) {
         console.error('Erro ao buscar setores', e)
       }
@@ -129,19 +158,20 @@ export default {
     async salvarConfiguracao() {
       this.loading = true
       try {
-        // Formata os campos antes de enviar para garantir que nulos sejam respeitados
         const payload = { ...this.config }
+        
+        // Ajuste de regra
         if (payload.tipoRegra === 'POR_INTERVALO') payload.quantidadeAtendimentos = null
         else payload.intervaloMinutos = null
 
-        // Se a pausa estiver vazia, envia null para não quebrar a validação do Java
-        if (!payload.pausaInicio) {
+        // Se o checkbox de pausa estiver desligado, garante que envie null
+        if (!this.usaPausa) {
           payload.pausaInicio = null
           payload.pausaFim = null
         }
 
         await api.post('/configuracoes-atendimento', payload)
-        this.$emit('salvo') // Avisa o pai para fechar o modal e atualizar
+        this.$emit('salvo')
       } catch (e) {
         const msg = e.response?.data?.message || 'Erro ao salvar configuração'
         alert(msg)

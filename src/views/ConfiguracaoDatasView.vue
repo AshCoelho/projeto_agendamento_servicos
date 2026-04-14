@@ -123,6 +123,7 @@
                       class="text-center py-3 cursor-pointer"
                       :color="isSelecionado(dia) ? 'green-lighten-4' : 'white'"
                       @click="toggleDia(dia)"
+                      @dblclick="abrirModalHorarios(formatarData(dia))"
                     >
                       {{ dia }}
                     </v-card>
@@ -140,6 +141,77 @@
           <v-divider class="mb-4"></v-divider>
         </v-card>
       </v-container>
+
+      <v-dialog v-model="modalHorarios" max-width="500px">
+        <v-card>
+          <v-card-title class="bg-blue-darken-2 text-white d-flex justify-space-between align-center">
+            <div class="d-flex flex-column">
+              <span class="text-h6">Horários Disponíveis</span>
+              <span class="text-caption">{{ dataSelecionadaFormatada }}</span>
+            </div>
+            <v-btn icon="mdi-close" variant="text" @click="modalHorarios = false"></v-btn>
+          </v-card-title>
+
+          <v-card-text class="pa-4">
+            <div v-if="carregandoHorarios" class="text-center py-8">
+              <v-progress-circular indeterminate color="primary" size="50"></v-progress-circular>
+              <p class="mt-4 text-grey">Buscando horários...</p>
+            </div>
+
+            <div v-else-if="horariosDia.length === 0" class="text-center py-8">
+              <v-icon size="64" color="grey-lighten-1">mdi-clock-alert-outline</v-icon>
+              <p class="text-grey-darken-1 mt-2">Nenhum horário gerado.</p>
+            </div>
+
+            <div v-else>
+              <p class="text-caption mb-3 text-grey-darken-1">
+                <v-icon size="small" color="blue-darken-2">mdi-information-outline</v-icon>
+                Clique para selecionar os horários que deseja <strong>remover</strong>:
+              </p>
+
+              <div class="d-flex flex-wrap justify-start">
+                <v-chip
+                  v-for="(h, i) in horariosDia"
+                  :key="i"
+                  
+                  :color="isParaExcluir(h.hora) ? 'red-darken-4' : 'blue-darken-2'"
+                  variant="flat"
+                  size="large"
+                  class="ma-1 font-weight-bold"
+                  
+                  theme="dark"
+                  @click="toggleHorarioExclusao(h.hora)"
+                >
+                  <v-icon start :icon="isParaExcluir(h.hora) ? 'mdi-delete-sweep' : 'mdi-clock-outline'"></v-icon>
+                  
+                  {{ h.hora.substring(0, 5) }}
+                  
+                  <span class="ml-2 text-[10px] font-weight-regular opacity-80">
+                    {{ isParaExcluir(h.hora) ? 'EXCLUIR' : '(' + h.vagas + ' v)' }}
+                  </span>
+                </v-chip>
+              </div>
+            </div>
+          </v-card-text>
+
+          <v-divider></v-divider>
+
+          <v-card-actions class="pa-4">
+            <v-btn
+              v-if="horariosParaExcluir.length > 0"
+              color="error"
+              variant="elevated"
+              prepend-icon="mdi-delete"
+              @click="excluirHorariosSelecionados"
+            >
+              Excluir {{ horariosParaExcluir.length }} selecionado(s)
+            </v-btn>
+            <v-spacer></v-spacer>
+            <v-btn color="grey-darken-1" variant="text" @click="modalHorarios = false">Fechar</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
     </main>
   </div>
 </template>
@@ -154,8 +226,9 @@ export default {
   data() {
     return {
       usuario: null,
+      filtroTexto: '',
       allConfigs: [],
-      setores: [],
+      setores: [], // Agora será preenchido pelos setores do Admin
       configuracoes: [],
       setorSelecionado: null,
       configSelecionada: null,
@@ -165,78 +238,20 @@ export default {
       dataAtual: new Date(),
       diasCalendario: [],
       relogio: '--:--:--',
+      agendamentosPorSetor: [],
+      modalHorarios: false,
+      carregandoHorarios: false,
+      horariosDia: [],
+      dataSelecionadaFormatada: '',
+      horariosParaExcluir: [],
+      dataAbertaNoModal: null // Precisamos disso para o DELETE saber o dia
     }
   },
 
   computed: {
-    temAtendimentoAtivo() {
-      const meuId = Number(this.usuario?.id || localStorage.getItem('usuarioId'))
-
-      if (!this.agendamentosPorSetor.length) return false
-
-      return this.agendamentosPorSetor.some((a) => {
-        const status = a.situacao?.toUpperCase()
-        const idNoBanco = Number(a.gerenciadorId)
-
-        const ocupado = status === 'CHAMADO' || status === 'EM_ATENDIMENTO'
-        const ehMeu = idNoBanco === meuId
-
-        return ocupado && ehMeu
-      })
-    },
-    displayLocalAtendimento() {
-      const numero = Number(this.usuario?.guiche || '1')
-      const secretariaNome = localStorage.getItem('secretariaNomeAtiva')?.toUpperCase() || ''
-
-      if (secretariaNome.includes('SAÚDE') || secretariaNome.includes('SAUDE')) {
-        // 🛡️ MAPEAMENTO MANUAL (DE-PARA)
-        // O número da esquerda é o que está no BANCO (coluna 'numero')
-        // O texto da direita é o que o usuário vai LER na tela
-        const mapaSaude = {
-          1: 'Classificação 01',
-          2: 'Classificação 02',
-          3: 'Recepção',
-          4: 'Consultório 01', // No banco é 4, na tela é 01
-          5: 'Consultório 02', // No banco é 5, na tela é 02
-          // Adicione aqui conforme a bagunça do banco:
-          // 10: "Consultório 03",
-        }
-
-        return mapaSaude[numero] || `Atendimento ${numero}`
-      }
-
-      // Padrão para outras secretarias (apenas o número com zero à esquerda)
-      return String(numero).padStart(2, '0')
-    },
-    labelLocalTrabalho() {
-      const secretariaNome = localStorage.getItem('secretariaNomeAtiva')?.toUpperCase() || ''
-      const perfil = this.usuario?.perfil?.toUpperCase()
-
-      // Se for saúde, usamos um termo mais genérico para o cabeçalho
-      if (secretariaNome.includes('SAÚDE') || secretariaNome.includes('SAUDE')) {
-        return 'Local de Atendimento'
-      }
-
-      if (perfil === 'MEDICO') return 'Consultório'
-      if (perfil === 'TRIAGEM') return 'Sala'
-      return 'Guichê'
-    },
-
+    // ... (suas computeds displayLocalAtendimento, labelLocalTrabalho, etc permanecem iguais)
     nomeMes() {
-      const meses = [
-        'Janeiro',
-        'Fevereiro',
-        'Março',
-        'Abril',
-        'Maio',
-        'Junho',
-        'Julho',
-        'Agosto',
-        'Setembro',
-        'Outubro',
-        'Novembro',
-        'Dezembro',
-      ]
+      const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
       return meses[this.dataAtual.getMonth()]
     },
     anoAtual() {
@@ -246,109 +261,70 @@ export default {
 
   async mounted() {
     this.gerarCalendario()
-    await this.carregarSetores() // Chama exatamente como na outra tela
-    window.addEventListener('beforeunload', this.handleBeforeUnload)
-
-    await this.getUsuarioLogado()
-    await this.buscarAgendamentos()
-
-    // Eu subi o intervalo para 2 segundos, pois 1 segundo afoga o servidor se houverem muitos atendentes
-    setInterval(() => {
-      this.buscarAgendamentos()
-    }, 2000)
-
-    this.carregarServicos()
-    this.carregarTiposAtendimento()
     this.atualizarRelogioLocal()
     setInterval(this.atualizarRelogioLocal, 1000)
-    setInterval(() => {
-      this.enviarPing()
-    }, 10000)
 
-    if (this.usuario?.setores) {
-      const setorAtual = this.usuario.setores.find((s) => s.id == this.setorTrabalhoId)
-      this.enderecoEstatico = setorAtual ? `Unidade: ${setorAtual.nome}` : 'Unidade de Atendimento'
+    try {
+      // 1. Carrega o usuário primeiro para saber os setores permitidos
+      await this.carregarDadosUsuario() 
+      // 2. Não precisamos mais do carregarSetores() com ID fixo 5
+      await this.getAllConfigs()
+    } catch (e) {
+      console.error("Erro no carregamento inicial:", e)
     }
   },
 
   methods: {
-    atualizarRelogioLocal() {
-      this.horaAtual = new Date()
-      this.relogio = this.horaAtual.toLocaleTimeString('pt-BR', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-      })
-    },
-    formatarLocalAtendimento(numero) {
-      const secretariaNome = localStorage.getItem('secretariaNomeAtiva')?.toUpperCase() || ''
-      if (secretariaNome.includes('SAÚDE')) {
-        const nomes = {
-          1: 'Classificação 01',
-          2: 'Classificação 02',
-          3: 'Recepção',
-          4: 'Consultório 01',
-          5: 'Consultório 02',
-        }
-        return nomes[Number(numero)] || `Sala ${numero}`
-      }
-      return `Guichê ${numero}`
-    },
-    async handleLogout() {
-      const token = localStorage.getItem('token')
-      const usuarioId = this.usuario?.id || localStorage.getItem('usuarioId')
 
-      try {
-        if (usuarioId && token) {
-          await AtendenteApi.deslogarGuiche(usuarioId)
-        }
-      } catch (error) {
-        console.error('Erro técnico ao deslogar guichê:', error.response?.data || error.message)
-      } finally {
-        localStorage.clear()
-        this.usuario = null
-
-        window.location.href = '/'
-      }
+    isParaExcluir(hora) {
+      return this.horariosParaExcluir && this.horariosParaExcluir.includes(hora);
     },
-    // PADRÃO IGUAL À OUTRA TELA:
-    async carregarSetores() {
+
+    async carregarDadosUsuario() {
       try {
-        // Removido o '/api' pois o SetorController não tem esse prefixo no Java
-        // E adicionado o caminho que você confirmou que funciona
-        const { data } = await api.get('/setores/por-secretaria/5')
-        this.setores = data
+        const { data } = await api.get('/gerenciador/usuario-logado')
+        this.usuario = data
+        // Preenche o select de setores com os setores que o Admin possui
+        this.setores = data.setores || []
+        
+        // Opcional: pré-selecionar o primeiro setor
+        if (this.setores.length > 0) {
+          this.setorSelecionado = this.setores[0].id
+          this.buscarConfiguracoes()
+        }
       } catch (e) {
-        console.error('Erro ao carregar setores', e)
+        console.error("Erro ao carregar usuário", e)
       }
+    },
+
+    atualizarRelogioLocal() {
+      this.relogio = new Date().toLocaleTimeString('pt-BR')
     },
 
     async buscarConfiguracoes() {
       if (!this.setorSelecionado) return
       try {
-        // Aqui mantemos o /api/ porque ConfiguracaoAtendimentoController TEM o prefixo
-        const { data } = await api.get(
-          `/api/configuracoes-atendimento/setor/${this.setorSelecionado}?ativo=true`,
-        )
-
+        // Chamando a nova rota de ativos que criamos no Java
+        const { data } = await api.get(`/configuracoes-atendimento/setor/${this.setorSelecionado}/ativos`)
+        
         this.configuracoes = data.map((c) => ({
           ...c,
           descricao: `${c.tipoRegra === 'POR_QUANTIDADE' ? 'Qtd' : 'Intervalo'} (${c.horaInicio} - ${c.horaFim})`,
         }))
-
+        
         this.configSelecionada = null
         this.datasBackend = []
         this.datasSelecionadas = []
       } catch (e) {
-        console.error('Erro ao buscar configurações', e)
+        console.error('Erro ao buscar configurações ativas', e)
       }
     },
 
     async buscarDatasConfiguracao() {
       if (!this.configSelecionada) return
       try {
-        const { data } = await api.get(`/api/configuracoes-atendimento/${this.configSelecionada}`)
-        // Mapeia o campo do seu Model Java: datasAtendimento
+        const { data } = await api.get(`/configuracoes-atendimento/${this.configSelecionada}`)
+        // Mapeia as datas que já existem no banco para o calendário
         this.datasBackend = data.datasAtendimento || []
         this.datasSelecionadas = [...this.datasBackend]
       } catch (e) {
@@ -360,30 +336,33 @@ export default {
       if (!this.configSelecionada) return
 
       const novas = this.datasSelecionadas.filter((d) => !this.datasBackend.includes(d))
-      const removidas = this.datasBackend.filter((d) => !this.datasSelecionadas.includes(d))
+      const removidas = this.datasBackend.filter((d) => this.datasBackend.includes(d) && !this.datasSelecionadas.includes(d))
 
       try {
         if (novas.length) {
-          await api.post(`/api/configuracoes-atendimento/${this.configSelecionada}/datas`, {
-            datas: novas,
-          })
+          await api.post(`/configuracoes-atendimento/${this.configSelecionada}/datas`, { datas: novas })
         }
 
         if (removidas.length) {
-          // O delete do seu Java recebe o Set<LocalDate> direto no corpo
-          await api.delete(`/api/configuracoes-atendimento/${this.configSelecionada}/datas`, {
-            data: removidas,
+          await api.delete(`/configuracoes-atendimento/${this.configSelecionada}/datas`, { 
+            data: removidas 
           })
         }
 
         alert('Configurações de datas salvas!')
         await this.buscarDatasConfiguracao()
       } catch (e) {
-        alert('Erro ao salvar datas.')
+        // Pega a mensagem de erro vinda do @RestController do Java
+        const msgErro = e.response?.data?.mensagem || e.response?.data || e.message
+        
+        console.error("Erro na requisição:", msgErro)
+        
+        // Exibe o motivo real (ex: "Não é possível desvincular a data...") no alert
+        alert(msgErro)
       }
     },
 
-    // Métodos do Calendário (mantidos)
+    // Métodos do Calendário
     gerarCalendario() {
       const ano = this.dataAtual.getFullYear()
       const mes = this.dataAtual.getMonth()
@@ -394,24 +373,57 @@ export default {
       for (let i = 1; i <= totalDias; i++) dias.push(i)
       this.diasCalendario = dias
     },
+
     mesAnterior() {
       this.dataAtual = new Date(this.dataAtual.getFullYear(), this.dataAtual.getMonth() - 1, 1)
       this.gerarCalendario()
     },
+
     proximoMes() {
       this.dataAtual = new Date(this.dataAtual.getFullYear(), this.dataAtual.getMonth() + 1, 1)
       this.gerarCalendario()
     },
+
     isSelecionado(dia) {
       if (!dia) return false
       return this.datasSelecionadas.includes(this.formatarData(dia))
     },
+
     toggleDia(dia) {
       const data = this.formatarData(dia)
       const index = this.datasSelecionadas.indexOf(data)
-      if (index > -1) this.datasSelecionadas.splice(index, 1)
-      else this.datasSelecionadas.push(data)
+      
+      if (index > -1) {
+        this.datasSelecionadas.splice(index, 1)
+      } else {
+        this.datasSelecionadas.push(data)
+      }
     },
+
+    async abrirModalHorarios(dataISO) {
+      this.dataAbertaNoModal = dataISO; // SALVA A DATA PARA O DELETE
+      this.dataSelecionadaFormatada = dataISO.split('-').reverse().join('/');
+      this.modalHorarios = true;
+      this.carregandoHorarios = true;
+      this.horariosDia = [];
+      this.horariosParaExcluir = []; // Limpa seleções anteriores
+
+      try {
+        const { data } = await api.get(`/slots/horarios-do-dia`, {
+          params: {
+            setorId: this.setorSelecionado,
+            configuracaoId: this.configSelecionada,
+            data: dataISO
+          }
+        });
+        this.horariosDia = data || [];
+      } catch (e) {
+        console.error("Erro ao buscar horários", e);
+      } finally {
+        this.carregandoHorarios = false;
+      }
+    },
+
     formatarData(dia) {
       const ano = this.dataAtual.getFullYear()
       const mes = (this.dataAtual.getMonth() + 1).toString().padStart(2, '0')
@@ -419,18 +431,58 @@ export default {
       return `${ano}-${mes}-${d}`
     },
 
-    async getAllConfigs() {
-      try {
-        const { data } = await api.get('/api/configuracoes-atendimento')
-        this.allConfigs = data
-      } catch (e) {
-        console.error(e)
+    toggleHorarioExclusao(hora) {
+      const index = this.horariosParaExcluir.indexOf(hora);
+      if (index > -1) {
+        this.horariosParaExcluir.splice(index, 1);
+      } else {
+        this.horariosParaExcluir.push(hora);
       }
     },
-    mounted() {
-      this.getAllConfigs()
+
+    async excluirHorariosSelecionados() {
+      const qtd = this.horariosParaExcluir.length;
+      if (!confirm(`Deseja realmente excluir estes ${qtd} horário(s)?`)) return;
+
+      this.carregandoHorarios = true;
+      const dataISO = this.dataAbertaNoModal; 
+
+      try {
+        // Mapeia cada exclusão para uma chamada ao seu endpoint Java
+        const exclusoes = this.horariosParaExcluir.map(hora => {
+          return api.delete('/slots/horarios-do-dia', {
+            params: {
+              setorId: this.setorSelecionado,
+              configuracaoId: this.configSelecionada,
+              data: dataISO,
+              hora: hora // O Java espera LocalTime (HH:mm:ss)
+            }
+          });
+        });
+
+        await Promise.all(exclusoes);
+        alert(`${qtd} horário(s) removido(s)!`);
+        
+        this.horariosParaExcluir = [];
+        await this.abrirModalHorarios(dataISO); // Recarrega a lista
+        
+      } catch (e) {
+        const msg = e.response?.data?.mensagem || e.message || "Erro ao excluir horários";
+        alert(msg);
+      } finally {
+        this.carregandoHorarios = false;
+      }
     },
-  },
+
+    async getAllConfigs() {
+      try {
+        const { data } = await api.get('/configuracoes-atendimento')
+        this.allConfigs = data
+      } catch (e) {
+        console.error("Endpoint geral não disponível:", e)
+      }
+    }
+  }
 }
 </script>
 

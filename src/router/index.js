@@ -60,7 +60,7 @@ const routes = [
     component: AdministradorView,
     meta: {
       requiresAuth: true,
-      requiredPerfil: 'SUPERADMIN'
+      requiredPerfil: 'ADMIN'
     }
   },
 
@@ -70,7 +70,7 @@ const routes = [
     component: ConfiguracaoView,
     meta: {
       requiresAuth: true,
-      requiredPerfil: 'SUPERADMIN'
+      requiredPerfil: 'ADMIN'
     }
   },
 
@@ -80,7 +80,7 @@ const routes = [
     component: ChamadasAdminView,
     meta: {
       requiresAuth: true,
-      requiredPerfil: 'SUPERADMIN'
+      requiredPerfil: 'ADMIN'
     }
   },
 
@@ -90,7 +90,7 @@ const routes = [
     component: ConfiguracaoDatasView,
     meta: {
       requiresAuth: true,
-      requiredPerfil: 'SUPERADMIN'
+      requiredPerfil: 'ADMIN'
     }
   },
 

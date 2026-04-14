@@ -77,99 +77,83 @@ import AdminConfig from '@/components/AdminConfig.vue'
 import 'primeicons/primeicons.css'
 
 export default {
-  components: {
-    AdminConfig,
-  },
+  components: { AdminConfig },
   data: () => ({
     usuario: null,
-    fila: [],
     agendamentosPorSec: [],
-    abaAtiva: 'AGUARDANDO',
     relogio: '--:--:--',
-    filtroTexto: '',
   }),
+
+  computed: {
+    totalHoje() {
+      return this.agendamentosPorSec.length
+    },
+    totalNaFila() {
+      // Filtra quem ainda não foi atendido ou cancelado
+      return this.agendamentosPorSec.filter(a => ['AGUARDANDO', 'CHAMADO'].includes(a.situacao)).length
+    },
+    agendamentosFinalizados() {
+      return this.agendamentosPorSec.filter(a => a.situacao === 'ATENDIDO').length
+    },
+    totalNormal() {
+      return this.agendamentosPorSec.filter(a => a.tipoAtendimento === 'NORMAL' && a.situacao === 'AGUARDANDO').length
+    },
+    totalPrioridade() {
+      return this.agendamentosPorSec.filter(a => a.tipoAtendimento !== 'NORMAL' && a.situacao === 'AGUARDANDO').length
+    },
+  },
+
   methods: {
-    async buscarAgendamentos() {
-      try {
-        const resposta = await api.get('/agendamentos/secretaria/1')
-        console.log('Dados recebidos no painel:', resposta.data)
-        if (Array.isArray(resposta.data)) {
-          this.agendamentosPorSec = resposta.data
-        }
-      } catch (e) {
-        console.error(e)
-      }
-    },
-
-    async handleChamarNormal() {
-      const secretariaId = this.usuario?.secretaria?.id
-      const gerenciadorId = this.usuario?.id
-
-      if (!secretariaId || !gerenciadorId) {
-        alert('Dados do usuário ou secretaria incompletos.')
-        return
-      }
-
-      try {
-        await api.post(`/agendamentos/chamar/normal/${secretariaId}/${gerenciadorId}`)
-      } catch (e) {
-        console.error(e)
-      } finally {
-        this.buscarAgendamentos()
-      }
-    },
-
-    async handleChamarPrioridade(secretariaId) {
-      try {
-        if (!secretariaId) alert('Algum problema com gerenciador ou secretaria')
-        await api.post(`/agendamentos/chamar/prioridade/${secretariaId}/${this.usuario.id}`)
-      } catch (e) {
-        console.error(e)
-      } finally {
-        this.buscarAgendamentos()
-      }
-    },
-
     async getUsuarioLogado() {
       try {
-        const usuario_logado = JSON.parse(localStorage.getItem('usuario'))
-        const resposta = await api.get('/gerenciador/usuario-logado', {
-          headers: { Authorization: `Bearer ${usuario_logado.token}` },
-        })
-        this.usuario = resposta.data
+        const res = await api.get('/gerenciador/usuario-logado')
+        this.usuario = res.data
+        
+        // Se for admin e tiver vários setores, buscamos todos
+        if (this.usuario?.setores?.length > 0) {
+          this.carregarDadosDeTodosOsSetores(this.usuario.setores)
+        }
       } catch (error) {
         console.error('Erro ao buscar usuário logado', error)
       }
     },
 
+    async carregarDadosDeTodosOsSetores(setores) {
+      try {
+        // Cria uma lista de promessas (uma busca para cada setor)
+        const buscas = setores.map(s => api.get(`/agendamentos/setor/${s.id}`))
+        
+        // Aguarda todas as respostas
+        const resultados = await Promise.all(buscas)
+        
+        // Junta todos os arrays de agendamentos em um só
+        const todosAgendamentos = resultados.reduce((acc, res) => {
+          return acc.concat(Array.isArray(res.data) ? res.data : [])
+        }, [])
+
+        this.agendamentosPorSec = todosAgendamentos
+        console.log('Total consolidado de agendamentos:', this.agendamentosPorSec.length)
+      } catch (e) {
+        console.error("Erro ao consolidar dados dos setores:", e)
+      }
+    },
+
     atualizarRelogioLocal() {
-      const agora = new Date()
-      this.relogio = agora.toLocaleTimeString('pt-BR', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-      })
-    },
-  },
-
-  computed: {
-    agendamentosFinalizados() {
-      return this.agendamentosPorSec.filter((a) => a.situacao === 'ATENDIDO').length
-    },
-
-    totalNormal() {
-      return this.agendamentosPorSec.filter((a) => a.tipoAtendimento === 'NORMAL').length
-    },
-    totalPrioridade() {
-      return this.agendamentosPorSec.filter((a) => a.tipoAtendimento !== 'NORMAL').length
+      this.relogio = new Date().toLocaleTimeString('pt-BR')
     },
   },
 
   mounted() {
-    this.buscarAgendamentos()
     this.getUsuarioLogado()
     this.atualizarRelogioLocal()
-    setInterval(() => this.atualizarRelogioLocal(), 1000)
+    setInterval(this.atualizarRelogioLocal, 1000)
+    
+    // Polling opcional para atualizar os cards automaticamente
+    setInterval(() => {
+      if (this.usuario?.secretaria?.id) {
+        this.buscarAgendamentos(this.usuario.secretaria.id)
+      }
+    }, 5000)
   },
 }
 </script>

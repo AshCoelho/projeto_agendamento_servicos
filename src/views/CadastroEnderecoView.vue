@@ -261,8 +261,7 @@
 <script>
 import AdminConfig from '@/components/AdminConfig.vue'
 import 'primeicons/primeicons.css'
-import axios from 'axios'
-import { computed } from 'vue'
+import api from '@/services/api' // Importando sua instância configurada
 
 export default {
   components: { AdminConfig },
@@ -272,7 +271,7 @@ export default {
       showModal: false,
       lista: [],
       relogio: '--:--:--',
-      horaAtual: new Date(),
+      timer: null,
       usuario: null,
       setorTrabalhoId: null,
       secretariaTrabalhoId: null,
@@ -292,141 +291,135 @@ export default {
     }
   },
 
-  mounted() {
+  computed: {
+    labelLocalTrabalho() {
+      const secretariaNome = localStorage.getItem('secretariaNomeAtiva')?.toUpperCase() || ''
+      const perfil = this.usuario?.perfil?.toUpperCase()
+
+      if (secretariaNome.includes('SAÚDE') || secretariaNome.includes('SAUDE')) {
+        return 'Local de Atendimento'
+      }
+
+      if (perfil === 'MEDICO') return 'Consultório'
+      if (perfil === 'TRIAGEM') return 'Sala'
+      return 'Guichê'
+    },
+  },
+
+  async mounted() {
+    // Chamada inicial organizada
+    await this.getUsuarioLogado()
     this.carregarEnderecos()
+    
+    // Inicia o relógio
+    this.atualizarRelogioLocal()
+    this.timer = setInterval(this.atualizarRelogioLocal, 1000)
+  },
+
+  beforeUnmount() {
+    if (this.timer) clearInterval(this.timer)
   },
 
   methods: {
     async carregarEnderecos() {
       try {
-        const res = await axios.get('http://localhost:8080/enderecos/listar-todos')
+        const res = await api.get('/enderecos/listar-todos')
         this.lista = res.data
       } catch (err) {
-        console.error('Erro ao carregar endereços', err)
+        console.error('Erro ao carregar endereços:', err)
       }
     },
+
     atualizarRelogioLocal() {
-      this.horaAtual = new Date()
-      this.relogio = this.horaAtual.toLocaleTimeString('pt-BR', {
+      this.relogio = new Date().toLocaleTimeString('pt-BR', {
         hour: '2-digit',
         minute: '2-digit',
         second: '2-digit',
       })
     },
 
-    formatarDataHora(data) {
-      if (!data) return ''
-      return new Date(data).toLocaleString('pt-BR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      })
-    },
     async getUsuarioLogado() {
       try {
-        const token = localStorage.getItem('token')
+        // Se sua 'api' já tiver interceptors, não precisa pegar o token manualmente aqui
+        const { data } = await api.get('/gerenciador/usuario-logado')
+        this.usuario = data
+        
         this.setorTrabalhoId = localStorage.getItem('setorTrabalhoId')
         this.secretariaTrabalhoId = localStorage.getItem('secretariaTrabalhoId')
 
-        if (!token || !this.setorTrabalhoId) return this.$router.push({ name: 'login' })
-
-        const { data } = await AtendenteApi.getUsuarioLogado()
-        this.usuario = data
-
-        if (data.id) {
-          localStorage.setItem('usuarioId', data.id)
-        }
+        if (data.id) localStorage.setItem('usuarioId', data.id)
       } catch (error) {
-        localStorage.clear()
-        this.$router.push({ name: 'login' })
+        console.error('Erro ao identificar usuário:', error)
+        // Opcional: redirecionar para login se falhar
+        // this.$router.push({ name: 'login' })
       }
-    },
-
-    computed: {
-      labelLocalTrabalho() {
-        const secretariaNome = localStorage.getItem('secretariaNomeAtiva')?.toUpperCase() || ''
-        const perfil = this.usuario?.perfil?.toUpperCase()
-
-        // Se for saúde, usamos um termo mais genérico para o cabeçalho
-        if (secretariaNome.includes('SAÚDE') || secretariaNome.includes('SAUDE')) {
-          return 'Local de Atendimento'
-        }
-
-        if (perfil === 'MEDICO') return 'Consultório'
-        if (perfil === 'TRIAGEM') return 'Sala'
-        return 'Guichê'
-      },
     },
 
     openModal(item = null) {
       if (item) {
-        this.form.id = item.id
-        this.form.logradouro = item.logradouro || ''
-        this.form.numero = item.numero || ''
-        this.form.cep = item.cep || ''
-        this.form.bairro = item.bairro || ''
-        this.form.cidade = item.cidade || ''
-        this.form.uf = item.uf || ''
-        this.form.complemento = item.complemento || ''
-        this.form.complemento = item.latidute || ''
-        this.form.complemento = item.longitude || ''
+        // Spread para evitar que a edição no modal altere a linha da tabela antes de salvar
+        this.form = { 
+          ...item,
+          latitude: item.latitude || '', 
+          longitude: item.longitude || '' 
+        }
       } else {
-        this.form.id = null
-        this.form.logradouro = ''
-        this.form.numero = ''
-        this.form.cep = ''
-        this.form.bairro = ''
-        this.form.cidade = ''
-        this.form.uf = ''
-        this.form.complemento = ''
-        this.form.latidude = ''
-        this.form.longitude = ''
+        this.resetForm()
       }
-
       this.showModal = true
+    },
+
+    resetForm() {
+      this.form = {
+        id: null,
+        logradouro: '',
+        numero: '',
+        cep: '',
+        bairro: '',
+        cidade: '',
+        uf: '',
+        complemento: '',
+        latitude: '',
+        longitude: '',
+      }
     },
 
     async save() {
       try {
-        const payload = {
-          logradouro: this.form.logradouro,
-          numero: this.form.numero,
-          bairro: this.form.bairro,
-          cidade: this.form.cidade,
-          uf: this.form.uf,
-          cep: this.form.cep,
-          complemento: this.form.complemento,
-          latidude: this.form.latidude,
-          longitude: this.form.longitude,
-        }
+        const payload = { ...this.form }
+        const id = payload.id
+        delete payload.id // O ID geralmente vai na URL, não no body
 
-        if (this.form.id) {
-          await axios.put(`http://localhost:8080/enderecos/${this.form.id}`, payload)
+        if (id) {
+          await api.put(`/enderecos/${id}`, payload)
         } else {
-          await axios.post('http://localhost:8080/enderecos', payload)
+          await api.post('/enderecos', payload)
         }
 
         this.showModal = false
-        await this.carregarEnderecos()
+        this.carregarEnderecos()
       } catch (err) {
-        console.error('Erro ao salvar endereço', err)
+        console.error('Erro ao salvar endereço:', err)
+        alert('Erro ao salvar dados.')
       }
     },
 
     async excluir(id) {
-      if (!confirm('Deseja excluir este endereço?')) return
+      if (!confirm('Deseja realmente excluir este endereço?')) return
 
       try {
-        await axios.delete(`http://localhost:8080/enderecos/${id}`)
-
+        await api.delete(`/enderecos/${id}`)
         this.carregarEnderecos()
       } catch (err) {
-        console.error('Erro ao excluir', err)
+        console.error('Erro ao excluir:', err)
       }
     },
-  },
+
+    formatarDataHora(data) {
+      if (!data) return ''
+      return new Date(data).toLocaleString('pt-BR')
+    }
+  }
 }
 </script>
 
