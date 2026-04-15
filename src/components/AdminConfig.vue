@@ -66,6 +66,17 @@
         >
       </router-link>
 
+      <router-link
+        v-if="perfilUsuario === 'ADMIN'"
+        to="/administrador/relatorios"
+        class="flex items-center gap-3 px-4 py-3 rounded-[13px] transition-all text-gray-500 hover:bg-gray-50"
+        :class="[!sidebarAberta ? 'justify-center px-0' : '']"
+        active-class="bg-[#2563eb] text-white shadow-xl shadow-blue-100"
+      >
+        <i class="pi pi-file"></i>
+        <span v-if="sidebarAberta" class="text-sm font-bold whitespace-nowrap">Relatórios</span>
+      </router-link>
+
       <div
         @click="sidebarAberta ? (abrirCadastros = !abrirCadastros) : (sidebarAberta = true)"
         class="flex items-center px-4 py-3 rounded-[13px] cursor-pointer transition-all hover:bg-gray-50 text-gray-600"
@@ -248,6 +259,11 @@ export default {
   },
 
   computed: {
+    perfilUsuario() {
+      const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
+      return (usuario.perfil || '').toUpperCase()
+    },
+
     agendamentosFinalizados() {
       return this.agendamentosPorSec.filter((a) => a.situacao === 'ATENDIDO').length
     },

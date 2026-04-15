@@ -141,7 +141,7 @@ export default {
         this.config.pausaInicio = null
         this.config.pausaFim = null
       }
-    }
+    },
   },
   methods: {
     async fetchSetores() {
@@ -159,7 +159,7 @@ export default {
       this.loading = true
       try {
         const payload = { ...this.config }
-        
+
         // Ajuste de regra
         if (payload.tipoRegra === 'POR_INTERVALO') payload.quantidadeAtendimentos = null
         else payload.intervaloMinutos = null

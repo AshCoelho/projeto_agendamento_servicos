@@ -1,11 +1,8 @@
 <template>
   <main class="w-full max-w-4xl bg-white rounded-2xl shadow-xl border border-slate-100 p-4 md:p-8">
-    
     <v-form ref="meuFormulario" class="space-y-6">
-      
       <!--/ SETOR / SERVIÇO -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
         <div>
           <label class="label">Serviço Desejado</label>
           <v-autocomplete
@@ -20,9 +17,11 @@
             rounded="lg"
             clearable
             hide-no-data
+            :rules="[regras.obrigatorio]"
+            required
           />
         </div>
-        
+
         <div>
           <label class="label">Setor</label>
           <v-select
@@ -36,9 +35,10 @@
             variant="outlined"
             rounded="lg"
             @update:model-value="aoSelecionarSetor"
+            :rules="[regras.obrigatorio]"
+            required
           />
         </div>
-
       </div>
 
       <!-- ENDEREÇO -->
@@ -69,6 +69,7 @@
             <div class="calendar-wrapper">
               <v-date-picker
                 v-model="form.data"
+                :key="rawDias.length + (form.setorId || 0)"
                 :allowed-dates="bloquearDatas"
                 :day-class="classeDia"
                 color="primary"
@@ -77,6 +78,9 @@
                 hide-header
                 @update:model-value="buscarHorarios"
               />
+              <p v-if="!form.data && tentouEnviar" class="text-red-500 text-xs mt-1">
+                Selecione uma data
+              </p>
             </div>
           </div>
         </div>
@@ -85,7 +89,9 @@
       <!-- HORÁRIOS -->
       <div class="lg:col-span-5">
         <label class="label mb-4 block">Horários Disponíveis</label>
-
+        <p v-if="!form.hora && tentouEnviar" class="text-red-500 text-xs mt-1">
+          Selecione um horário
+        </p>
         <div
           v-if="form.data && slots.length > 0"
           class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3"
@@ -112,32 +118,29 @@
 
         <div v-else class="empty-state">
           <i class="pi pi-calendar text-2xl mb-2"></i>
-          <p class="text-xs font-medium text-center px-4">
-            Selecione uma data no calendário
-          </p>
+          <p class="text-xs font-medium text-center px-4">Selecione uma data no calendário</p>
 
-          <div class="flex gap-4 text-xs mt-3">
+          <!-- <div class="flex gap-4 justify-center text-xs mt-3">
             <div class="flex items-center gap-1">
-              <div class="w-3 h-3 bg-green-200 rounded"></div>
+              <div class="w-3 h-3 bg-[#dcfce7] border border-green-300 rounded"></div>
               Muitas vagas
             </div>
 
             <div class="flex items-center gap-1">
-              <div class="w-3 h-3 bg-yellow-200 rounded"></div>
+              <div class="w-3 h-3 bg-[#fef9c3] border border-yellow-300 rounded"></div>
               Poucas vagas
             </div>
 
             <div class="flex items-center gap-1">
-              <div class="w-3 h-3 bg-red-200 rounded"></div>
+              <div class="w-3 h-3 bg-[#fee2e2] border border-red-300 rounded"></div>
               Sem vagas
             </div>
-          </div>
+          </div> -->
         </div>
       </div>
 
       <!-- DADOS PESSOAIS -->
       <div v-if="form.hora" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6 pt-6 border-t">
-        
         <div class="sm:col-span-2">
           <label class="label">Nome Completo</label>
           <v-text-field
@@ -213,7 +216,7 @@
       <v-btn
         color="primary"
         :loading="loading"
-        :disabled="!form.hora"
+        :disabled="!form.servicoId || !form.setorId || !form.data || !form.hora"
         @click="agendar"
         class="w-full mt-8"
         height="56"
@@ -221,7 +224,6 @@
       >
         Finalizar Agendamento
       </v-btn>
-
     </v-form>
 
     <!-- SNACKBAR -->
@@ -241,7 +243,6 @@
         <v-btn variant="text" @click="snackbar.show = false">Fechar</v-btn>
       </template>
     </v-snackbar>
-
   </main>
 </template>
 
@@ -251,19 +252,20 @@ import 'primeicons/primeicons.css'
 import api from '@/services/api'
 import { watch } from 'vue'
 import { nextTick } from 'vue'
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import logoPrefeitura from '@/assets/brasao.png'
 
 const loading = ref(false)
-const API_BASE = 'http://192.168.200.57:8080/api'
+const tentouEnviar = ref(false)
+const API_BASE = 'http://192.168.20.57:8080/api'
 const disponibilidadeDias = ref(new Set())
 const meuFormulario = ref(null)
 const menuServico = ref(false)
 const rawDias = ref([])
 
 const regras = {
- obrigatorio: (v) => (v && v.trim().length > 0) || 'Campo obrigatório',
+  obrigatorio: (v) => (v && v.trim().length > 0) || 'Campo obrigatório',
   email: (v) => {
     const pattern =
       /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
@@ -292,84 +294,134 @@ const regras = {
   },
 }
 
-const obterNomeServico = () => servicos.value.find(s => s.id === form.value.servicoId)?.nome || 'Não informado';
-const obterNomeSetor = () => setores.value.find(s => s.id === form.value.setorId)?.nome || 'Não informado';
+const obterNomeServico = () =>
+  servicos.value.find((s) => s.id === form.value.servicoId)?.nome || 'Não informado'
+const obterNomeSetor = () =>
+  setores.value.find((s) => s.id === form.value.setorId)?.nome || 'Não informado'
 
 const gerarPDF = (dadosAgendamento) => {
-  const doc = new jsPDF();
+  const doc = new jsPDF()
+  const margin = 14
 
-  // 1. Adiciona a Logo (O Vite resolve o caminho automaticamente)
-  // imagem, formato, x, y, largura, altura
-  doc.addImage(logoPrefeitura, 'PNG', 14, 10, 25, 25);
+  // 1. Cabeçalho com Logo
+  doc.addImage(logoPrefeitura, 'PNG', margin, 10, 14, 23)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(14)
+  doc.text('PREFEITURA MUNICIPAL DE SÃO LUÍS', 30, 18)
+  doc.setFontSize(10)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(100)
+  doc.text('Comprovante de Agendamento Eletrônico', 30, 24)
 
-  // 2. Cabeçalho (ao lado da logo)
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
-  doc.text("PREFEITURA MUNICIPAL", 45, 20);
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  doc.text("Comprovante de Agendamento Eletrônico", 45, 26);
-  
-  doc.setDrawColor(200);
-  doc.line(14, 38, 196, 38); // Linha divisória
+  // Linha divisória elegante
+  doc.setDrawColor(220)
+  doc.line(margin, 35, 196, 35)
 
-  // 3. Bloco de Dados
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
-  doc.text("DADOS DO AGENDAMENTO", 14, 50);
+  // 2. DESTAQUE DA SENHA (O mais importante)
+  doc.setFillColor(245, 245, 245) // Fundo cinza bem clarinho
+  doc.rect(margin, 40, 182, 20, 'F')
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(10)
+  doc.setTextColor(50)
+  doc.text('PROTOCOLO / SENHA', margin + 5, 48)
+  doc.setFontSize(18)
+  doc.setTextColor(0, 51, 102) // Azul escuro
+  doc.text(dadosAgendamento.senha || 'N001', margin + 5, 56)
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
-  
-  // Montamos o corpo do texto
-  const yInicial = 60;
-  const espacamento = 8;
-  
-  const informacoes = [
-    `PROTOCOLO/SENHA: ${dadosAgendamento.senha || '---'}`,
-    `SERVIÇO: ${obterNomeServico()}`,
-    `SETOR: ${obterNomeSetor()}`,
-    `DATA: ${form.value.data ? new Date(form.value.data).toLocaleDateString('pt-BR') : ''}`,
-    `HORÁRIO: ${form.value.hora}`,
-    `------------------------------------------------------------`,
-    `NOME: ${form.value.nome.toUpperCase()}`,
-    `CPF: ${form.value.cpf}`,
-    `CELULAR: ${form.value.celular}`,
-    `E-MAIL: ${form.value.email}`
-  ];
+  // 3. INFORMAÇÕES DO AGENDAMENTO
+  let y = 75
+  doc.setFontSize(11)
+  doc.setTextColor(0)
 
-  informacoes.forEach((linha, index) => {
-    doc.text(linha, 14, yInicial + (index * espacamento));
-  });
+  // Coluna 1: O Que e Onde
+  doc.setFont('helvetica', 'bold')
+  doc.text('SERVIÇO:', margin, y)
+  doc.setFont('helvetica', 'normal')
+  doc.text(obterNomeServico(), margin + 25, y)
 
-  // 4. Rodapé simples
-  const yRodape = yInicial + (informacoes.length * espacamento) + 10;
-  doc.setFontSize(9);
-  doc.setTextColor(100);
-  doc.text("Apresente este comprovante impresso ou no celular ao chegar no local.", 14, yRodape);
-  doc.text(`Emitido em: ${new Date().toLocaleString('pt-BR')}`, 14, yRodape + 5);
+  y += 8
+  doc.setFont('helvetica', 'bold')
+  doc.text('SETOR:', margin, y)
+  doc.setFont('helvetica', 'normal')
+  doc.text(obterNomeSetor(), margin + 25, y)
 
-  // 5. Baixar
-  doc.save(`Agendamento_${form.value.cpf.replace(/\D/g, '')}.pdf`);
-};
+  y += 8
+  // coluna dupla para Data e Hora
+  doc.setFont('helvetica', 'bold')
+  doc.text('DATA:', margin, y)
+  doc.setFont('helvetica', 'normal')
+  doc.text(
+    form.value.data ? new Date(form.value.data).toLocaleDateString('pt-BR') : '',
+    margin + 25,
+    y,
+  )
+
+  doc.setFont('helvetica', 'bold')
+  doc.text('HORÁRIO:', margin + 80, y)
+  doc.setFont('helvetica', 'normal')
+  doc.text(form.value.hora, margin + 105, y)
+
+  // Divisória sutil
+  y += 12
+  doc.setDrawColor(240)
+  doc.line(margin, y, 196, y)
+
+  // 4. DADOS DO REQUERENTE
+  y += 12
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(10)
+  doc.text('DADOS DO REQUERENTE', margin, y)
+
+  y += 10
+  doc.setFontSize(11)
+  doc.setFont('helvetica', 'normal')
+  doc.text(`NOME: ${form.value.nome.toUpperCase()}`, margin, y)
+  y += 8
+  doc.text(`CPF: ${form.value.cpf}`, margin, y)
+  y += 8
+  doc.text(`CONTATO: ${form.value.celular} | ${form.value.email}`, margin, y)
+
+  y += 12
+  doc.setDrawColor(240)
+  doc.line(margin, y, 196, y)
+
+  // AVISO!
+  y += 6
+  doc.setFontSize(8)
+  doc.setTextColor(150)
+  doc.text(
+    'Importante: Apresente este comprovante impresso ou no celular ao chegar no local.',
+    14,
+    y,
+  )
+
+  // 5. RODAPÉ
+  doc.setFontSize(8)
+  doc.setTextColor(150)
+  const rodapeY = 280
+  doc.text('Este documento é um comprovante oficial de agendamento.', margin, rodapeY)
+  doc.text(`Emitido em: ${new Date().toLocaleString('pt-BR')}`, 196, rodapeY, { align: 'right' })
+
+  doc.save(`Agendamento_${form.value.cpf.replace(/\D/g, '')}.pdf`)
+}
 
 function validarCPF(cpf) {
-  cpf = cpf.replace(/[^\d]+/g, '');
-  if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
+  cpf = cpf.replace(/[^\d]+/g, '')
+  if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false
 
-  let soma = 0;
-  for (let i = 0; i < 9; i++) soma += parseInt(cpf.charAt(i)) * (10 - i);
-  let resto = (soma * 10) % 11;
-  if (resto === 10 || resto === 11) resto = 0;
-  if (resto !== parseInt(cpf.charAt(9))) return false;
+  let soma = 0
+  for (let i = 0; i < 9; i++) soma += parseInt(cpf.charAt(i)) * (10 - i)
+  let resto = (soma * 10) % 11
+  if (resto === 10 || resto === 11) resto = 0
+  if (resto !== parseInt(cpf.charAt(9))) return false
 
-  soma = 0;
-  for (let i = 0; i < 10; i++) soma += parseInt(cpf.charAt(i)) * (11 - i);
-  resto = (soma * 10) % 11;
-  if (resto === 10 || resto === 11) resto = 0;
-  if (resto !== parseInt(cpf.charAt(10))) return false;
+  soma = 0
+  for (let i = 0; i < 10; i++) soma += parseInt(cpf.charAt(i)) * (11 - i)
+  resto = (soma * 10) % 11
+  if (resto === 10 || resto === 11) resto = 0
+  if (resto !== parseInt(cpf.charAt(10))) return false
 
-  return true;
+  return true
 }
 
 const form = ref({
@@ -414,7 +466,7 @@ function formatarCelular() {
 
 function mostrarMensagem(texto, tipo = 'success') {
   snackbar.value.text = texto
-  snackbar.value.color = tipo === 'success' ? 'green-darken-2' : 'red-darken-2'
+  snackbar.value.color = tipo === 'success' ? 'success' : 'error'
   snackbar.value.icon = tipo === 'success' ? 'pi pi-check-circle' : 'pi pi-exclamation-triangle'
   snackbar.value.show = true
 }
@@ -424,7 +476,7 @@ const servicos = ref([])
 const slots = ref([])
 const configuracao = ref({})
 
-// 🟢 Função para gerar o link do Google Maps
+//  Função para gerar o link do Google Maps
 function gerarLinkMapa(endereco) {
   if (!endereco) return '#'
 
@@ -455,36 +507,44 @@ function bloquearDatas(date) {
 }
 
 function classeDia(date) {
-  const iso = new Date(date).toISOString().split('T')[0]
+  if (!rawDias.value || rawDias.value.length === 0) return ''
 
-  const item = rawDias.value.find(d => d.data === iso)
+  // Converte o parâmetro 'date' (que pode ser Date, String ou Number) para um Date objeto
+  const d = new Date(date)
+
+  // Formata para YYYY-MM-DD (ex: 2026-04-20) de forma segura
+  const ano = d.getFullYear()
+  const mes = String(d.getMonth() + 1).padStart(2, '0')
+  const dia = String(d.getDate()).padStart(2, '0')
+  const iso = `${ano}-${mes}-${dia}`
+
+  // Procura o item no seu array (conforme o print do seu Preview)
+  const item = rawDias.value.find((x) => x.data === iso)
 
   if (!item) return ''
 
+  // Defina seus critérios de vagas aqui
   if (item.vagas === 0) return 'dia-sem-vaga'
-  if (item.vagas <= 10) return 'dia-pouca-vaga'
+  if (item.vagas > 0 && item.vagas <= 10) return 'dia-pouca-vaga'
+  if (item.vagas > 10) return 'dia-muita-vaga'
 
-  return 'dia-muita-vaga'
+  return ''
 }
 
 async function buscarDiasDisponiveis() {
   if (!form.value.setorId) return
-
   try {
     const res = await fetch(
       `${API_BASE}/slots/datas-disponiveis?setorId=${form.value.setorId}&configuracaoId=${configuracao.value[0].id}`,
     )
-
     const data = await res.json()
 
-    console.log('DATAS', data)
-
+    // Força a reatividade do Vue
+    rawDias.value = []
+    await nextTick()
     rawDias.value = Array.isArray(data) ? data : []
 
-    disponibilidadeDias.value = new Set(
-      rawDias.value.map(d => d.data)
-    )
-
+    disponibilidadeDias.value = new Set(rawDias.value.map((d) => d.data))
   } catch (err) {
     console.error(err)
   }
@@ -526,9 +586,7 @@ async function buscarSetoresPorServico() {
   if (!form.value.servicoId) return
 
   try {
-    const res = await fetch(
-      `${API_BASE}/setores/por-servico/${form.value.servicoId}`
-    )
+    const res = await fetch(`${API_BASE}/setores/por-servico/${form.value.servicoId}`)
 
     setores.value = await res.json()
 
@@ -561,30 +619,30 @@ async function aoSelecionarSetor() {
   }
 }
 
-watch(() => form.value.servicoId, async (novoValor) => {
-  if (!novoValor) {
-    setores.value = []
-    return
-  }
+watch(
+  () => form.value.servicoId,
+  async (novoValor) => {
+    if (!novoValor) {
+      setores.value = []
+      return
+    }
 
-  try {
-    const res = await fetch(
-      `${API_BASE}/setores/por-servico/${novoValor}`
-    )
+    try {
+      const res = await fetch(`${API_BASE}/setores/por-servico/${novoValor}`)
 
-    setores.value = await res.json()
+      setores.value = await res.json()
 
-    form.value.setorId = null
-    limparHorarios()
+      form.value.setorId = null
+      limparHorarios()
 
-    // ✅ FECHA CORRETAMENTE
-    await nextTick()
-    menuServico.value = false
-
-  } catch (err) {
-    console.error(err)
-  }
-})
+      //  FECHA CORRETAMENTE
+      await nextTick()
+      menuServico.value = false
+    } catch (err) {
+      console.error(err)
+    }
+  },
+)
 
 function resetarFormulario() {
   form.value = {
@@ -647,17 +705,26 @@ function limparHorarios() {
 }
 
 async function agendar() {
+  tentouEnviar.value = true
+
   if (meuFormulario.value) {
     const { valid } = await meuFormulario.value.validate()
-    if (!valid) {
-      mostrarMensagem('Por favor, verifique os campos em vermelho.', 'error')
+
+    // Validação extra manual para campos que não são v-input (data e hora)
+    const dataHoraValida = !!form.value.data && !!form.value.hora
+
+    if (!valid || !dataHoraValida) {
+      mostrarMensagem(
+        'Por favor, preencha todos os campos obrigatórios, incluindo data e hora.',
+        'error',
+      )
       return
     }
   }
 
   loading.value = true
   try {
-    // 🟢 Criamos uma cópia dos dados para não estragar a formatação da tela do usuário
+    //  Criamos uma cópia dos dados para não estragar a formatação da tela do usuário
     const payload = {
       ...form.value,
       // Removemos pontos, traços e parênteses para enviar apenas os 11 números
@@ -668,7 +735,7 @@ async function agendar() {
     const response = await fetch(`${API_BASE}/agendamentos/externo`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload), // 🟢 Enviamos o payload limpo
+      body: JSON.stringify(payload), //  Enviamos o payload limpo
     })
 
     if (!response.ok) throw new Error(await response.text())
@@ -686,9 +753,8 @@ async function agendar() {
     setTimeout(() => {
       resetarFormulario()
       // window.location.reload(true) força o recarregamento limpando o estado atual
-      window.location.reload() 
+      window.location.reload()
     }, 3000) // 3 segundos de delay
-
   } catch (err) {
     mostrarMensagem('Erro: ' + err.message, 'error')
   } finally {
@@ -698,3 +764,30 @@ async function agendar() {
 
 onMounted(carregarServicos)
 </script>
+
+<style scoped>
+/* Estiliza o botão interno do dia no calendário */
+:deep(.dia-muita-vaga .v-btn) {
+  background-color: #dcfce7 !important; /* Verde claro */
+  color: #166534 !important;
+  opacity: 1 !important;
+}
+
+:deep(.dia-pouca-vaga .v-btn) {
+  background-color: #fef9c3 !important; /* Amarelo claro */
+  color: #854d0e !important;
+  opacity: 1 !important;
+}
+
+:deep(.dia-sem-vaga .v-btn) {
+  background-color: #fee2e2 !important; /* Vermelho claro */
+  color: #991b1b !important;
+  opacity: 1 !important;
+}
+
+/* Mantém o destaque azul quando o usuário CLICAR em um dia */
+:deep(.v-date-picker-month__day--selected .v-btn) {
+  background-color: #1867c0 !important;
+  color: white !important;
+}
+</style>

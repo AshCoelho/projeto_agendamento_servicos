@@ -186,6 +186,8 @@ export default {
       this.carregando = true
       try {
         const { data } = await api.post('/auth/login', this.login)
+        console.log(' Resposta completa do backend:', data)
+        console.log(' Perfil recebido:', data.perfil)
 
         if (!data?.token) {
           throw new Error('Token não retornado no login')
@@ -199,11 +201,11 @@ export default {
 
         switch (perfil) {
           case 'ADMIN':
+          case 'SUPERADMIN':
             this.$router.push('/administrador')
             break
           case 'ATENDENTE':
           case 'CADASTRO':
-          case 'SUPERADMIN':
             this.$router.push('/guiche')
             break
           case 'MEDICO':

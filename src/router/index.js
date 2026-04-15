@@ -10,7 +10,7 @@ import ModalGuiche from '@/views/ModalGuiche.vue'
 import AgendamentoExternoView from '@/views/AgendamentoExternoView.vue'
 import ConfiguracaoDatasView from '@/views/ConfiguracaoDatasView.vue'
 import MetricasView from '@/views/MetricasView.vue'
-import ChamadasAdminView from '@/views/ChamadasAdminView.vue'
+import RelatoriosView from '@/views/RelatoriosView.vue'
 
 const routes = [
   // 🔓 Rotas públicas
@@ -65,6 +65,16 @@ const routes = [
   },
 
   {
+    path: '/administrador/relatorios',
+    name: 'relatorios',
+    component: RelatoriosView,
+    meta: {
+      requiresAuth: true,
+      requiredPerfil: 'ADMIN'
+    }
+  },
+
+  {
     path: '/administrador/configuracao',
     name: 'admin-config',
     component: ConfiguracaoView,
@@ -74,15 +84,6 @@ const routes = [
     }
   },
 
-  {
-    path: '/administrador/chamadas',
-    name: 'admin-chamadas',
-    component: ChamadasAdminView,
-    meta: {
-      requiresAuth: true,
-      requiredPerfil: 'ADMIN'
-    }
-  },
 
   {
     path: '/administrador/configuracao-datas',

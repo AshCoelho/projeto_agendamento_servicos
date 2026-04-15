@@ -21,34 +21,6 @@
       </p>
     </header>
 
-    <div class="flex items-center justify-center gap-4 md:gap-8 mb-8 flex-wrap">
-      <div
-        class="flex flex-col items-center space-y-1"
-        :class="etapa === 1 ? 'text-blue-600' : 'text-slate-300'"
-      >
-        <div
-          class="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 flex items-center justify-center text-lg transition-colors"
-          :class="etapa === 1 ? 'bg-blue-600 border-blue-600 text-white' : 'border-current'"
-        >
-          <i class="pi pi-briefcase"></i>
-        </div>
-        <span class="text-[10px] md:text-xs font-bold tracking-wider uppercase">Serviço</span>
-      </div>
-      <div class="w-10 md:w-20 h-[2px] bg-slate-200"></div>
-      <div
-        class="flex flex-col items-center space-y-1"
-        :class="etapa === 2 ? 'text-blue-600' : 'text-slate-300'"
-      >
-        <div
-          class="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 flex items-center justify-center text-lg transition-colors"
-          :class="etapa === 2 ? 'bg-blue-600 border-blue-600 text-white' : 'border-current'"
-        >
-          <i class="pi pi-user"></i>
-        </div>
-        <span class="text-[10px] md:text-xs font-bold tracking-wider uppercase">Dados</span>
-      </div>
-    </div>
-
     <AgendamentoExt></AgendamentoExt>
 
     <footer class="text-center mt-8 text-slate-500 text-xs">
@@ -65,7 +37,6 @@ import { ref, onMounted } from 'vue'
 import 'primeicons/primeicons.css'
 import AgendamentoExt from '@/components/AgendamentoExt.vue'
 
-const etapa = ref(1)
 const API_BASE = 'http://192.168.200.57:8080/api'
 
 const secretarias = ref([])
