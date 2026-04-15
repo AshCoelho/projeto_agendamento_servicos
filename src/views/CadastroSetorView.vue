@@ -129,7 +129,7 @@
                 />
               </div>
 
-              <!-- ✅ Select de Secretaria com v-model e options -->
+              <!--Select de Secretaria com v-model e options -->
               <div>
                 <label
                   class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"
@@ -190,19 +190,16 @@
 <script>
 import AdminConfig from '@/components/AdminConfig.vue'
 import 'primeicons/primeicons.css'
-import axios from 'axios'
-
-const api = axios.create({
-  baseURL: 'http://localhost:8080',
-})
+// Importamos a sua instância centralizada que já tem a baseURL e Interceptors
+import api from '@/services/api'
 
 export default {
   components: { AdminConfig },
 
   data: () => ({
     lista: [],
-    secretarias: [], // ✅ lista para popular o select
-    enderecos: [], // ✅ lista para popular o select
+    secretarias: [],
+    enderecos: [],
     showModal: false,
     usuarioCompleto: null,
     form: {
@@ -215,37 +212,26 @@ export default {
   }),
 
   methods: {
-    getToken() {
-      const storage = localStorage.getItem('usuario')
-      if (!storage) return null
-      return JSON.parse(storage).token
-    },
-
+    // Agora o endereço é formatado com segurança para o template
     formatarEndereco(endereco) {
       if (!endereco || typeof endereco !== 'object') {
         return 'Sem endereço'
       }
-
-      return `${endereco.logradouro ?? ''}, ${endereco.numero ?? ''} - ${endereco.bairro ?? ''}, ${endereco.cidade ?? ''} - ${endereco.uf ?? ''} | CEP: ${endereco.cep ?? ''}`
+      const e = endereco
+      return `${e.logradouro ?? ''}, ${e.numero ?? ''} - ${e.bairro ?? ''}, ${e.cidade ?? ''} - ${e.uf ?? ''} | CEP: ${e.cep ?? ''}`
     },
 
     async inicializar() {
       try {
-        const token = this.getToken()
-        if (!token) return
-
-        const resUser = await api.get('api/gerenciador/usuario-logado', {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-
+        const resUser = await api.get('/gerenciador/usuario-logado')
         this.usuarioCompleto = resUser.data
-
+        
+        // Armazena as secretarias que o usuário pode gerenciar
         this.secretarias = this.usuarioCompleto.secretarias ?? []
 
-        const idSecretaria = this.getSecretariaId()
-        if (idSecretaria) {
-          await this.carregarSetores(idSecretaria)
-          // ajuste o endpoint conforme sua API
+        if (this.secretarias.length > 0) {
+          // Opção A: Carregar os setores de todas as secretarias vinculadas
+          await this.carregarTodosSetores()
         } else {
           console.warn('Usuário sem secretaria vinculada.')
         }
@@ -256,19 +242,38 @@ export default {
 
     async carregarEnderecos() {
       try {
-        const res = await api.get(`/api/enderecos/listar-todos`)
+        const res = await api.get('/enderecos/listar-todos')
         this.enderecos = res.data
       } catch (error) {
         console.warn('Erro ao carregar endereços:', error)
       }
     },
 
-    async carregarSetores(secretariaId) {
+    async carregarTodosSetores() {
       try {
-        const res = await api.get(`/api/setores/por-secretaria/${secretariaId}`)
-        this.lista = res.data
+        this.lista = [] // Limpa a lista atual
+        
+        // Faz as chamadas em paralelo para todas as secretarias do usuário
+        const promises = this.secretarias.map(sec => 
+          api.get(`/setores/por-secretaria/${sec.id}`)
+        )
+        
+        const resultados = await Promise.all(promises)
+        
+        // Junta todos os arrays de setores em um único array
+        this.lista = resultados.flatMap(res => res.data)
+        
       } catch (error) {
-        console.error('Erro ao carregar setores:', error)
+        console.error('Erro ao carregar todos os setores:', error)
+      }
+    },
+
+    async carregarSecretarias() {
+      try {
+        const res = await api.get('/secretarias')
+        this.secretarias = res.data
+      } catch (error) {
+        console.error('Erro ao carregar lista de secretarias:', error)
       }
     },
 
@@ -278,64 +283,62 @@ export default {
           id: item.id,
           nome: item.nome,
           descricao: item.descricao,
-          secretariaId: item.secretaria?.id,
-          enderecoId: item.endereco?.id ?? null,
+          secretariaId: item.secretaria?.id || '', // Use string vazia em vez de null
+          enderecoId: item.endereco?.Id || item.endereco?.id || '',    // Use string vazia em vez de null
         }
       } else {
         this.form = {
           id: null,
           nome: '',
           descricao: '',
-          secretariaId: '',
-          enderecoId: null,
+          secretariaId: this.secretarias.length === 1 ? this.secretarias[0].id : '',
+          enderecoId: '',
         }
       }
-      this.carregarSecretarias()
+      
       this.carregarEnderecos()
-
       this.showModal = true
     },
-    async carregarSecretarias() {
-      try {
-        // Usando o endpoint base do seu SecretariaController
-        const res = await api.get('/api/secretarias')
-        this.secretarias = res.data
-        console.log(res)
-      } catch (error) {
-        console.error('Erro ao carregar lista de secretarias:', error)
-      }
-    },
+
     getSecretariaId() {
+      // Pega a primeira secretaria vinculada ao usuário logado
       return this.usuarioCompleto?.secretarias?.[0]?.id || null
     },
 
     async save() {
       try {
-        this.form.secretariaId = this.getSecretariaId()
-
-        console.log('Enviando:', this.form)
+        // Validação básica
+        if (!this.form.secretariaId) {
+          alert('Por favor, selecione uma secretaria.')
+          return
+        }
 
         if (this.form.id) {
-          await api.put(`/api/setores/${this.form.id}`, this.form)
+          await api.put(`/setores/${this.form.id}`, this.form)
         } else {
-          await api.post('/api/setores', this.form)
+          await api.post('/setores', this.form)
         }
 
         this.showModal = false
-        await this.carregarSetores(this.getSecretariaId())
+        
+        // CORREÇÃO: Após salvar, recarrega TUDO que o usuário pode ver
+        await this.carregarTodosSetores()
+        
       } catch (error) {
-        console.error('Erro completo:', error.response?.data || error)
-        alert('Erro ao salvar setor.')
+        const msg = error.response?.data?.message || 'Erro ao salvar setor.'
+        console.error('Erro ao salvar:', error)
+        alert(msg)
       }
     },
 
     async excluir(id) {
-      if (!confirm('Deseja realmente excluir?')) return
+      if (!confirm('Deseja realmente excluir este setor?')) return
       try {
-        // ✅ Corrigido: prefixo /api
-        await api.delete(`/api/setores/${id}`)
-        // ✅ Corrigido: usa getSecretariaId()
-        await this.carregarSetores(this.getSecretariaId())
+        await api.delete(`/setores/${id}`)
+        
+        // Após excluir, recarrega a lista completa novamente
+        await this.carregarTodosSetores()
+        
       } catch (error) {
         console.error('Erro ao excluir setor:', error)
         alert('Erro ao excluir setor.')

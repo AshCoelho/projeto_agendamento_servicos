@@ -258,25 +258,34 @@ import logoPrefeitura from '@/assets/brasao.png'
 
 const loading = ref(false)
 const tentouEnviar = ref(false)
-const API_BASE = 'http://192.168.20.57:8080/api'
+const API_BASE = 'http://192.168.200.57:8080/api'
 const disponibilidadeDias = ref(new Set())
 const meuFormulario = ref(null)
 const menuServico = ref(false)
 const rawDias = ref([])
 
+
 const regras = {
-  obrigatorio: (v) => (v && v.trim().length > 0) || 'Campo obrigatório',
+  // Versão corrigida: verifica se existe e só dá trim se for string
+  obrigatorio: (v) => {
+    if (v === null || v === undefined || String(v).trim() === '') return 'Campo obrigatório'
+    return true
+  },
+  
   email: (v) => {
+    if (!v) return 'E-mail é obrigatório'
     const pattern =
       /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
     return pattern.test(v) || 'E-mail inválido'
   },
+
   cpf: (v) => {
     if (!v) return 'CPF é obrigatório'
     const cpfLimpo = v.replace(/\D/g, '')
     return validarCPF(cpfLimpo) || 'CPF inválido'
   },
-  celular: (v) => (v && v.length >= 10) || 'Telefone incompleto',
+
+  celular: (v) => (v && v.replace(/\D/g, '').length >= 10) || 'Telefone incompleto',
 
   maioridade: (v) => {
     if (!v) return 'Data de nascimento é obrigatória'
@@ -285,7 +294,6 @@ const regras = {
     let idade = hoje.getFullYear() - dataNasc.getFullYear()
     const mes = hoje.getMonth() - dataNasc.getMonth()
 
-    // Ajusta a idade se ainda não fez aniversário no ano corrente
     if (mes < 0 || (mes === 0 && hoje.getDate() < dataNasc.getDate())) {
       idade--
     }
@@ -532,21 +540,34 @@ function classeDia(date) {
 }
 
 async function buscarDiasDisponiveis() {
+  // 1. Verifica se o setorId existe
   if (!form.value.setorId) return
-  try {
-    const res = await fetch(
-      `${API_BASE}/slots/datas-disponiveis?setorId=${form.value.setorId}&configuracaoId=${configuracao.value[0].id}`,
-    )
-    const data = await res.json()
 
-    // Força a reatividade do Vue
+  // 2. Tenta pegar o ID da configuração de forma segura
+  // Se configuracao for um Array vindo do banco, usamos [0]
+  // Se for um objeto único, usamos apenas .id
+  const config = configuracao.value
+  const configId = Array.isArray(config) ? config[0]?.id : config?.id
+
+  // Se não tiver o ID da configuração ainda, não faz a chamada
+  if (!configId) {
+    console.warn("Aguardando carregar configuração do setor...")
+    return
+  }
+
+  try {
+    // Usando a string de URL direta conforme sua preferência
+    const res = await api.get(`/slots/datas-disponiveis?setorId=${form.value.setorId}&configuracaoId=${configId}`)
+    
+    const data = res.data
+
     rawDias.value = []
     await nextTick()
     rawDias.value = Array.isArray(data) ? data : []
 
     disponibilidadeDias.value = new Set(rawDias.value.map((d) => d.data))
   } catch (err) {
-    console.error(err)
+    console.error("Erro ao buscar datas:", err.response?.data || err.message)
   }
 }
 
@@ -575,21 +596,20 @@ function formatarTextoSetor(item) {
 
 async function carregarServicos() {
   try {
-    const res = await fetch(`${API_BASE}/agendamento/api/servico/listar-todos`)
-    servicos.value = await res.json()
+    // O Axios já entrega o objeto pronto em res.data
+    const res = await api.get('/agendamento/api/servico/listar-todos')
+    servicos.value = res.data 
   } catch (err) {
-    console.error('Erro ao carregar serviços:', err)
+    // Se cair aqui, verifique se err.response existe
+    console.error('Erro detalhado:', err.response || err)
   }
 }
 
 async function buscarSetoresPorServico() {
   if (!form.value.servicoId) return
-
   try {
-    const res = await fetch(`${API_BASE}/setores/por-servico/${form.value.servicoId}`)
-
-    setores.value = await res.json()
-
+    const res = await api.get(`/setores/por-servico/${form.value.servicoId}`)
+    setores.value = res.data
     form.value.setorId = null
     limparHorarios()
   } catch (err) {
@@ -599,8 +619,8 @@ async function buscarSetoresPorServico() {
 
 async function getConfiguracaoBySetorId() {
   try {
-    const res = await fetch(`${API_BASE}/configuracoes-atendimento/setor/${form.value.setorId}`)
-    configuracao.value = await res.json()
+    const res = await api.get(`/configuracoes-atendimento/setor/${form.value.setorId}`)
+    configuracao.value = res.data
     //console.log(configuracao.value)
   } catch (e) {
     console.error(e)
@@ -628,9 +648,9 @@ watch(
     }
 
     try {
-      const res = await fetch(`${API_BASE}/setores/por-servico/${novoValor}`)
+      const res = await api.get(`/setores/por-servico/${novoValor}`)
 
-      setores.value = await res.json()
+      setores.value = res.data
 
       form.value.setorId = null
       limparHorarios()
@@ -671,10 +691,11 @@ async function buscarHorarios() {
   try {
     const dataFormatada = form.value.data.toISOString().split('T')[0]
 
-    const res = await fetch(
-      `${API_BASE}/slots/horarios-disponiveis?setorId=${form.value.setorId}&data=${dataFormatada}`,
-    )
-    const data = await res.json()
+    const res = await api.get(`/slots/horarios-disponiveis?setorId=${form.value.setorId}&data=${dataFormatada}`)
+
+    // REMOVIDO: const data = await res.json()
+    // NO AXIOS:
+    const data = res.data
 
     const agora = new Date()
     const hojeIso = agora.toISOString().split('T')[0]
@@ -708,55 +729,40 @@ async function agendar() {
   tentouEnviar.value = true
 
   if (meuFormulario.value) {
+    // Agora o validate() não vai mais dar erro de .trim()
     const { valid } = await meuFormulario.value.validate()
-
-    // Validação extra manual para campos que não são v-input (data e hora)
     const dataHoraValida = !!form.value.data && !!form.value.hora
 
     if (!valid || !dataHoraValida) {
-      mostrarMensagem(
-        'Por favor, preencha todos os campos obrigatórios, incluindo data e hora.',
-        'error',
-      )
+      mostrarMensagem('Por favor, preencha todos os campos obrigatórios.', 'error')
       return
     }
   }
 
   loading.value = true
   try {
-    //  Criamos uma cópia dos dados para não estragar a formatação da tela do usuário
     const payload = {
       ...form.value,
-      // Removemos pontos, traços e parênteses para enviar apenas os 11 números
+      // Garante que o CPF vá limpo
       cpf: form.value.cpf.replace(/\D/g, ''),
       celular: form.value.celular.replace(/\D/g, ''),
+      // Garante que a data vá como String YYYY-MM-DD para o Spring
+      data: form.value.data instanceof Date 
+            ? form.value.data.toISOString().split('T')[0] 
+            : form.value.data
     }
 
-    const response = await fetch(`${API_BASE}/agendamentos/externo`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload), //  Enviamos o payload limpo
-    })
+    const res = await api.post('/agendamentos/externo', payload)
+    
+    gerarPDF(res.data)
+    mostrarMensagem(`Agendamento realizado! Senha: ${res.data.senha}`, 'success')
 
-    if (!response.ok) throw new Error(await response.text())
-
-    const result = await response.json()
-
-    // 1. Gera o PDF primeiro
-    gerarPDF(result)
-
-    // 2. Avisa o usuário
-    mostrarMensagem(`Agendamento realizado! Senha: ${result.senha}`, 'success')
-
-    // 3. Aguarda um pouco para o usuário ver a mensagem e o download iniciar
-    // Depois limpa tudo e recarrega a página do zero
     setTimeout(() => {
-      resetarFormulario()
-      // window.location.reload(true) força o recarregamento limpando o estado atual
       window.location.reload()
-    }, 3000) // 3 segundos de delay
+    }, 3000)
   } catch (err) {
-    mostrarMensagem('Erro: ' + err.message, 'error')
+    const msg = err.response?.data?.message || err.response?.data || err.message
+    mostrarMensagem('Erro: ' + msg, 'error')
   } finally {
     loading.value = false
   }
