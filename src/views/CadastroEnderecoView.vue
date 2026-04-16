@@ -153,6 +153,9 @@
 import AdminConfig from '@/components/AdminConfig.vue'
 import 'primeicons/primeicons.css'
 import api from '@/services/api'
+import { EnderecoService } from '@/services/endereco.service'
+import { SetorService } from '@/services/setor.service'
+import { UsuarioService } from '@/services/usuario.service'
 
 export default {
   components: { AdminConfig },
@@ -202,25 +205,13 @@ export default {
 },
 
     async carregarEnderecos() {
-  if (!this.usuario?.setores || this.usuario.setores.length === 0) return;
-
-  try {
-    // Criamos uma lista de promessas para buscar o endereço de cada setor do usuário
-    const promessas = this.usuario.setores.map(setor => 
-      api.get(`/enderecos/setor/${setor.id}`)
-    );
-
-    const resultados = await Promise.all(promessas);
-    
-    // Extraímos os dados e filtramos nulos (caso um setor não tenha endereço ainda)
-    this.lista = resultados
-      .map(res => res.data)
-      .filter(endereco => endereco !== null && endereco !== "");
-      
-  } catch (err) {
-    console.error('Erro ao carregar endereços dos setores:', err);
-  }
-},
+      try {
+        const { data } = await api.get('/enderecos/listar-todos')
+        this.lista = data || []
+      } catch (err) {
+        console.error('Erro ao carregar endereços:', err)
+      }
+    },
 
     openModal(item = null) {
       if (item) {

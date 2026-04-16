@@ -69,7 +69,7 @@
                 </td>
                 <td class="px-6 py-4 text-right">
                   <button
-                    @click="excluir(setor.id)"
+                    @click="abrirConfirmacao(setor)"
                     class="text-red-400 hover:text-red-600 text-[10px] font-black uppercase transition-all px-3"
                   >
                     Excluir
@@ -184,6 +184,46 @@
         </div>
       </div>
     </Teleport>
+
+    <Teleport to="body">
+      <div
+        v-if="confirmDialog"
+        class="fixed inset-0 z-[110] flex items-center justify-center bg-black/40 backdrop-blur-sm"
+      >
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 animate-in">
+          
+          <h3 class="text-lg font-bold text-gray-800 mb-4">
+            Confirmar exclusão
+          </h3>
+
+          <p class="text-sm text-gray-500 mb-6">
+            Deseja realmente excluir o setor
+            <strong class="text-red-600">
+              {{ setorParaExcluir?.nome }}
+            </strong>?
+          </p>
+
+          <div class="flex justify-end gap-3">
+            <button
+              @click="confirmDialog = false"
+              class="px-4 py-2 text-gray-500 hover:text-gray-700 font-semibold"
+            >
+              Cancelar
+            </button>
+
+            <button
+              @click="confirmarExclusao"
+              :disabled="loadingExcluir"
+              class="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg font-semibold shadow disabled:opacity-50"
+            >
+              {{ loadingExcluir ? 'Excluindo...' : 'Excluir' }}
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </Teleport>
+
   </div>
 </template>
 
@@ -192,6 +232,10 @@ import AdminConfig from '@/components/AdminConfig.vue'
 import 'primeicons/primeicons.css'
 // Importamos a sua instância centralizada que já tem a baseURL e Interceptors
 import api from '@/services/api'
+import { EnderecoService } from '@/services/endereco.service'
+import { SetorService } from '@/services/setor.service'
+import { UsuarioService } from '@/services/usuario.service'
+import { SecretariaService } from '@/services/secretaria.service'
 
 export default {
   components: { AdminConfig },
@@ -202,6 +246,8 @@ export default {
     enderecos: [],
     showModal: false,
     usuarioCompleto: null,
+    confirmDialog: false,        
+    setorParaExcluir: null, 
     form: {
       id: null,
       nome: '',
@@ -223,17 +269,13 @@ export default {
 
     async inicializar() {
       try {
-        const resUser = await api.get('/gerenciador/usuario-logado')
+        const resUser = await UsuarioService.getUsuarioLogado()
         this.usuarioCompleto = resUser.data
-        
-        // Armazena as secretarias que o usuário pode gerenciar
+
         this.secretarias = this.usuarioCompleto.secretarias ?? []
 
         if (this.secretarias.length > 0) {
-          // Opção A: Carregar os setores de todas as secretarias vinculadas
           await this.carregarTodosSetores()
-        } else {
-          console.warn('Usuário sem secretaria vinculada.')
         }
       } catch (error) {
         console.error('Erro ao inicializar:', error)
@@ -242,7 +284,7 @@ export default {
 
     async carregarEnderecos() {
       try {
-        const res = await api.get('/enderecos/listar-todos')
+        const res = await EnderecoService.listarTodos()
         this.enderecos = res.data
       } catch (error) {
         console.warn('Erro ao carregar endereços:', error)
@@ -251,26 +293,24 @@ export default {
 
     async carregarTodosSetores() {
       try {
-        this.lista = [] // Limpa a lista atual
-        
-        // Faz as chamadas em paralelo para todas as secretarias do usuário
-        const promises = this.secretarias.map(sec => 
-          api.get(`/setores/por-secretaria/${sec.id}`)
+        this.lista = []
+
+        const promises = this.secretarias.map(sec =>
+          SetorService.listarPorSecretaria(sec.id)
         )
-        
+
         const resultados = await Promise.all(promises)
-        
-        // Junta todos os arrays de setores em um único array
+
         this.lista = resultados.flatMap(res => res.data)
-        
+
       } catch (error) {
-        console.error('Erro ao carregar todos os setores:', error)
+        console.error('Erro ao carregar setores:', error)
       }
     },
 
     async carregarSecretarias() {
       try {
-        const res = await api.get('/secretarias')
+        const res = await SecretariaService.listarTodas()
         this.secretarias = res.data
       } catch (error) {
         console.error('Erro ao carregar lista de secretarias:', error)
@@ -305,40 +345,42 @@ export default {
       return this.usuarioCompleto?.secretarias?.[0]?.id || null
     },
 
+    abrirConfirmacao(setor) {
+      this.setorParaExcluir = setor
+      this.confirmDialog = true
+    },
+
     async save() {
       try {
-        // Validação básica
         if (!this.form.secretariaId) {
-          alert('Por favor, selecione uma secretaria.')
+          alert('Selecione uma secretaria')
           return
         }
 
         if (this.form.id) {
-          await api.put(`/setores/${this.form.id}`, this.form)
+          await SetorService.atualizar(this.form.id, this.form)
         } else {
-          await api.post('/setores', this.form)
+          await SetorService.criar(this.form)
         }
 
         this.showModal = false
-        
-        // CORREÇÃO: Após salvar, recarrega TUDO que o usuário pode ver
         await this.carregarTodosSetores()
-        
+
       } catch (error) {
-        const msg = error.response?.data?.message || 'Erro ao salvar setor.'
-        console.error('Erro ao salvar:', error)
-        alert(msg)
+        console.error(error)
+        alert('Erro ao salvar')
       }
     },
 
-    async excluir(id) {
-      if (!confirm('Deseja realmente excluir este setor?')) return
+    async confirmarExclusao() {
       try {
-        await api.delete(`/setores/${id}`)
-        
-        // Após excluir, recarrega a lista completa novamente
+        await SetorService.excluir(this.setorParaExcluir.id)
+
+        this.confirmDialog = false
+        this.setorParaExcluir = null
+
         await this.carregarTodosSetores()
-        
+
       } catch (error) {
         console.error('Erro ao excluir setor:', error)
         alert('Erro ao excluir setor.')

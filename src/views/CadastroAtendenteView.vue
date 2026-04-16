@@ -108,7 +108,11 @@
                 <label class="block text-[10px] font-black text-gray-400 uppercase mb-2">Perfil</label>
                 <select v-model="form.perfil" class="w-full bg-gray-50 border rounded-lg p-3 text-sm outline-none">
                   <option value="ATENDENTE">Atendente</option>
-                  <option v-if="usuarioLogadoPerfil === 'SUPER_ADMIN' || usuarioLogadoPerfil === 'ADMIN'" value="ADMIN">Administrador</option>
+                  <option 
+                    v-if="usuarioLogadoPerfil === 'SUPER_ADMIN'" 
+                    value="ADMIN">
+                    Administrador
+                  </option>
                 </select>
               </div>
 
@@ -260,7 +264,7 @@ export default {
           return acc;
         }, []);
 
-        this.lista = agrupado;
+        this.lista = agrupado.filter(item => item.perfil !== 'ADMIN');
 
       } catch (e) {
         console.error("Erro ao carregar lista:", e);

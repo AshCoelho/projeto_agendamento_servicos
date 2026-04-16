@@ -133,7 +133,23 @@
 
               <!-- BOTÃO -->
               <div class="mt-6">
-                <v-btn color="primary" @click="salvarDatas"> Salvar Alterações </v-btn>
+                <v-btn
+                  color="primary"
+                  :loading="salvando"
+                  :disabled="salvando"
+                  @click="salvarDatas"
+                >
+                  {{ salvando ? 'Salvando...' : 'Salvar Alterações' }}
+                </v-btn>
+
+                <v-alert
+                  v-if="sucessoSalvar"
+                  type="success"
+                  variant="tonal"
+                  class="mt-4"
+                >
+                  Datas atualizadas com sucesso!
+                </v-alert>
               </div>
             </v-col>
           </v-row>
@@ -141,6 +157,55 @@
           <v-divider class="mb-4"></v-divider>
         </v-card>
       </v-container>
+
+      <v-dialog v-model="modalConfirmarRemocao" max-width="500px">
+        <v-card>
+          <v-card-title class="bg-red-darken-2 text-white">
+            Confirmar remoção
+          </v-card-title>
+
+          <v-card-text class="pa-4">
+            <p class="mb-3">
+              Você está removendo as seguintes datas:
+            </p>
+
+            <ul>
+              <li v-for="d in datasParaRemover" :key="d">
+                {{ d.split('-').reverse().join('/') }}
+              </li>
+            </ul>
+
+            <p class="mt-4 text-red">
+              Essa ação pode falhar se existirem reservas nessas datas.
+            </p>
+
+            <!-- AQUI entra o erro -->
+            <div
+              v-if="erroRemocao"
+              class="mt-4 pa-3 bg-red-lighten-4 text-red-darken-2 rounded d-flex align-center"
+            >
+              <v-icon class="mr-2">mdi-alert-circle</v-icon>
+              {{ erroRemocao }}
+            </div>
+          </v-card-text>
+
+          <v-card-actions>
+            <v-btn
+              color="grey"
+              variant="text"
+              @click="modalConfirmarRemocao = false"
+            >
+              Cancelar
+            </v-btn>
+
+            <v-spacer></v-spacer>
+
+            <v-btn color="error" @click="confirmarRemocaoDatas">
+              Confirmar Remoção
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
 
       <v-dialog v-model="modalHorarios" max-width="500px">
         <v-card>
@@ -221,6 +286,7 @@ import AdminConfig from '@/components/AdminConfig.vue'
 import api from '@/services/api'
 import { AtendenteApi } from '@/services/atendente.api'
 
+
 export default {
   components: { AdminConfig },
   data() {
@@ -244,7 +310,12 @@ export default {
       horariosDia: [],
       dataSelecionadaFormatada: '',
       horariosParaExcluir: [],
-      dataAbertaNoModal: null // Precisamos disso para o DELETE saber o dia
+      dataAbertaNoModal: null, // Precisamos disso para o DELETE saber o dia
+      modalConfirmarRemocao: false,
+     datasParaRemover: [],
+     erroRemocao: null,
+     salvando: false,
+      sucessoSalvar: false
     }
   },
 
@@ -336,7 +407,21 @@ export default {
       if (!this.configSelecionada) return
 
       const novas = this.datasSelecionadas.filter((d) => !this.datasBackend.includes(d))
-      const removidas = this.datasBackend.filter((d) => this.datasBackend.includes(d) && !this.datasSelecionadas.includes(d))
+      const removidas = this.datasBackend.filter((d) => !this.datasSelecionadas.includes(d))
+
+      if (removidas.length > 0) {
+        this.datasParaRemover = removidas
+        this.erroRemocao = null // limpa erro antigo
+        this.modalConfirmarRemocao = true
+        return
+      }
+
+      await this.executarSalvar(novas, [])
+    },
+
+    async executarSalvar(novas, removidas) {
+      this.salvando = true
+      this.sucessoSalvar = false
 
       try {
         if (novas.length) {
@@ -349,16 +434,40 @@ export default {
           })
         }
 
-        alert('Configurações de datas salvas!')
+        this.erroRemocao = null
+        this.modalConfirmarRemocao = false
+
+        // 🔥 feedback de sucesso
+        this.sucessoSalvar = true
+
         await this.buscarDatasConfiguracao()
+
       } catch (e) {
-        // Pega a mensagem de erro vinda do @RestController do Java
-        const msgErro = e.response?.data?.mensagem || e.response?.data || e.message
-        
-        console.error("Erro na requisição:", msgErro)
-        
-        // Exibe o motivo real (ex: "Não é possível desvincular a data...") no alert
-        alert(msgErro)
+        let msgErro = e.response?.data?.mensagem || e.response?.data || e.message
+
+        msgErro = msgErro.replace(
+          /\d{4}-\d{2}-\d{2}/g,
+          (data) => data.split('-').reverse().join('/')
+        )
+
+        this.erroRemocao = msgErro
+
+        await this.buscarDatasConfiguracao()
+
+      } finally {
+        this.salvando = false
+      }
+    },
+
+    async confirmarRemocaoDatas() {
+      const novas = this.datasSelecionadas.filter((d) => !this.datasBackend.includes(d))
+
+      await this.executarSalvar(novas, this.datasParaRemover)
+
+      // ✅ só fecha se deu certo
+      if (!this.erroRemocao) {
+        this.modalConfirmarRemocao = false
+        this.datasParaRemover = []
       }
     },
 

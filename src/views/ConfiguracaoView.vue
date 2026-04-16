@@ -151,7 +151,7 @@ export default {
     async getConfiguracoesAtendimento(setores) {
       try {
         // Criamos as promessas para cada setor do array
-        const buscas = setores.map(s => api.get(`/configuracoes-atendimento/setor/${s.id}/ativos`))
+        const buscas = setores.map(s => api.get(`/configuracoes-atendimento/setor/${s.id}`))
         const resultados = await Promise.all(buscas)
         
         // Consolidamos tudo em uma lista só para a tabela
