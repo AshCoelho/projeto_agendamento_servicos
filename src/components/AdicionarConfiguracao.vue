@@ -116,12 +116,21 @@
 import api from '@/services/api'
 
 export default {
+  props: {
+    config: {
+      type: Object,
+      default: null
+    }
+  },
+
   data: () => ({
     valid: false,
     loading: false,
     setores: [],
-    usaPausa: false, // Controla o checkbox
-    config: {
+    usaPausa: false,
+
+    configForm: {
+      id: null,
       setor: { id: null },
       horaInicio: '08:00',
       horaFim: '18:00',
@@ -134,44 +143,86 @@ export default {
       ativo: true,
     },
   }),
+
   watch: {
-    // Se desmarcar o checkbox, limpa os campos de pausa
+    // 🔥 quando receber item para edição
+    config: {
+      immediate: true,
+      deep: true,
+      handler(val) {
+        if (!val) return
+
+        this.configForm = {
+          id: val.id || null,
+          setor: { id: val.setor?.id || null },
+          horaInicio: val.horaInicio || '08:00',
+          horaFim: val.horaFim || '18:00',
+          pausaInicio: val.pausaInicio || null,
+          pausaFim: val.pausaFim || null,
+          tipoRegra: val.tipoRegra || 'POR_INTERVALO',
+          intervaloMinutos: val.intervaloMinutos || 20,
+          quantidadeAtendimentos: val.quantidadeAtendimentos || null,
+          numeroGuiches: val.numeroGuiches || 1,
+          ativo: val.ativo ?? true,
+        }
+
+        this.usaPausa = !!(val.pausaInicio && val.pausaFim)
+      }
+    },
+
     usaPausa(val) {
       if (!val) {
-        this.config.pausaInicio = null
-        this.config.pausaFim = null
+        this.configForm.pausaInicio = null
+        this.configForm.pausaFim = null
       }
     },
   },
+
   methods: {
     async fetchSetores() {
       try {
         const { data } = await api.get('/gerenciador/usuario-logado')
         this.setores = data.setores || []
-        if (this.setores.length > 0) {
-          this.config.setor.id = this.setores[0].id
+
+        if (this.setores.length > 0 && !this.configForm.setor.id) {
+          this.configForm.setor.id = this.setores[0].id
         }
       } catch (e) {
         console.error('Erro ao buscar setores', e)
       }
     },
+
     async salvarConfiguracao() {
       this.loading = true
+
       try {
         const payload = { ...this.config }
 
-        // Ajuste de regra
-        if (payload.tipoRegra === 'POR_INTERVALO') payload.quantidadeAtendimentos = null
-        else payload.intervaloMinutos = null
+        if (payload.tipoRegra === 'POR_INTERVALO') {
+          payload.quantidadeAtendimentos = null
+        } else {
+          payload.intervaloMinutos = null
+        }
 
-        // Se o checkbox de pausa estiver desligado, garante que envie null
         if (!this.usaPausa) {
           payload.pausaInicio = null
           payload.pausaFim = null
         }
 
-        await api.post('/configuracoes-atendimento', payload)
+        // 👉 SE TEM ID, É UPDATE
+        if (this.config?.id) {
+          await api.put(
+            `/configuracoes-atendimento/${this.config.id}`,
+            payload
+          )
+        } 
+        // 👉 SENÃO, CREATE
+        else {
+          await api.post('/configuracoes-atendimento', payload)
+        }
+
         this.$emit('salvo')
+
       } catch (e) {
         const msg = e.response?.data?.message || 'Erro ao salvar configuração'
         alert(msg)
@@ -180,6 +231,7 @@ export default {
       }
     },
   },
+
   mounted() {
     this.fetchSetores()
   },

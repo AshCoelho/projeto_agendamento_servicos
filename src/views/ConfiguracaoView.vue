@@ -79,6 +79,7 @@
           variant="text" 
           size="small" 
           color="blue"
+          @click="abrirEdicao(item)"
         ></v-btn>
       </div>
     </template>
@@ -98,7 +99,11 @@
         </v-card-title>
         <v-divider></v-divider>
         <v-card-text>
-          <AdicionarConfiguracao @salvo="onConfigSalva" @cancelar="dialog.addConfig = false" />
+          <AdicionarConfiguracao
+            :config="configEmEdicao"
+            @salvo="onConfigSalva"
+            @cancelar="dialog.addConfig = false"
+          />
         </v-card-text>
       </v-card>
     </v-dialog>
@@ -109,14 +114,21 @@
 import AdminConfig from '@/components/AdminConfig.vue'
 import AdicionarConfiguracao from '@/components/AdicionarConfiguracao.vue'
 import api from '@/services/api'
+import { ConfiguracoesAtendimentoService } from '@/services/configuracao.service'
+import { UsuarioService } from '@/services/usuario.service'
 
 export default {
   components: { AdminConfig, AdicionarConfiguracao },
   data: () => ({
     usuario: null, // Adicionado para armazenar os dados do admin
     allConfigs: [],
+    configEmEdicao: null,
     configuracoesAtendimentos: [],
     dialog: { addConfig: false },
+    config: {
+      type: Object,
+      default: null
+    },
     headers: [
       { title: 'Setor', key: 'setor.nome' },
       { title: 'Regra', key: 'tipoRegra' },
@@ -129,97 +141,93 @@ export default {
     ],
   }),
   methods: {
+
+    async abrirEdicao(item) {
+      this.configEmEdicao = { ...item } // clone importante
+      this.dialog.addConfig = true
+    },
     // 1. Primeiro pegamos o usuário para saber quais setores ele comanda
     async inicializarComponente() {
-    try {
-      // Busca o usuário e ESPERA (await)
-      const res = await api.get('/gerenciador/usuario-logado');
-      this.usuario = res.data;
-      
-      console.log("Usuário carregado:", this.usuario);
+      try {
+        const res = await UsuarioService.getUsuarioLogado()
 
-      // Agora que temos o usuário, buscamos as configs
-      if (this.usuario?.setores?.length > 0) {
-        await this.getAllConfigs();
+        this.usuario = res.data
+
+        console.log("Usuário carregado:", this.usuario)
+
+        if (this.usuario?.setores?.length > 0) {
+          await this.getAllConfigs()
+        }
+
+      } catch (error) {
+        console.error('Erro ao inicializar:', error)
       }
-    } catch (error) {
-      console.error('Erro ao inicializar:', error);
-    }
-  },
+    },
 
     // 2. Buscamos as configurações de TODOS os setores do admin
     async getConfiguracoesAtendimento(setores) {
       try {
-        // Criamos as promessas para cada setor do array
-        const buscas = setores.map(s => api.get(`/configuracoes-atendimento/setor/${s.id}`))
-        const resultados = await Promise.all(buscas)
-        
-        // Consolidamos tudo em uma lista só para a tabela
+        const resultados =
+          await ConfiguracoesAtendimentoService.listarPorSetores(setores)
+
         this.configuracoesAtendimentos = resultados.reduce((acc, res) => {
           return acc.concat(Array.isArray(res.data) ? res.data : [])
         }, [])
+
       } catch (e) {
-        console.error('Erro ao carregar configurações dos setores:', e)
+        console.error('Erro ao carregar configs por setor:', e)
       }
     },
 
     async alterarStatus(item) {
-      const statusAcao = item.ativo ? 'desativar' : 'ativar';
-      if (!confirm(`Deseja realmente ${statusAcao} esta configuração?`)) return;
+      const statusAcao = item.ativo ? 'desativar' : 'ativar'
+
+      if (!confirm(`Deseja realmente ${statusAcao} esta configuração?`)) return
 
       try {
         if (item.ativo) {
-          await api.delete(`/configuracoes-atendimento/${item.id}/desativar`);
+          await ConfiguracoesAtendimentoService.desativar(item.id)
         } else {
-          await api.put(`/configuracoes-atendimento/${item.id}/ativar`);
+          await ConfiguracoesAtendimentoService.ativar(item.id)
         }
 
-        // ATUALIZAÇÃO EM TEMPO REAL: 
-        // Invertemos o status no objeto local para o usuário ver a mudança na hora
-        item.ativo = !item.ativo;
+        item.ativo = !item.ativo
 
-        // Opcional: Recarregar do banco para garantir sincronia total
         if (this.usuario?.setores) {
-          this.getConfiguracoesAtendimento(this.usuario.setores);
+          await this.getConfiguracoesAtendimento(this.usuario.setores)
         }
+
       } catch (e) {
-        console.error(e);
-        const erroMsg = e.response?.data?.mensagem || 'Erro ao alterar status.';
-        alert(erroMsg);
+        const erroMsg = e.response?.data?.mensagem || 'Erro ao alterar status.'
+        alert(erroMsg)
       }
     },
 
     onConfigSalva() {
-    this.dialog.addConfig = false;
-    this.getAllConfigs(); // Atualiza em tempo real após salvar
-  },
+      this.dialog.addConfig = false
+      this.configEmEdicao = null
+      this.getAllConfigs()
+    },
 
     // Mantido caso o seu backend venha a ter um GET total no futuro
     async getAllConfigs() {
-    if (!this.usuario?.setores) return;
+      if (!this.usuario?.setores) return
 
-    try {
-      // Buscamos de todos os setores do admin
-      const buscas = this.usuario.setores.map(setor => 
-        api.get(`/configuracoes-atendimento/setor/${setor.id}`)
-      );
+      try {
+        const resultados =
+          await ConfiguracoesAtendimentoService.listarPorSetores(this.usuario.setores)
 
-      const resultados = await Promise.all(buscas);
+        const dados = resultados.flatMap(res =>
+          Array.isArray(res.data) ? res.data : []
+        )
 
-      // flatMap achata os resultados e o "[...]" força o Vue a atualizar a tela
-      const dadosFormatados = resultados.flatMap(res => 
-        Array.isArray(res.data) ? res.data : []
-      );
+        this.configuracoesAtendimentos = [...dados]
+        this.allConfigs = [...dados]
 
-      // ATENÇÃO: Atualizamos as DUAS variáveis para não ter erro de vínculo na tabela
-      this.configuracoesAtendimentos = [...dadosFormatados];
-      this.allConfigs = [...dadosFormatados];
-
-      console.log("Configs carregadas com sucesso:", this.allConfigs.length);
-    } catch (e) {
-      console.error("Erro ao carregar configurações:", e);
-    }
-  },
+      } catch (e) {
+        console.error("Erro ao carregar configurações:", e)
+      }
+    },
   },
   mounted() {
     this.inicializarComponente(); // Opcional, dependendo do seu backend
