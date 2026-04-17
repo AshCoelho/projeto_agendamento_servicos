@@ -1075,7 +1075,9 @@ export default {
       try {
         //const token = localStorage.getItem('token')
 
-        const horarioFront = new Date().toISOString().split('.')[0]
+        const horarioFront = new Date().toISOString()
+
+        console.log(horarioFront);
 
         await AtendenteApi.cancelarAtendimento(id, horarioFront)
 
@@ -1096,7 +1098,7 @@ export default {
       if (!confirm('Deseja finalizar?')) return
 
       try {
-        const horarioFront = new Date().toISOString().split('.')[0]
+        const horarioFront = new Date().toISOString()
 
         // 2. Passa o ID e o Horário para a API
         await AtendenteApi.finalizarAtendimento(id, horarioFront)
