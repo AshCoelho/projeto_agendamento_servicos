@@ -96,7 +96,7 @@
 
               <div>
                 <label class="block text-[10px] font-black text-gray-400 uppercase mb-2">CPF</label>
-                <input v-model="form.cpf" type="text" class="w-full bg-gray-50 border rounded-lg p-3 text-sm outline-none" />
+                <input v-model="form.cpf" @input="formatarCpf" maxlength="14" type="text" class="w-full bg-gray-50 border rounded-lg p-3 text-sm outline-none" />
               </div>
 
               <div>
@@ -272,6 +272,19 @@ export default {
         console.error("Erro ao carregar lista:", e);
         this.lista = [];
       }
+    },
+
+    formatarCpf() {
+      let v = this.form.cpf || '';
+
+      v = v.replace(/\D/g, '');
+      v = v.slice(0, 11);
+
+      v = v.replace(/(\d{3})(\d)/, '$1.$2');
+      v = v.replace(/(\d{3})(\d)/, '$1.$2');
+      v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+
+      this.form.cpf = v;
     },
 
     openModal(item = null) {
