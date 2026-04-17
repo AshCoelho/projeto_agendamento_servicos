@@ -264,7 +264,9 @@ export default {
           return acc;
         }, []);
 
-        this.lista = agrupado.filter(item => item.perfil !== 'ADMIN');
+        this.lista = agrupado.filter(
+          item => item.perfil !== 'ADMIN' && item.perfil !== 'SUPER_ADMIN'
+        );
 
       } catch (e) {
         console.error("Erro ao carregar lista:", e);
