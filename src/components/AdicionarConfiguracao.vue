@@ -3,7 +3,7 @@
     <v-row>
       <v-col cols="12">
         <v-select
-          v-model="config.setor.id"
+          v-model="configForm.setor.id"
           :items="setores"
           item-title="nome"
           item-value="id"
@@ -25,7 +25,7 @@
 
       <v-col cols="6">
         <v-text-field
-          v-model="config.horaInicio"
+          v-model="configForm.horaInicio"
           label="Início Expediente"
           type="time"
           variant="outlined"
@@ -35,7 +35,7 @@
       </v-col>
       <v-col cols="6">
         <v-text-field
-          v-model="config.horaFim"
+          v-model="configForm.horaFim"
           label="Fim Expediente"
           type="time"
           variant="outlined"
@@ -46,7 +46,7 @@
 
       <v-col cols="6" v-if="usaPausa">
         <v-text-field
-          v-model="config.pausaInicio"
+          v-model="configForm.pausaInicio"
           label="Início Pausa (Opcional)"
           type="time"
           variant="outlined"
@@ -55,7 +55,7 @@
       </v-col>
       <v-col cols="6" v-if="usaPausa">
         <v-text-field
-          v-model="config.pausaFim"
+          v-model="configForm.pausaFim"
           label="Fim Pausa (Opcional)"
           type="time"
           variant="outlined"
@@ -64,15 +64,15 @@
       </v-col>
 
       <v-col cols="12">
-        <v-radio-group v-model="config.tipoRegra" inline label="Regra de Agendamento" hide-details>
+        <v-radio-group v-model="configForm.tipoRegra" inline label="Regra de Agendamento" hide-details>
           <v-radio label="Por Intervalo (minutos)" value="POR_INTERVALO"></v-radio>
           <v-radio label="Por Quantidade (total)" value="POR_QUANTIDADE"></v-radio>
         </v-radio-group>
       </v-col>
 
-      <v-col cols="6" v-if="config.tipoRegra === 'POR_INTERVALO'">
+      <v-col cols="6" v-if="configForm.tipoRegra === 'POR_INTERVALO'">
         <v-text-field
-          v-model="config.intervaloMinutos"
+          v-model="configForm.intervaloMinutos"
           label="Minutos por atendimento"
           type="number"
           variant="outlined"
@@ -81,7 +81,7 @@
       </v-col>
       <v-col cols="6" v-else>
         <v-text-field
-          v-model="config.quantidadeAtendimentos"
+          v-model="configForm.quantidadeAtendimentos"
           label="Total de atendimentos"
           type="number"
           variant="outlined"
@@ -91,7 +91,7 @@
 
       <v-col cols="6">
         <v-text-field
-          v-model="config.numeroGuiches"
+          v-model="configForm.numeroGuiches"
           label="Número de Guichês"
           type="number"
           variant="outlined"
@@ -196,7 +196,7 @@ export default {
       this.loading = true
 
       try {
-        const payload = { ...this.config }
+        const payload = { ...this.configForm }
 
         if (payload.tipoRegra === 'POR_INTERVALO') {
           payload.quantidadeAtendimentos = null
