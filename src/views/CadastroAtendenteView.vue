@@ -348,8 +348,7 @@ export default {
         this.showModal = false;
         await this.carregar();
       } catch (e) {
-        // Aqui você consegue ver a mensagem exata que o seu Java enviou no throw
-        const msg = e.response?.data?.message || e.message;
+        const msg = e.response?.data?.mensagem ?? 'Erro ao salvar';
         alert('Erro ao salvar: ' + msg);
       }
     },
