@@ -186,8 +186,8 @@ export default {
       this.carregando = true
       try {
         const { data } = await api.post('/auth/login', this.login)
-        console.log(' Resposta completa do backend:', data)
-        console.log(' Perfil recebido:', data.perfil)
+        //console.log(' Resposta completa do backend:', data)
+        //console.log(' Perfil recebido:', data.perfil)
 
         if (!data?.token) {
           throw new Error('Token não retornado no login')

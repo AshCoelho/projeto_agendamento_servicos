@@ -208,19 +208,19 @@ export default {
       const token = localStorage.getItem('token')
       const usuarioId = this.usuario?.id || localStorage.getItem('usuarioId')
 
-      console.log('Iniciando processo de saída para o usuário:', usuarioId)
+      //console.log('Iniciando processo de saída para o usuário:', usuarioId)
 
       try {
         if (usuarioId && token) {
           await AtendenteApi.deslogarGuiche(usuarioId)
-          console.log('Banco de dados atualizado: Guichê liberado.')
+          //console.log('Banco de dados atualizado: Guichê liberado.')
         } else {
           console.warn('Aviso: usuarioId ou token não encontrados para limpar guichê.')
         }
       } catch (error) {
         console.error('Erro técnico ao deslogar guichê:', error.response?.data || error.message)
       } finally {
-        console.log('Limpando dados locais e redirecionando...')
+        //console.log('Limpando dados locais e redirecionando...')
         localStorage.clear()
         this.usuario = null
         this.$router.push({ name: 'login' })

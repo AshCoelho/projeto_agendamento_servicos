@@ -286,12 +286,12 @@ export default {
           this.selectedItem?.id
 
         if (!agendamentoId) {
-          console.log('Nenhum atendimento ativo para ping.')
+          //console.log('Nenhum atendimento ativo para ping.')
           return
         }
 
         await AtendenteApi.heartbeat(agendamentoId)
-        console.log('Heartbeat enviado para ID:', agendamentoId)
+        //console.log('Heartbeat enviado para ID:', agendamentoId)
       } catch (e) {
         console.warn('Falha no ping:', e)
       }

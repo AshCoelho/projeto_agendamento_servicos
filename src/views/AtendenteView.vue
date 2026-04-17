@@ -1077,7 +1077,7 @@ export default {
 
         const horarioFront = new Date().toISOString()
 
-        console.log(horarioFront);
+        //console.log(horarioFront);
 
         await AtendenteApi.cancelarAtendimento(id, horarioFront)
 
