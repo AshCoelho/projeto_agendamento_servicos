@@ -265,7 +265,7 @@ export default {
         }, []);
 
         this.lista = agrupado.filter(
-          item => item.perfil !== 'ADMIN' && item.perfil !== 'SUPER_ADMIN'
+          item => item.perfil !== 'ADMIN' && item.perfil !== 'SUPERADMIN'
         );
 
       } catch (e) {
