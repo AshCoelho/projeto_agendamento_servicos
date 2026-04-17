@@ -129,18 +129,54 @@
                     </v-card>
                   </div>
                 </div>
+
+                <div class="mt-1 px-1">
+                  <p class="text-[11px] mb-3 text-grey-darken-1 d-flex align-center leading-relaxed">
+                    <v-icon size="small" color="blue-darken-2" class="mr-1">mdi-mouse-left-click</v-icon>
+                    <span>
+                      Um clique para <strong>vincular</strong> ou <strong>desvincular</strong> a data.
+                    </span>
+                  </p>
+
+                  <p class="text-[11px] text-grey-darken-1 d-flex align-center leading-relaxed">
+                    <v-icon size="small" color="blue-darken-2" class="mr-1">mdi-mouse-double-click</v-icon>
+                    <span>
+                      Dois cliques para <strong>abrir o modal</strong> de horários.
+                    </span>
+                  </p>
+                </div>
+
               </div>
 
               <!-- BOTÃO -->
-              <div class="mt-6">
-                <v-btn
-                  color="primary"
-                  :loading="salvando"
-                  :disabled="salvando"
-                  @click="salvarDatas"
-                >
-                  {{ salvando ? 'Salvando...' : 'Salvar Alterações' }}
-                </v-btn>
+              <div class="mt-8">
+                <div class="flex items-center mb-4">
+                  <div class="flex-1">
+                    <v-btn
+                      color="blue-darken-2"
+                      variant="tonal"
+                      prepend-icon="mdi-calendar-range"
+                      @click="selecionarTodasDatas"
+                    >
+                      {{ isTodosUteisSelecionados ? 'Desmarcar todos os dias' : 'Selecionar dias úteis' }}
+                    </v-btn>
+                  </div>
+
+                  <div class="flex-1 flex justify-center">
+                    <v-btn
+                      color="primary"
+                      size="large"
+                      :loading="salvando"
+                      :disabled="salvando"
+                      @click="salvarDatas"
+                      class="px-10" 
+                    >
+                      {{ salvando ? 'Salvando...' : 'Salvar Alterações' }}
+                    </v-btn>
+                  </div>
+
+                  <div class="flex-1"></div>
+                </div>
 
                 <v-alert
                   v-if="sucessoSalvar"
@@ -328,6 +364,22 @@ export default {
     anoAtual() {
       return this.dataAtual.getFullYear()
     },
+
+    isTodosUteisSelecionados() {
+      // Filtra dias úteis do calendário atual
+      const uteis = this.diasCalendario
+        .filter(dia => dia !== null)
+        .filter(dia => {
+          const d = new Date(this.dataAtual.getFullYear(), this.dataAtual.getMonth(), dia);
+          return d.getDay() !== 0 && d.getDay() !== 6;
+        })
+        .map(dia => this.formatarData(dia));
+
+      if (uteis.length === 0) return false;
+      
+      // Verifica se cada um deles está no array de selecionados
+      return uteis.every(data => this.datasSelecionadas.includes(data));
+    }
   },
 
   async mounted() {
@@ -400,6 +452,40 @@ export default {
         this.datasSelecionadas = [...this.datasBackend]
       } catch (e) {
         console.error('Erro ao buscar datas', e)
+      }
+    },
+
+    selecionarTodasDatas() {
+      // 1. Identificamos quais são todos os dias úteis (Seg-Sex) do mês atual
+      const diasUteisDoMes = this.diasCalendario
+        .filter(dia => dia !== null)
+        .map(dia => {
+          const dataVerificacao = new Date(this.dataAtual.getFullYear(), this.dataAtual.getMonth(), dia);
+          return {
+            iso: this.formatarData(dia),
+            isUtil: dataVerificacao.getDay() !== 0 && dataVerificacao.getDay() !== 6
+          };
+        })
+        .filter(d => d.isUtil)
+        .map(d => d.iso);
+
+      // 2. Verificamos se TODOS esses dias úteis já estão na lista de selecionados
+      const todosSelecionados = diasUteisDoMes.every(data => 
+        this.datasSelecionadas.includes(data)
+      );
+
+      if (todosSelecionados) {
+        // Se todos já estão lá, desmarcamos todos os dias úteis deste mês
+        this.datasSelecionadas = this.datasSelecionadas.filter(
+          data => !diasUteisDoMes.includes(data)
+        );
+      } else {
+        // Se falta algum, adicionamos apenas os que ainda não estão na lista
+        diasUteisDoMes.forEach(data => {
+          if (!this.datasSelecionadas.includes(data)) {
+            this.datasSelecionadas.push(data);
+          }
+        });
       }
     },
 
