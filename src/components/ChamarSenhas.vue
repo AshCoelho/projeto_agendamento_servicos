@@ -439,62 +439,6 @@ export default {
       }
     },
 
-    async handleCancelar(id) {
-      if (!confirm('Deseja realmente cancelar?')) return
-      try {
-        const token = localStorage.getItem('token')
-
-        // 1. Envia comando para a API
-        await AtendenteApi.cancelarAtendimento(id, token)
-
-        // 2. Limpa dos chamados manuais
-        this.idsChamadosManualmente = this.idsChamadosManualmente.filter((itemId) => itemId !== id)
-
-        // 3. Atualização Otimista (tira o status de EM_ATENDIMENTO instantaneamente)
-        const index = this.agendamentosPorSetor.findIndex((a) => (a.agendamentoId || a.id) === id)
-        if (index !== -1) {
-          this.agendamentosPorSetor[index].situacao = 'FALTOU'
-        }
-
-        // 4. MUDA A ABA NA HORA!
-        this.abaAtiva = 'AGUARDANDO'
-
-        // 5. Busca os dados reais no fundo
-        await this.buscarAgendamentos()
-      } catch (e) {
-        alert('Erro ao cancelar.')
-      }
-    },
-
-    async handleFinalizar(id) {
-      if (!confirm('Deseja finalizar?')) return
-      try {
-        // 1. Envia comando para a API
-        await AtendenteApi.finalizarAtendimento(id)
-
-        // 2. Limpa dos chamados manuais
-        this.idsChamadosManualmente = this.idsChamadosManualmente.filter((itemId) => itemId !== id)
-
-        // 3. Fecha o modal de edição (caso esteja aberto)
-        this.mostrarModalEdicao = false
-
-        // 4. Atualização Otimista (tira o status de EM_ATENDIMENTO instantaneamente)
-        const index = this.agendamentosPorSetor.findIndex((a) => (a.agendamentoId || a.id) === id)
-        if (index !== -1) {
-          this.agendamentosPorSetor[index].situacao = 'ATENDIDO'
-        }
-
-        // 5. MUDA A ABA NA HORA!
-        this.abaAtiva = 'AGUARDANDO'
-
-        // 6. Busca os dados reais no fundo
-        await this.buscarAgendamentos()
-      } catch (e) {
-        console.error('Erro ao finalizar:', e)
-        alert('Erro ao finalizar atendimento.')
-      }
-    },
-
     async salvarEspontaneo() {
       try {
         if (!this.novoAgendamento.nomeCidadao || !this.novoAgendamento.servico) {
