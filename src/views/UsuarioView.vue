@@ -70,14 +70,27 @@ export default {
   },
 
   async created() {
-    this.usuario = JSON.parse(localStorage.getItem('usuario'))
-
-    if (this.usuario?.login) {
-      await this.buscarHistorico()
-    }
+    await this.buscarUsuarioLogado()
   },
 
   methods: {
+    async buscarUsuarioLogado() {
+      try {
+        const { data } = await api.get('/gerenciador/usuario-logado')
+
+        this.usuario = data
+
+        if (this.usuario?.login) {
+          await this.buscarHistorico()
+        }
+        
+
+      } catch (error) {
+        console.error('Erro ao buscar usuário logado:', error)
+        this.logout()
+      }
+    },
+
     async buscarHistorico() {
       this.carregando = true
       try {
