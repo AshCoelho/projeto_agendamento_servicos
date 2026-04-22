@@ -212,7 +212,7 @@ export default {
             this.$router.push('/guiche')
             break
           case 'USUARIO':
-            this.$router.push('/agendamento')
+            this.$router.push('/usuario')
             break
           default:
             alert('Perfil não reconhecido: ' + perfil)

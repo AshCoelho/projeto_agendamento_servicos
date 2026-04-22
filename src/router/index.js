@@ -11,6 +11,7 @@ import AgendamentoExternoView from '@/views/AgendamentoExternoView.vue'
 import ConfiguracaoDatasView from '@/views/ConfiguracaoDatasView.vue'
 import MetricasView from '@/views/MetricasView.vue'
 import RelatoriosView from '@/views/RelatoriosView.vue'
+import UsuarioView from '@/views/UsuarioView.vue'
 
 const routes = [
   // 🔓 Rotas públicas
@@ -60,7 +61,7 @@ const routes = [
     component: AdministradorView,
     meta: {
       requiresAuth: true,
-      requiredPerfil: 'ADMIN'
+      requiredPerfil: ['ADMIN', 'SUPERADMIN']
     }
   },
 
@@ -70,7 +71,7 @@ const routes = [
     component: RelatoriosView,
     meta: {
       requiresAuth: true,
-      requiredPerfil: 'ADMIN'
+      requiredPerfil: ['ADMIN', 'SUPERADMIN']
     }
   },
 
@@ -80,7 +81,7 @@ const routes = [
     component: ConfiguracaoView,
     meta: {
       requiresAuth: true,
-      requiredPerfil: 'ADMIN'
+      requiredPerfil: ['ADMIN', 'SUPERADMIN']
     }
   },
 
@@ -91,7 +92,7 @@ const routes = [
     component: ConfiguracaoDatasView,
     meta: {
       requiresAuth: true,
-      requiredPerfil: 'ADMIN'
+      requiredPerfil: ['ADMIN', 'SUPERADMIN']
     }
   },
 
@@ -115,6 +116,13 @@ const routes = [
     name: 'cadastro-atendente',
     component: CadastroAtendente,
     meta: { requiresAuth: true }
+  },
+
+  {
+    path: '/usuario',
+    name: 'usuario',
+    component: UsuarioView,
+    meta: { requiresAuth: true }
   }
 ]
 
@@ -127,16 +135,30 @@ router.beforeEach((to, from, next) => {
   const usuarioStr = localStorage.getItem('usuario')
   const usuario = usuarioStr ? JSON.parse(usuarioStr) : null
 
+  // 1. Rota pública? Pode passar.
   if (!to.meta.requiresAuth) {
     return next()
   }
 
+  // 2. Não está logado? Login.
   if (!usuario) {
     return next({ name: 'login' })
   }
 
-  if (to.meta.requiredPerfil && usuario.perfil !== to.meta.requiredPerfil) {
-    return next({ name: 'login' })
+  // 3. Verificação de Perfil
+  if (to.meta.requiredPerfil) {
+    // Transformamos em array caso tenha vindo como string simples
+    const perfisPermitidos = Array.isArray(to.meta.requiredPerfil) 
+      ? to.meta.requiredPerfil 
+      : [to.meta.requiredPerfil]
+
+    // DEBUG: Descomente a linha abaixo se persistir o erro para ver no console
+    // console.log(`Perfil Usuário: ${usuario.perfil} | Permitidos:`, perfisPermitidos)
+
+    if (!perfisPermitidos.includes(usuario.perfil)) {
+      console.warn("Acesso negado: Perfil insuficiente")
+      return next({ name: 'atendente' }) // Redireciona para o painel básico em vez de deslogar
+    }
   }
 
   next()
