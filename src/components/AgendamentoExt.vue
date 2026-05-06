@@ -258,7 +258,7 @@ import logoPrefeitura from '@/assets/brasao.png'
 
 const loading = ref(false)
 const tentouEnviar = ref(false)
-const API_BASE = 'http://192.168.200.57:8080/api'
+const API_BASE = 'http://192.168.200.40:8080/api'
 const disponibilidadeDias = ref(new Set())
 const meuFormulario = ref(null)
 const menuServico = ref(false)
@@ -271,7 +271,7 @@ const regras = {
     if (v === null || v === undefined || String(v).trim() === '') return 'Campo obrigatório'
     return true
   },
-  
+
   email: (v) => {
     if (!v) return 'E-mail é obrigatório'
     const pattern =
@@ -558,7 +558,7 @@ async function buscarDiasDisponiveis() {
   try {
     // Usando a string de URL direta conforme sua preferência
     const res = await api.get(`/slots/datas-disponiveis?setorId=${form.value.setorId}&configuracaoId=${configId}`)
-    
+
     const data = res.data
 
     rawDias.value = []
@@ -598,7 +598,7 @@ async function carregarServicos() {
   try {
     // O Axios já entrega o objeto pronto em res.data
     const res = await api.get('/agendamento/api/servico/listar-todos')
-    servicos.value = res.data 
+    servicos.value = res.data
   } catch (err) {
     // Se cair aqui, verifique se err.response existe
     console.error('Erro detalhado:', err.response || err)
@@ -747,13 +747,13 @@ async function agendar() {
       cpf: form.value.cpf.replace(/\D/g, ''),
       celular: form.value.celular.replace(/\D/g, ''),
       // Garante que a data vá como String YYYY-MM-DD para o Spring
-      data: form.value.data instanceof Date 
-            ? form.value.data.toISOString().split('T')[0] 
+      data: form.value.data instanceof Date
+            ? form.value.data.toISOString().split('T')[0]
             : form.value.data
     }
 
     const res = await api.post('/agendamentos/externo', payload)
-    
+
     gerarPDF(res.data)
     mostrarMensagem(`Agendamento realizado! Senha: ${res.data.senha}`, 'success')
 

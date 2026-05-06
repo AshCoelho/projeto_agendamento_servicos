@@ -13,7 +13,7 @@
       <div class="px-8 grid grid-cols-3 gap-6 mb-5">
         <div class="bg-white p-6 rounded-[15px] shadow-sm flex justify-between items-start border-b-4 hover:border-[#9E9E9E]">
           <div>
-            <p class="text-[12px] font-bold text-gray-400 uppercase mb-1">Atendimentos Hoje</p>
+            <p class="text-[12px] font-bold text-gray-400 uppercase mb-1">Atendimentos</p>
             <h3 class="text-3xl font-black text-gray-800">{{ agendamentosFiltrados.length }}</h3>
           </div>
           <i class="pi pi-calendar text-xl"></i>
@@ -49,7 +49,7 @@
 
         <div>
           <label class="text-[10px] font-bold text-gray-400 uppercase">Data</label>
-          <input 
+          <input
             type="date"
             v-model="filtroData"
             class="block bg-white border rounded-lg p-2 text-sm"
@@ -58,7 +58,7 @@
 
         <div>
           <label class="text-[10px] font-bold text-gray-400 uppercase">Serviço</label>
-            <select 
+            <select
               v-model="filtroServico"
               class="block bg-white border rounded-lg p-2 text-sm min-w-[200px]"
             >
@@ -70,7 +70,7 @@
         </div>
 
       <div class="flex items-end">
-        <button 
+        <button
           @click="filtroData = ''; filtroServico = ''"
           class="bg-gray-200 px-3 py-2 rounded text-xs font-bold"
         >

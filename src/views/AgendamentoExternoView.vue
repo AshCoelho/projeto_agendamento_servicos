@@ -37,7 +37,7 @@ import { ref, onMounted } from 'vue'
 import 'primeicons/primeicons.css'
 import AgendamentoExt from '@/components/AgendamentoExt.vue'
 
-const API_BASE = 'http://192.168.200.57:8080/api'
+const API_BASE = 'http://192.168.200.40:8080/api'
 
 const secretarias = ref([])
 

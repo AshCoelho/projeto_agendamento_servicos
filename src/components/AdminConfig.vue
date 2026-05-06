@@ -110,6 +110,43 @@
           </router-link>
         </div>
       </Transition>
+
+      <div
+        v-if="perfilUsuario === 'SUPERADMIN'"
+        @click="sidebarAberta ? (abrirPainelAdmin = !abrirPainelAdmin) : (sidebarAberta = true)"
+        class="flex items-center px-4 py-3 rounded-[13px] cursor-pointer transition-all hover:bg-gray-50 text-gray-600"
+        :class="[sidebarAberta ? 'justify-between' : 'justify-center px-0']"
+      >
+        <div class="flex items-center gap-3">
+          <i class="pi pi pi-wrench"></i>
+          <span v-if="sidebarAberta" class="text-sm font-bold whitespace-nowrap">Painel Administrativo</span>
+        </div>
+        <i
+          v-if="sidebarAberta"
+          class="pi pi-chevron-down text-[10px] transition-transform duration-300"
+          :class="{ 'rotate-180': abrirPainelAdmin }"
+        ></i>
+      </div>
+
+
+
+      <Transition name="fade">
+        <div
+          v-if="abrirPainelAdmin && sidebarAberta"
+          class="ml-2 space-y-1 mt-1 border-l-2 border-gray-50 pl-2"
+        >
+          <router-link
+            v-for="item in opcoesPainelAdmin"
+            :key="item.id"
+            :to="item.rota"
+            class="flex items-center gap-3 px-4 py-2 rounded-[10px] transition-all text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+            active-class="!text-[#2563eb] font-bold bg-blue-50/50"
+          >
+            <i :class="['pi text-[12px]', item.icon]"></i>
+            <span class="text-xs tracking-tight whitespace-nowrap">{{ item.nome }}</span>
+          </router-link>
+        </div>
+      </Transition>
     </nav>
 
     <div class="mt-auto w-full px-4 pb-4">
@@ -156,7 +193,8 @@ export default {
     abaAtiva: 'AGUARDANDO',
     relogio: '--:--:--',
     filtroTexto: '',
-    abrirCadastros: false,
+    abrirCadastros: true,
+    abrirPainelAdmin: false,
     menuAtivo: 'painel',
     sidebarAberta: false,
     cadastros: [
@@ -178,6 +216,26 @@ export default {
         icon: 'pi-user',
         rota: '/cadastro/atendente',
       },
+    ],
+    opcoesPainelAdmin: [
+      {
+        id: 'ponto-atendimento',
+        nome: 'Ponto de Atendimento',
+        icon: 'pi-shop',
+        rota: '/adm/pontoatendimento'
+      },
+      {
+        id: 'usuarios',
+        nome: 'Usuários',
+        icon: 'pi-user-edit',
+        rota: '/cadastro/setor'
+      },
+      {
+        id: 'monitor',
+        nome: 'Monitor',
+        icon: 'pi-stop',
+        rota: '/cadastro/setor'
+      }
     ],
   }),
   methods: {

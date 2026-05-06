@@ -191,7 +191,7 @@
         class="fixed inset-0 z-[110] flex items-center justify-center bg-black/40 backdrop-blur-sm"
       >
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 animate-in">
-          
+
           <h3 class="text-lg font-bold text-gray-800 mb-4">
             Confirmar exclusão
           </h3>
@@ -246,8 +246,8 @@ export default {
     enderecos: [],
     showModal: false,
     usuarioCompleto: null,
-    confirmDialog: false,        
-    setorParaExcluir: null, 
+    confirmDialog: false,
+    setorParaExcluir: null,
     form: {
       id: null,
       nome: '',
@@ -271,6 +271,8 @@ export default {
       try {
         const resUser = await UsuarioService.getUsuarioLogado()
         this.usuarioCompleto = resUser.data
+
+        console.log(resUser.data)
 
         this.secretarias = this.usuarioCompleto.secretarias ?? []
 
@@ -299,9 +301,12 @@ export default {
           SetorService.listarPorSecretaria(sec.id)
         )
 
+
         const resultados = await Promise.all(promises)
 
         this.lista = resultados.flatMap(res => res.data)
+
+        console.log(resultados.flatMap(res => res.data))
 
       } catch (error) {
         console.error('Erro ao carregar setores:', error)
@@ -335,7 +340,7 @@ export default {
           enderecoId: '',
         }
       }
-      
+
       this.carregarEnderecos()
       this.showModal = true
     },

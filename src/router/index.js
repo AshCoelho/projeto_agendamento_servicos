@@ -12,6 +12,8 @@ import ConfiguracaoDatasView from '@/views/ConfiguracaoDatasView.vue'
 import MetricasView from '@/views/MetricasView.vue'
 import RelatoriosView from '@/views/RelatoriosView.vue'
 import UsuarioView from '@/views/UsuarioView.vue'
+import AdmPontoAtendimentoView from '@/views/adm-pontoAtendimentoView.vue'
+import AdmCadastroPontoAtendimentoView from '@/views/adm-CadastroPAView.vue'
 
 const routes = [
   // 🔓 Rotas públicas
@@ -123,7 +125,20 @@ const routes = [
     name: 'usuario',
     component: UsuarioView,
     meta: { requiresAuth: true }
-  }
+  },
+  //SUPERADM
+  {
+    path: '/adm/pontoatendimento',
+    name: 'Ponto de Atendimento',
+    component: AdmPontoAtendimentoView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/adm/cadastro-pontoatendimento',
+    name: 'Cadastro de Ponto de Atendimento',
+    component: AdmCadastroPontoAtendimentoView,
+    meta: { requiresAuth: true }
+  },
 ]
 
 const router = createRouter({
@@ -148,8 +163,8 @@ router.beforeEach((to, from, next) => {
   // 3. Verificação de Perfil
   if (to.meta.requiredPerfil) {
     // Transformamos em array caso tenha vindo como string simples
-    const perfisPermitidos = Array.isArray(to.meta.requiredPerfil) 
-      ? to.meta.requiredPerfil 
+    const perfisPermitidos = Array.isArray(to.meta.requiredPerfil)
+      ? to.meta.requiredPerfil
       : [to.meta.requiredPerfil]
 
     // DEBUG: Descomente a linha abaixo se persistir o erro para ver no console
