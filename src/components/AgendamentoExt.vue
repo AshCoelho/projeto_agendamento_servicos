@@ -258,7 +258,7 @@ import logoPrefeitura from '@/assets/brasao.png'
 
 const loading = ref(false)
 const tentouEnviar = ref(false)
-const API_BASE = 'http://192.168.200.40:8080/api'
+const API_BASE = 'http://192.168.201.37:8080/api'
 const disponibilidadeDias = ref(new Set())
 const meuFormulario = ref(null)
 const menuServico = ref(false)

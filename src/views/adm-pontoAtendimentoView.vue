@@ -189,8 +189,7 @@ export default {
                     const secretariaA = a.nomeSecretaria || "";
                     const secretariaB = b.nomeSecretaria || "";
 
-                    console.log(a.nomeSecretaria);
-                    console.log(b.nomeSecretaria);
+                    
 
                     if (secretariaA !== secretariaB) {
                         return secretariaA.localeCompare(secretariaB);
